@@ -169,6 +169,28 @@ validator generate-stubs --force
 
 ---
 
+## Standalone Windows executable
+
+Build a single-file `ocx-validator.exe` that runs on Windows machines
+without a Python installation:
+
+```bash
+uv run pyinstaller packaging/validator.spec --noconfirm
+```
+
+The executable lands in `dist/ocx-validator.exe` (~16 MB) and exposes the
+full `validator` CLI:
+
+```bash
+dist\ocx-validator.exe report all model.3docx --destination report.html
+```
+
+All versioned OCX data-binding modules are bundled (they are imported
+dynamically at runtime), so every supported schema version works out of
+the box.
+
+---
+
 ## Running tests
 
 ```bash
