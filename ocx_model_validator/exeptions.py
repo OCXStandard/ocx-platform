@@ -13,6 +13,11 @@ class XmlParserError(ValueError):
 class SourceError(ValueError):
     """SourceValidator errors."""
 
+
+class SchemaVersionError(ValueError):
+    """Unknown, missing or unsupported OCX schema version."""
+
+
 class DynamicLoaderError(AttributeError):
     """Dynamic import errors."""
 
