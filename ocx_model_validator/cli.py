@@ -99,14 +99,12 @@ def _load_vessel(model: Path):
 
 
 def _detect_schema_version(model: Path) -> str | None:
+    from ocx_model_validator.parsers.version import detect_schema_version
+
     xml = model.read_text(encoding="utf-8")
-    schema_version = re.search(r'\bschemaVersion="([^"]+)"', xml)
-    if schema_version:
+    if re.search(r'\bschemaVersion="', xml):
         return None
-    namespace_version = re.search(r"//V(\d)(\d)(\d)//OCX_Schema\.xsd", xml)
-    if namespace_version:
-        return ".".join(namespace_version.groups())
-    return None
+    return detect_schema_version(xml)
 
 
 _HTML_SUFFIXES = {".html", ".htm"}
