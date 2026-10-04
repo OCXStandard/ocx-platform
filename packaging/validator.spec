@@ -29,7 +29,7 @@ a = Analysis(
     ["validator_entry.py"],
     pathex=[".."],
     binaries=binaries,
-    datas=[],
+    datas=[("../ocx_model_validator/schemas", "ocx_model_validator/schemas")],
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],

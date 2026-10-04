@@ -23,6 +23,8 @@ making downstream tools independent of any particular OCX schema version.
   catalogues and bill of materials, rendered rich to stdout or as Markdown
 - **MCP server** `ocx-mcp` exposing model loading, info, frame table,
   compartments and scantling write-back to LLM clients
+- **XSD schema validation** (`validator validate schema`): offline validation
+  against vendored OCX 3.0.0–3.2.0 schemas with rich, HTML and JSON output
 
 ---
 
@@ -159,6 +161,11 @@ validator report stiffeners   model.3docx
 validator report brackets     model.3docx
 validator report pillars      model.3docx
 validator report all          model.3docx --destination report.md
+
+# validate the model against its OCX XSD (offline; writes
+# model.validation.json + model.validation.html beside the model)
+validator validate schema model.3docx
+validator validate schema model.3docx --max-errors 100
 
 # generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
 uv run python ocx_model_validator/generate_stubs.py

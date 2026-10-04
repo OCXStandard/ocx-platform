@@ -17,6 +17,9 @@ ocx-model-validator/           ← repo root (pyproject.toml here)
 │   │   ├── base_parser.py      ← IParser, IModuleDeclaration interfaces
 │   │   ├── dynamic_loader.py   ← DynamicLoader, DeclarationOfOcxImport
 │   │   └── parser.py           ← OcxParser (detects version, delegates to DynamicLoader)
+│   ├── validation/
+│   │   └── schema.py           ← offline XSD validation (lxml + vendored schemas/)
+│   ├── schemas/                 ← vendored OCX + UnitsML XSDs (package data)
 │   └── builders/
 │       ├── base.py             ← IOcxBuilder ABC, UnsupportedSchemaVersionError
 │       ├── factory.py          ← get_builder(version) — _BUILDER_REGISTRY dispatch
@@ -60,6 +63,9 @@ validator report brackets     model.3docx
 validator report pillars      model.3docx
 validator report all          model.3docx --destination report.md
 validator report all          model.3docx --destination report.html
+
+# Validate against the bundled OCX XSD (exit 0 valid / 1 errors / 2 cannot validate)
+validator validate schema model.3docx [--max-errors N]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
 uv run python ocx_model_validator/generate_stubs.py
