@@ -15,7 +15,7 @@ making downstream tools independent of any particular OCX schema version.
 - Builds a typed, frozen IR (`IrVessel`, `IrPanel`, `IrPlate`, `IrBracket`, `IrStiffener`, …)
 - Supports OCX schema **3.0 / 3.1 / 3.2** out of the box
 - Converts UnitsML unit definitions to SI factors via `build_unit_registry`
-- CLI subcommands for model reports and `validator generate-stubs [--force]` for auto-generating xsdata test stubs
+- CLI subcommands for model reports; xsdata test stubs are generated with the repo-internal script `ocx_model_validator/generate_stubs.py`
 - Duplicate-id and dangling-ref integrity checks built into the builder
 - **Frame table extraction** (`ocx_model_validator.frame_table`): derives frame
   labels, positions and spacings (mm) from the model's X reference planes
@@ -160,34 +160,59 @@ validator report brackets     model.3docx
 validator report pillars      model.3docx
 validator report all          model.3docx --destination report.md
 
-# generate xsdata stubs from .3docx models in ./models/
-validator generate-stubs
+# generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
+uv run python ocx_model_validator/generate_stubs.py
 
 # wipe and regenerate all stubs
-validator generate-stubs --force
+uv run python ocx_model_validator/generate_stubs.py --force
 ```
 
 ---
 
 ## Standalone Windows executable
 
-Build a single-file `ocx-validator.exe` that runs on Windows machines
+Build a standalone `ocx-validator.exe` that runs on Windows machines
 without a Python installation:
 
 ```bash
 uv run pyinstaller packaging/validator.spec --noconfirm
 ```
 
-The executable lands in `dist/ocx-validator.exe` (~16 MB) and exposes the
-full `validator` CLI:
+The build produces a one-dir bundle in `dist/ocx-validator/` (fast
+startup — no self-extraction at launch). Distribute the whole folder
+(or zip it); the executable inside exposes the full `validator` CLI:
 
 ```bash
-dist\ocx-validator.exe report all model.3docx --destination report.html
+dist\ocx-validator\ocx-validator.exe report all model.3docx --destination report.html
 ```
 
 All versioned OCX data-binding modules are bundled (they are imported
 dynamically at runtime), so every supported schema version works out of
 the box.
+
+### Installing on another machine
+
+Zip the dist and run the installer script, which extracts to a folder of
+your choice and adds it to the user `PATH`:
+
+```powershell
+# on the build machine
+Compress-Archive -Path dist\ocx-validator\* -DestinationPath ocx-validator.zip
+
+# on the target machine (prompts for install folder)
+.\packaging\install.ps1 -ZipPath ocx-validator.zip
+```
+
+For machines where PowerShell script execution is restricted, use the
+plain `cmd.exe` installer instead (requires Windows 10 1803+ for the
+built-in `tar`):
+
+```bat
+packaging\install.bat ocx-validator.zip [install-folder]
+```
+
+Note: `install.bat` uses `setx`, which truncates a user `PATH` longer
+than 1024 characters — prefer `install.ps1` when possible.
 
 ---
 

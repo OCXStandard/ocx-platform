@@ -12,11 +12,11 @@ Usage::
     validator report pillars MODEL.3docx ...
     validator report bom MODEL.3docx ...
     validator report all MODEL.3docx ...
-    validator generate-stubs [--force]
 """
 from __future__ import annotations
 
 import re
+import sys
 from enum import Enum
 from pathlib import Path
 from types import SimpleNamespace
@@ -28,6 +28,13 @@ from rich.console import Console
 from ocx_model_validator.reporting.model import Report
 from ocx_model_validator.reporting.renderers import get_renderer
 from ocx_model_validator.reporting.renderers.rich import RichRenderer
+
+
+def configure_logging(level: str = "INFO") -> None:
+    """Replace the default loguru sink with a stderr sink at *level*."""
+    logger.remove()
+    logger.add(sys.stderr, level=level)
+
 
 app = typer.Typer(
     name="validator",
@@ -81,7 +88,11 @@ def _load_vessel(model: Path):
                 schema_version=version,
             )
         builder = get_builder(version)
-        return builder.build(root)
+        vessel = builder.build(root)
+        from ocx_model_validator.reporting.summary import model_summary
+
+        logger.info(model_summary(vessel))
+        return vessel
     except Exception as exc:
         logger.error("Failed to parse/build {}: {}", model, exc)
         raise typer.Exit(code=1) from exc
@@ -294,17 +305,6 @@ def all_cmd(
     _emit(merged, fmt, destination)
 
 
-@app.command("generate-stubs")
-def generate_stubs_cmd(
-    force: bool = typer.Option(
-        False, "--force",
-        help="Delete existing stubs and regenerate all.", is_flag=True),
-) -> None:
-    """Generate XML test stubs from OCX models in ./models."""
-    from ocx_model_validator.generate_stubs import main as generate_stubs
-
-    generate_stubs(force=force)
-
-
 def entrypoint() -> None:
+    configure_logging()
     app()

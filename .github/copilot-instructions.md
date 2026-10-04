@@ -61,14 +61,14 @@ validator report pillars      model.3docx
 validator report all          model.3docx --destination report.md
 validator report all          model.3docx --destination report.html
 
-# Generate XML test stubs from .3docx models in ./models/
-validator generate-stubs
+# Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
+uv run python ocx_model_validator/generate_stubs.py
 
 # Wipe and regenerate all stubs
-validator generate-stubs --force
+uv run python ocx_model_validator/generate_stubs.py --force
 ```
 
-The `models/` directory at the repo root is the source for stub generation. Place `.3docx` files there before running `validator generate-stubs`. Generated stubs land in `tests/data/ocx_{version}_stubs/` and `tests/data/unitsml_stubs/`.
+The `models/` directory at the repo root is the source for stub generation. Place `.3docx` files there before running the stub-generation script. Generated stubs land in `tests/data/ocx_{version}_stubs/` and `tests/data/unitsml_stubs/`.
 
 ## Architecture — the parse → build pipeline
 

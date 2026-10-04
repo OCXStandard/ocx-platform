@@ -48,9 +48,10 @@ def test_report_missing_model_file():
     assert result.exit_code != 0
 
 
-def test_generate_stubs_command_exists():
+def test_generate_stubs_command_removed():
+    """Stub generation is a repo-internal script, not a CLI command."""
     result = runner.invoke(app, ["generate-stubs", "--help"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
 
 def test_report_compartments(model_310: Path):

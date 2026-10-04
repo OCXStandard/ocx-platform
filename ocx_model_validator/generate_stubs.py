@@ -621,4 +621,6 @@ def main(force: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(force="--force" in sys.argv)
