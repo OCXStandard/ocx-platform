@@ -2,8 +2,8 @@
 
 Independent of the IR pipeline: validates raw XML with lxml, fully
 offline. The vendored XSDs live in ``ocx_model_validator/schemas/``;
-a custom resolver remaps the remote UnitsML ``xs:import`` URL to the
-local copy so no network access ever occurs.
+a custom resolver remaps the remote UnitsML and W3C ``xml.xsd``
+``xs:import`` URLs to local copies so no network access ever occurs.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from ocx_model_validator.parsers.version import detect_schema_version
 
 _SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 _UNITSML_FILE = "unitsmlSchema_lite-0.9.18.xsd"
+_XML_XSD = _SCHEMAS_DIR / "xml.xsd"
 
 #: OCX schema version -> vendored schema directory name
 SUPPORTED_VERSIONS: dict[str, str] = {
@@ -51,16 +52,20 @@ class SchemaValidationResult:
     validated_at: str
 
 
-class _LocalUnitsmlResolver(etree.Resolver):
-    """Remap the remote UnitsML schemaLocation to the vendored local file."""
+class _LocalSchemaResolver(etree.Resolver):
+    """Remap remote schemaLocation URLs to the vendored local files."""
 
     def __init__(self, schema_dir: Path) -> None:
         super().__init__()
         self._schema_dir = schema_dir
 
     def resolve(self, url, pubid, context):  # noqa: ANN001 — lxml signature
-        if url and "unitsmlSchema_lite" in url:
+        if not url:
+            return None
+        if "unitsmlSchema_lite" in url:
             return self.resolve_filename(str(self._schema_dir / _UNITSML_FILE), context)
+        if url.endswith("/xml.xsd"):
+            return self.resolve_filename(str(_XML_XSD), context)
         return None
 
 
@@ -79,7 +84,7 @@ def load_schema(version: str) -> etree.XMLSchema:
         )
     schema_dir = _SCHEMAS_DIR / folder
     parser = etree.XMLParser()
-    parser.resolvers.add(_LocalUnitsmlResolver(schema_dir))
+    parser.resolvers.add(_LocalSchemaResolver(schema_dir))
     doc = etree.parse(str(schema_dir / "OCX_Schema.xsd"), parser)
     schema = etree.XMLSchema(doc)
     _schema_cache[version] = schema

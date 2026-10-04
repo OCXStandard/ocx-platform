@@ -1,6 +1,8 @@
 """Tests for XSD schema validation (ocx_model_validator.validation.schema)."""
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -87,3 +89,22 @@ class TestSchemaRegistry:
 
         for version in SUPPORTED_VERSIONS:
             assert load_schema(version) is not None
+
+    def test_schemas_compile_fully_offline(self):
+        """Compiling must not touch the network (fresh process, blackholed proxies)."""
+        import os
+
+        env = dict(os.environ)
+        for var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
+            env[var] = "http://127.0.0.1:1"
+        code = (
+            "from ocx_model_validator.validation.schema import SUPPORTED_VERSIONS, load_schema\n"
+            "for v in SUPPORTED_VERSIONS:\n"
+            "    load_schema(v)\n"
+            "print('OK')\n"
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=120
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "OK" in proc.stdout
