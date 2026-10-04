@@ -12,6 +12,7 @@ Usage::
     validator report pillars MODEL.3docx ...
     validator report bom MODEL.3docx ...
     validator report all MODEL.3docx ...
+    validator validate schema MODEL.3docx [--max-errors N]
 """
 from __future__ import annotations
 
@@ -43,6 +44,8 @@ app = typer.Typer(
 )
 report_app = typer.Typer(help="Generate model reports.", no_args_is_help=True)
 app.add_typer(report_app, name="report")
+validate_app = typer.Typer(help="Validate models.", no_args_is_help=True)
+app.add_typer(validate_app, name="validate")
 
 
 class ReportFormat(str, Enum):
@@ -301,6 +304,52 @@ def all_cmd(
         sections=[s for p in parts for s in p.sections],
     )
     _emit(merged, fmt, destination)
+
+
+@validate_app.command("schema")
+def validate_schema_cmd(
+    model: Path = _MODEL_ARG,
+    max_errors: int = typer.Option(
+        50, "--max-errors", min=1,
+        help="Maximum number of errors shown in the terminal table "
+             "(sidecar files always contain the full list)."),
+) -> None:
+    """Validate the model against its bundled OCX XSD (offline).
+
+    Exit codes: 0 = valid, 1 = validation errors, 2 = cannot validate.
+    Always writes MODEL.validation.json and MODEL.validation.html beside
+    the model file.
+    """
+    import json
+    from dataclasses import asdict
+
+    from ocx_model_validator.exeptions import (SchemaVersionError,
+                                               SourceError, XmlParserError)
+    from ocx_model_validator.reporting.generators import schema_validation
+    from ocx_model_validator.validation.schema import validate_schema
+
+    try:
+        result = validate_schema(model)
+    except (SchemaVersionError, SourceError, XmlParserError) as exc:
+        logger.error("{}", exc)
+        raise typer.Exit(code=2) from exc
+
+    RichRenderer().render_to_console(
+        schema_validation.build(result, max_errors=max_errors), Console())
+
+    json_path = model.with_suffix(".validation.json")
+    html_path = model.with_suffix(".validation.html")
+    try:
+        json_path.write_text(json.dumps(asdict(result), indent=2),
+                             encoding="utf-8")
+        html_path.write_text(
+            get_renderer("html").render(schema_validation.build(result)),
+            encoding="utf-8")
+        typer.echo(f"Sidecars written: {json_path}, {html_path}")
+    except OSError as exc:
+        logger.error("Cannot write sidecar files: {}", exc)
+
+    raise typer.Exit(code=0 if result.valid else 1)
 
 
 def entrypoint() -> None:
