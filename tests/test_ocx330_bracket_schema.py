@@ -183,3 +183,10 @@ class TestBracketParameters330:
         bracket = _bracket("bkt330shape", params)
         model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
         _assert_valid(validate_schema(model))
+
+    def test_non_enum_bracket_shape_is_invalid(self, tmp_path):
+        params = _params(extra_attrs=' bracketShape="Circular"')
+        bracket = _bracket("bkt330badshape", params)
+        model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
+        result = validate_schema(model)
+        assert result.valid is False

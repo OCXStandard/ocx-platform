@@ -1756,8 +1756,16 @@
 			</xs:annotation>
 			<xs:simpleType>
 				<xs:restriction base="xs:string">
-					<xs:enumeration value="Triangular"/>
-					<xs:enumeration value="Rectangular"/>
+					<xs:enumeration value="Triangular">
+						<xs:annotation>
+							<xs:documentation>A three-sided bracket with two support arms.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Rectangular">
+						<xs:annotation>
+							<xs:documentation>A four-sided bracket, typically connecting parallel structures.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
 				</xs:restriction>
 			</xs:simpleType>
 		</xs:attribute>
