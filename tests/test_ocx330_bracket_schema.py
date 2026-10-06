@@ -171,3 +171,15 @@ class TestOrderedSupports:
         model = _write_model(tmp_path, _inject_bracket(text, bracket))
         result = validate_schema(model)
         assert result.valid is False
+
+
+class TestBracketParameters330:
+    def test_shape_and_multiple_copes_are_valid(self, tmp_path):
+        copes = (
+            '<ocx:FeatureCope><ocx:CopeRadius numericvalue="0.03" unit="Um"/></ocx:FeatureCope>'
+            '<ocx:FeatureCope><ocx:CopeRadius numericvalue="0.05" unit="Um"/></ocx:FeatureCope>'
+        )
+        params = _params(extra_elements=copes, extra_attrs=' bracketShape="Triangular"')
+        bracket = _bracket("bkt330shape", params)
+        model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
+        _assert_valid(validate_schema(model))

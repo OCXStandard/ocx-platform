@@ -1736,7 +1736,11 @@
 			<xs:element ref="ocx:Unose" minOccurs="0"/>
 			<xs:element ref="ocx:Vnose" minOccurs="0"/>
 			<xs:element ref="ocx:FreeEdgeRadius" minOccurs="0"/>
-			<xs:element ref="ocx:FeatureCope" minOccurs="0"/>
+			<xs:element ref="ocx:FeatureCope" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Cope features of the bracket. Cardinality raised from 0..1 to 0..n in 3.3.0.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element ref="ocx:FlangeEdgeReinforcement" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute ref="ocx:hasEdgeReinforcement" use="required"/>
@@ -1746,6 +1750,17 @@
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute ref="ocx:reinforcementType"/>
+		<xs:attribute name="bracketShape" use="optional">
+			<xs:annotation>
+				<xs:documentation>Bracket shape classification introduced in 3.3.0. The OuterContour remains authoritative for other shapes.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Triangular"/>
+					<xs:enumeration value="Rectangular"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:attribute name="reinforcementType">
 		<xs:annotation>
