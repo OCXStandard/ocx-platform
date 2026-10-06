@@ -27,6 +27,7 @@ SUPPORTED_VERSIONS: dict[str, str] = {
     "3.0.1": "ocx_301",
     "3.1.0": "ocx_310",
     "3.2.0": "ocx_320",
+    "3.3.0": "ocx_330",
 }
 
 
