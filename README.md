@@ -24,7 +24,7 @@ making downstream tools independent of any particular OCX schema version.
 - **MCP server** `ocx-mcp` exposing model loading, info, frame table,
   compartments and scantling write-back to LLM clients
 - **XSD schema validation** (`validator validate schema`): offline validation
-  against vendored OCX 3.0.0–3.2.0 schemas with rich, HTML and JSON output
+  against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
 
 ---
 
