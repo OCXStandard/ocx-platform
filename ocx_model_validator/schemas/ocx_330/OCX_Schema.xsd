@@ -1816,7 +1816,31 @@
 					<xs:documentation>The bend radius of the transition zone between bracket web and bracket flange.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="FlangeSnipeAngle" type="ocx:Quantity_T" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Snipe angle of the flange end. Absence or a value of 0 means a square flange end. Introduced in 3.3.0.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:sequence>
+		<xs:attribute name="flangeDirection" use="optional">
+			<xs:annotation>
+				<xs:documentation>Flange direction relative to the bracket surface normal. Introduced in 3.3.0.</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="WithNormal">
+						<xs:annotation>
+							<xs:documentation>The flange points along the bracket surface normal.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="AgainstNormal">
+						<xs:annotation>
+							<xs:documentation>The flange points against the bracket surface normal.</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
 	</xs:complexType>
 	<xs:element name="FeatureCope" type="ocx:FeatureCope_T">
 		<xs:annotation>

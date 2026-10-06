@@ -190,3 +190,20 @@ class TestBracketParameters330:
         model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
         result = validate_schema(model)
         assert result.valid is False
+
+
+class TestFlangeEdgeReinforcement330:
+    def test_snipe_angle_and_direction_are_valid(self, tmp_path):
+        flange = (
+            '<ocx:FlangeEdgeReinforcement flangeDirection="AgainstNormal">'
+            '<ocx:FlangeWidth numericvalue="0.075" unit="Um"/>'
+            '<ocx:Radius numericvalue="0.025" unit="Um"/>'
+            '<ocx:FlangeSnipeAngle numericvalue="0.5236" unit="URad"/>'
+            "</ocx:FlangeEdgeReinforcement>"
+        )
+        params = _params(extra_elements=flange).replace(
+            'ocx:hasEdgeReinforcement="false"', 'ocx:hasEdgeReinforcement="true"'
+        )
+        bracket = _bracket("bkt330flg", params)
+        model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
+        _assert_valid(validate_schema(model))
