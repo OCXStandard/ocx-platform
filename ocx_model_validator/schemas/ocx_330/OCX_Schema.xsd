@@ -344,6 +344,21 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="CatalogueBracketRef" type="ocx:CatalogueBracketRef_T" substitutionGroup="ocx:CatalogueRef">
+		<xs:annotation>
+			<xs:documentation>A reference to a catalogue bracket. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="CatalogueBracketRef_T">
+		<xs:annotation>
+			<xs:documentation>Type definition of the reference to a catalogue bracket.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ocx:CatalogueRef_T">
+				<xs:attribute ref="ocx:refType" use="required" fixed="ocx:CatalogueBracket"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="PlateMaterial" substitutionGroup="ocx:CatalogueRef">
 		<xs:annotation>
 			<xs:documentation>Definition of the Plate material and plate thickness.</xs:documentation>
@@ -858,6 +873,11 @@
 				<xs:enumeration value="ocx:BarSection">
 					<xs:annotation>
 						<xs:documentation>A reference to a catalogue bar section.</xs:documentation>
+					</xs:annotation>
+				</xs:enumeration>
+				<xs:enumeration value="ocx:CatalogueBracket">
+					<xs:annotation>
+						<xs:documentation>A reference to a catalogue bracket. Introduced in 3.3.0.</xs:documentation>
 					</xs:annotation>
 				</xs:enumeration>
 				<xs:enumeration value="ocx:Cell">
@@ -1440,17 +1460,36 @@
 		</xs:annotation>
 		<xs:complexContent>
 			<xs:extension base="ocx:StructurePart_T">
-				<xs:sequence>
-					<xs:element ref="ocx:BracketParameters"/>
-					<xs:element ref="ocx:PlateMaterial"/>
-					<xs:element ref="ocx:Offset" minOccurs="0"/>
-					<xs:element ref="ocx:OuterContour"/>
-					<xs:element ref="ocx:UnboundedGeometry" minOccurs="0"/>
-					<xs:group ref="ocx:BracketTopology" minOccurs="0"/>
-					<xs:element ref="ocx:CutBy" minOccurs="0"/>
-					<xs:element ref="ocx:InnerContour" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element ref="ocx:StiffenedBy" minOccurs="0"/>
-				</xs:sequence>
+				<xs:choice>
+					<xs:sequence>
+						<xs:annotation>
+							<xs:documentation>Mode 1: inline bracket definition.</xs:documentation>
+						</xs:annotation>
+						<xs:element ref="ocx:BracketParameters"/>
+						<xs:element ref="ocx:PlateMaterial"/>
+						<xs:element ref="ocx:Offset" minOccurs="0"/>
+						<xs:element ref="ocx:OuterContour"/>
+						<xs:element ref="ocx:UnboundedGeometry" minOccurs="0"/>
+						<xs:group ref="ocx:BracketTopology" minOccurs="0"/>
+						<xs:element ref="ocx:CutBy" minOccurs="0"/>
+						<xs:element ref="ocx:InnerContour" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element ref="ocx:StiffenedBy" minOccurs="0"/>
+					</xs:sequence>
+					<xs:sequence>
+						<xs:annotation>
+							<xs:documentation>Mode 2: occurrence of a catalogue bracket, introduced in 3.3.0. The Transformation maps the 2D catalogue space (z = 0) into 3D model space. The occurrence carries the variable data; the catalogue entry carries the invariant shape and parameters.</xs:documentation>
+						</xs:annotation>
+						<xs:element ref="ocx:CatalogueBracketRef"/>
+						<xs:element ref="ocx:Transformation"/>
+						<xs:element ref="ocx:PlateMaterial"/>
+						<xs:element ref="ocx:Offset" minOccurs="0"/>
+						<xs:element ref="ocx:UnboundedGeometry" minOccurs="0"/>
+						<xs:group ref="ocx:BracketTopology" minOccurs="0"/>
+						<xs:element ref="ocx:CutBy" minOccurs="0"/>
+						<xs:element ref="ocx:InnerContour" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element ref="ocx:StiffenedBy" minOccurs="0"/>
+					</xs:sequence>
+				</xs:choice>
 				<xs:attribute ref="ocx:functionType"/>
 			</xs:extension>
 		</xs:complexContent>
@@ -4774,6 +4813,11 @@ either a sweep direction and length or a sweep curve.</xs:documentation>
 							<xs:documentation>Catalogue of 2D hole shapes.</xs:documentation>
 						</xs:annotation>
 					</xs:element>
+					<xs:element ref="ocx:BracketCatalogue" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Catalogue of standard bracket definitions. Introduced in 3.3.0.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -4922,6 +4966,69 @@ either a sweep direction and length or a sweep curve.</xs:documentation>
 						</xs:annotation>
 					</xs:element>
 				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="BracketCatalogue" type="ocx:BracketCatalogue_T">
+		<xs:annotation>
+			<xs:documentation>Catalogue of standard bracket definitions. Introduced in 3.3.0: bracket occurrences reference catalogue entries via CatalogueBracketRef and a Transformation from the 2D catalogue space to 3D model space.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="BracketCatalogue_T">
+		<xs:annotation>
+			<xs:documentation>Type definition of the catalogue of standard bracket definitions.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ocx:DescriptionBase_T">
+				<xs:sequence>
+					<xs:element ref="ocx:CatalogueBracket" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="CatalogueBracket" type="ocx:CatalogueBracket_T">
+		<xs:annotation>
+			<xs:documentation>One standard bracket definition holding the invariant data: parameters and the outer contour in 2D catalogue space (z = 0 plane). Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="CatalogueBracket_T">
+		<xs:annotation>
+			<xs:documentation>Type definition of one standard bracket definition in the bracket catalogue.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ocx:DescriptionBase_T">
+				<xs:sequence>
+					<xs:element ref="ocx:BracketParameters"/>
+					<xs:element ref="ocx:OuterContour">
+						<xs:annotation>
+							<xs:documentation>The bracket outer contour in 2D catalogue space (z = 0 plane).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute ref="ocx:GUIDRef"/>
+				<xs:attribute name="connectionKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>Classification of the bracket by the kind of objects it connects.</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="PlatePlate"/>
+							<xs:enumeration value="PlateStiffenerWeb"/>
+							<xs:enumeration value="PlateStiffenerFlange"/>
+							<xs:enumeration value="PlateEdgeReinforcement"/>
+							<xs:enumeration value="StiffenerFlangeStiffenerFlange"/>
+							<xs:enumeration value="StiffenerWebStiffenerWeb"/>
+							<xs:enumeration value="StiffenerEdgeReinforcement"/>
+							<xs:enumeration value="EdgeReinforcementEdgeReinforcement"/>
+							<xs:enumeration value="MultiLimit"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="customerCatalogRefName" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Hook for mapping this catalogue entry to a vendor or project bracket catalogue entry.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

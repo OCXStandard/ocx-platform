@@ -207,3 +207,60 @@ class TestFlangeEdgeReinforcement330:
         bracket = _bracket("bkt330flg", params)
         model = _write_model(tmp_path, _inject_bracket(_stub_330(), bracket))
         _assert_valid(validate_schema(model))
+
+
+def _catalogue_xml() -> str:
+    return (
+        '<ocx:BracketCatalogue id="bktcat330" name="Bracket catalogue">'
+        '<ocx:CatalogueBracket id="cbkt1" name="Plate-Plate 300"'
+        ' connectionKind="PlatePlate" customerCatalogRefName="VENDOR-BKT-42">'
+        + _params()
+        + _contour("cbkt1g")
+        + "</ocx:CatalogueBracket></ocx:BracketCatalogue>"
+    )
+
+
+def _occurrence_bracket(pid: str) -> str:
+    transformation = (
+        "<ocx:Transformation>"
+        '<ocx:Origin coordinates="0.75 5.08 1.5" unit="Um"/>'
+        '<ocx:PrimaryAxis direction="0.0 -1.0 0.0"/>'
+        '<ocx:SecondaryAxis direction="0.0 0.0 1.0"/>'
+        "</ocx:Transformation>"
+    )
+    ref = (
+        f'<ocx:CatalogueBracketRef localRef="cbkt1" ocx:GUIDRef="{GUID}"'
+        ' ocx:refType="ocx:CatalogueBracket"/>'
+    )
+    return (
+        f'<ocx:Bracket id="{pid}" name="BktOcc" ocx:GUIDRef="{GUID}">'
+        f"{_MASS}{ref}{transformation}{_MATERIAL}</ocx:Bracket>"
+    )
+
+
+class TestBracketCatalogue:
+    def test_catalogue_and_occurrence_are_valid(self, tmp_path):
+        text = _stub_330()
+        assert "</ocx:ClassCatalogue>" in text
+        text = text.replace(
+            "</ocx:ClassCatalogue>", _catalogue_xml() + "</ocx:ClassCatalogue>", 1
+        )
+        text = _inject_bracket(text, _occurrence_bracket("bkt330occ"))
+        model = _write_model(tmp_path, text)
+        _assert_valid(validate_schema(model))
+
+    def test_occurrence_without_transformation_is_invalid(self, tmp_path):
+        """Deviation from plan: lxml/libxml2 does not enforce xs:IDREF
+        resolution during XSD validation, so an orphan localRef cannot be
+        detected by schema validation. Instead verify the occurrence content
+        model: Transformation is mandatory in catalogue-occurrence mode."""
+        bracket = re.sub(
+            r"<ocx:Transformation>.*?</ocx:Transformation>",
+            "",
+            _occurrence_bracket("bkt330bad2"),
+            flags=re.DOTALL,
+        )
+        text = _inject_bracket(_stub_330(), bracket)
+        model = _write_model(tmp_path, text)
+        result = validate_schema(model)
+        assert result.valid is False
