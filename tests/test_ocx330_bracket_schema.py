@@ -148,3 +148,26 @@ class TestBackwardCompatibility:
         bracket = _bracket("bkt330leg", _params(), topology)
         model = _write_model(tmp_path, _inject_bracket(text, bracket))
         _assert_valid(validate_schema(model))
+
+
+class TestOrderedSupports:
+    def test_ordered_supports_with_lap_are_valid(self, tmp_path):
+        text = _stub_330()
+        grid = _first_gridref(text)
+        topology = (
+            f'<ocx:Support1Limit lapped="true">{grid}'
+            f'<ocx:Lap numericvalue="0.05" unit="Um"/></ocx:Support1Limit>'
+            f"<ocx:Support2Limit>{grid}</ocx:Support2Limit>"
+            f"<ocx:Support3Limit>{grid}</ocx:Support3Limit>"
+        )
+        bracket = _bracket("bkt330sup", _params(), topology)
+        model = _write_model(tmp_path, _inject_bracket(text, bracket))
+        _assert_valid(validate_schema(model))
+
+    def test_support2_without_support1_is_invalid(self, tmp_path):
+        text = _stub_330()
+        topology = f"<ocx:Support2Limit>{_first_gridref(text)}</ocx:Support2Limit>"
+        bracket = _bracket("bkt330bad", _params(), topology)
+        model = _write_model(tmp_path, _inject_bracket(text, bracket))
+        result = validate_schema(model)
+        assert result.valid is False

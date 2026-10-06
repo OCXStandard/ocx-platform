@@ -1446,7 +1446,7 @@
 					<xs:element ref="ocx:Offset" minOccurs="0"/>
 					<xs:element ref="ocx:OuterContour"/>
 					<xs:element ref="ocx:UnboundedGeometry" minOccurs="0"/>
-					<xs:element ref="ocx:LimitedBy" minOccurs="0"/>
+					<xs:group ref="ocx:BracketTopology" minOccurs="0"/>
 					<xs:element ref="ocx:CutBy" minOccurs="0"/>
 					<xs:element ref="ocx:InnerContour" minOccurs="0" maxOccurs="unbounded"/>
 					<xs:element ref="ocx:StiffenedBy" minOccurs="0"/>
@@ -1455,6 +1455,71 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:complexType name="SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>Type definition of one ordered bracket support limit. Introduced in 3.3.0. Refers to the connected object (BoundedRef) or a free edge curve, with optional lap information.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice>
+				<xs:element ref="ocx:BoundedRef"/>
+				<xs:element ref="ocx:FreeEdgeCurve3D"/>
+			</xs:choice>
+			<xs:element name="Lap" type="ocx:Quantity_T" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Lap length of this support edge onto the connected object. Absence or a value of 0 means the bracket is trimmed against the connected object.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="lapped" type="xs:boolean" default="false">
+			<xs:annotation>
+				<xs:documentation>True if the bracket edge is lapped onto the connected object; false (default) if trimmed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="Support1Limit" type="ocx:SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>Connection along the bracket local U arm. Mandatory when ordered supports are used. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Support2Limit" type="ocx:SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>Connection along the bracket local V arm. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Support3Limit" type="ocx:SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>Connection along the U-arm nose. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Support4Limit" type="ocx:SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>Connection along the V-arm nose. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="Support5Limit" type="ocx:SupportLimit_T">
+		<xs:annotation>
+			<xs:documentation>A fifth support for multi-limit bracket configurations. Introduced in 3.3.0.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:group name="BracketTopology">
+		<xs:annotation>
+			<xs:documentation>Bracket topology: EITHER the legacy unordered LimitedBy set (DEPRECATED since 3.3.0) OR the ordered Support1Limit..Support5Limit sequence.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element ref="ocx:LimitedBy">
+				<xs:annotation>
+					<xs:documentation>DEPRECATED since 3.3.0 for Bracket: superseded by the ordered SupportNLimit elements. Retained for backward compatibility.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:sequence>
+				<xs:element ref="ocx:Support1Limit"/>
+				<xs:element ref="ocx:Support2Limit" minOccurs="0"/>
+				<xs:element ref="ocx:Support3Limit" minOccurs="0"/>
+				<xs:element ref="ocx:Support4Limit" minOccurs="0"/>
+				<xs:element ref="ocx:Support5Limit" minOccurs="0"/>
+			</xs:sequence>
+		</xs:choice>
+	</xs:group>
 	<xs:complexType name="StructurePart_T" abstract="true">
 		<xs:annotation>
 			<xs:documentation>Type definition of  the abstract base class for structure objects representing structure concepts.</xs:documentation>
