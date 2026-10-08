@@ -57,3 +57,5 @@ models/
 
 # pdoc output
 _site/
+
+.worktrees/
