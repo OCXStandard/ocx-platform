@@ -1,7 +1,7 @@
 """Tests for OCX 3.2.0 IR gap closure additions."""
 from __future__ import annotations
 
-from ocx_model_validator.model.ir import (
+from ocx_model_core.model.ir import (
     IrCog,
     IrMassProperties,
     IrVector3D,
@@ -37,6 +37,6 @@ def test_ref_offset_defaults_and_population():
 
 
 def test_vector3d_importable_from_base_and_geometry():
-    from ocx_model_validator.model.ir.base import IrVector3D as V1
-    from ocx_model_validator.model.ir.geometry import IrVector3D as V2
+    from ocx_model_core.model.ir.base import IrVector3D as V1
+    from ocx_model_core.model.ir.geometry import IrVector3D as V2
     assert V1 is V2

@@ -1,8 +1,7 @@
 """Tests for the schema-validation report generator."""
 from __future__ import annotations
 
-from ocx_model_validator.validation.schema import (SchemaError,
-                                                   SchemaValidationResult)
+from ocx_model_core.validation.schema import SchemaError, SchemaValidationResult
 
 
 def _result(n_errors: int) -> SchemaValidationResult:

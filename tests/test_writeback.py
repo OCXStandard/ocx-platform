@@ -2,8 +2,7 @@
 
 import pytest
 from lxml import etree
-
-from ocx_model_validator import writeback
+from ocx_model_core import writeback
 
 NS = "https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd"
 

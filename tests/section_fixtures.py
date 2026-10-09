@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ocx_model_validator.model.ir.arrangement import IrCompartment
-from ocx_model_validator.model.ir.base import (
+from ocx_model_core.model.ir.arrangement import IrCompartment
+from ocx_model_core.model.ir.base import (
     IrCog,
     IrMassProperties,
     ParentKind,
@@ -9,16 +9,16 @@ from ocx_model_validator.model.ir.base import (
     Quantity,
     Ref,
 )
-from ocx_model_validator.model.ir.catalogues import IrMaterial
-from ocx_model_validator.model.ir.geometry import (
+from ocx_model_core.model.ir.catalogues import IrMaterial
+from ocx_model_core.model.ir.geometry import (
     IrCoordinateSystem,
     IrLine3D,
     IrPoint3D,
     IrPolyLine3D,
     IrRefPlane,
 )
-from ocx_model_validator.model.ir.sections import IrBulbFlatSection
-from ocx_model_validator.model.ir.structural import IrPanel, IrPlate, IrStiffener, IrVessel
+from ocx_model_core.model.ir.sections import IrBulbFlatSection
+from ocx_model_core.model.ir.structural import IrPanel, IrPlate, IrStiffener, IrVessel
 
 
 def q(value: float, unit: str) -> Quantity:

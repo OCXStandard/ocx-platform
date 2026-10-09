@@ -1,9 +1,9 @@
 """Tests for the bill-of-material report generator."""
-from ocx_model_validator.model.ir import IrMassProperties
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef, Quantity, Ref
-from ocx_model_validator.model.ir.catalogues import IrMaterial
-from ocx_model_validator.model.ir.sections import IrFlatBarSection
-from ocx_model_validator.model.ir.structural import (
+from ocx_model_core.model.ir import IrMassProperties
+from ocx_model_core.model.ir.base import ParentKind, ParentRef, Quantity, Ref
+from ocx_model_core.model.ir.catalogues import IrMaterial
+from ocx_model_core.model.ir.sections import IrFlatBarSection
+from ocx_model_core.model.ir.structural import (
     IrPillar,
     IrPlate,
     IrStiffener,

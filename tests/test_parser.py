@@ -8,10 +8,9 @@ Exercises:
 from __future__ import annotations
 
 import pytest
-
-from ocx_model_validator.exeptions import XmlParserError
-from ocx_model_validator.parsers.dynamic_loader import DeclarationOfOcxImport
-from ocx_model_validator.parsers.parser import OcxParser, OcxVersion
+from ocx_model_core.exeptions import XmlParserError
+from ocx_model_core.parsers.dynamic_loader import DeclarationOfOcxImport
+from ocx_model_core.parsers.parser import OcxParser, OcxVersion
 
 # ---------------------------------------------------------------------------
 # OcxVersion

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ocx_model_validator.model.ir.structural import IrVessel
+from ocx_model_core.model.ir.structural import IrVessel
 from ocx_model_validator.reporting.generators.model_extent import extent_mm
 
 from .section_fixtures import make_synthetic_vessel

@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import pytest
-
-from ocx_model_validator.model.ir import (
+from ocx_model_core.model.ir import (
     IrCircle3D,
     IrCircumArc3D,
     IrCompositeCurve3D,

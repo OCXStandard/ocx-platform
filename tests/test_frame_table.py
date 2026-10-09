@@ -1,11 +1,10 @@
 """FrameTable extraction from IR ref planes."""
 import pytest
-
-from ocx_model_validator.exeptions import SectionError
+from ocx_model_core.exeptions import SectionError
+from ocx_model_core.model.ir.base import Quantity
+from ocx_model_core.model.ir.geometry import IrCoordinateSystem, IrRefPlane
+from ocx_model_core.model.ir.structural import IrVessel
 from ocx_model_validator.frame_table import build_frame_table
-from ocx_model_validator.model.ir.base import Quantity
-from ocx_model_validator.model.ir.geometry import IrCoordinateSystem, IrRefPlane
-from ocx_model_validator.model.ir.structural import IrVessel
 
 
 def _vessel(planes, x_ids=None):

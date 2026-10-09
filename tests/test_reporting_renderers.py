@@ -1,6 +1,5 @@
 """Tests for report renderers."""
 import pytest
-
 from ocx_model_validator.reporting.model import Link, Report, ReportSection, ReportTable
 from ocx_model_validator.reporting.renderers import get_renderer
 from ocx_model_validator.reporting.renderers.markdown import MarkdownRenderer

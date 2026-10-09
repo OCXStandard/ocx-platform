@@ -1,0 +1,31 @@
+[project]
+name = "ocx-model-validator"
+version = "0.5.0"
+description = "Validate OCX .3docx ship model files — schema validation, model reports, CLI and MCP server"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ocx-model-core>=0.5,<0.6",
+    "ocx-geometry>=0.1,<0.2",
+    "mcp>=1.0,<2",
+    "loguru>=0.7",
+    "typer>=0.9",
+    "rich>=13",
+    "lxml>=6.0",
+]
+
+[project.scripts]
+ocx-mcp = "ocx_model_validator.mcp.server:main"
+ocx-validate = "ocx_model_validator.cli:entrypoint"
+validator = "ocx_model_validator.cli:entrypoint"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ocx_model_validator"]
+
+[tool.uv.sources]
+ocx-model-core = { workspace = true }
+ocx-geometry = { workspace = true }

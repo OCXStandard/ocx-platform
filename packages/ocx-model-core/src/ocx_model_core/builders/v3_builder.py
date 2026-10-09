@@ -1,0 +1,1572 @@
+"""OcxV3Builder — translates OCX schema v3.x dataclasses into IR types.
+
+All attribute access on raw OCX objects uses ``getattr(obj, "field", None)``
+so that minor renames or additions within the v3 family degrade gracefully
+instead of raising ``AttributeError``.
+
+Integrity checks (duplicate ids, dangling refs) are performed after the full
+model is built and reported via ``IrVessel.duplicate_ids`` and
+``IrVessel.dangling_refs``.
+"""
+from __future__ import annotations
+
+import dataclasses
+from typing import Any
+
+from loguru import logger
+
+from ocx_model_core.model.ir import (
+    IrBracket,
+    IrBuilderInformation,
+    IrBulbFlatSection,
+    IrBulkCargo,
+    IrCircle3D,
+    IrCircumArc3D,
+    IrCog,
+    IrCompartment,
+    IrCompositeCurve3D,
+    IrCone3D,
+    IrCoordinateSystem,
+    IrCylinder3D,
+    IrDesignView,
+    IrEdgeReinforcement,
+    IrEllipse3D,
+    IrEndCut,
+    IrExtrudedSurface,
+    IrFeatureCope,
+    IrFlatBarSection,
+    IrGaseousCargo,
+    IrGenericSection,
+    IrHalfRoundSection,
+    IrHeader,
+    IrHexagonSection,
+    IrHole2D,
+    IrHoleShapeCatalogue,
+    IrInclination,
+    IrISection,
+    IrLimitedByRef,
+    IrLine3D,
+    IrLiquidCargo,
+    IrLSection,
+    IrLSectionOvershootFlange,
+    IrLSectionOvershootWeb,
+    IrMassProperties,
+    IrMaterial,
+    IrNurbs3D,
+    IrNurbsSurface,
+    IrOccurrence,
+    IrOccurrenceGroup,
+    IrOctagonSection,
+    IrPanel,
+    IrPhysicalSpace,
+    IrPillar,
+    IrPlane3D,
+    IrPlate,
+    IrPoint3D,
+    IrPolyLine3D,
+    IrPrincipalParticulars,
+    IrRectangularTubeSection,
+    IrRefPlane,
+    IrRoundSection,
+    IrSeam,
+    IrSection,
+    IrShipDesignation,
+    IrSphere3D,
+    IrSquareSection,
+    IrStatutoryData,
+    IrStiffener,
+    IrSurface,
+    IrSurfaceCollection,
+    IrTonnageData,
+    IrTSection,
+    IrTubeSection,
+    IrUnitCargo,
+    IrUSection,
+    IrVector3D,
+    IrVessel,
+    IrZSection,
+    ParentKind,
+    ParentRef,
+    Quantity,
+    Ref,
+)
+from ocx_model_core.model.ir.geometry import IrUnboundedGeometry
+from ocx_model_core.model.units import build_unit_registry
+
+from .base import IOcxBuilder, MetaData
+
+# ---------------------------------------------------------------------------
+# Mapping from lowercased class-name substring → normalised stype string.
+#
+# _detect_section_type() lowercases the raw class name and checks each key
+# as a substring in order.  More-specific keys MUST precede any key that is
+# a substring of them (e.g. "flatbar" before "tbar", "rectangulartube"
+# before "tube", "lbarof"/"lbarow" before "lbar",
+# "halfroundbar" before "roundbar").
+# ---------------------------------------------------------------------------
+_SECTION_TYPE_MAP: dict[str, str] = {
+    "rectangulartube": "RectangularTube",  # before "tube"
+    "octagonbar":      "OctagonBar",
+    "squarebar":       "SquareBar",
+    "bulbflat":        "BulbFlat",
+    "flatbar":         "FlatBar",          # before "tbar"
+    "halfroundbar":    "HalfRoundBar",     # before "roundbar"
+    "hexagonbar":      "HexagonBar",
+    "roundbar":        "RoundBar",
+    "ubar":            "UBar",
+    "ibar":            "IBar",
+    "lbarof":          "LBarOF",           # before "lbar"
+    "zbar":            "ZBar",
+    "lbarow":          "LBarOW",           # before "lbar"
+    "lbar":            "LBar",
+    "tbar":            "TBar",
+    "tube":            "Tube",
+}
+
+_BAR_SECTION_CHOICE_ATTRS: tuple[str, ...] = (
+    "rectangular_tube",
+    "octagon_bar",
+    "square_bar",
+    "bulb_flat",
+    "flat_bar",
+    "half_round_bar",
+    "hexagon_bar",
+    "round_bar",
+    "ubar",
+    "ibar",
+    "lbar_of",
+    "zbar",
+    "lbar_ow",
+    "lbar",
+    "tbar",
+    "tube",
+)
+
+
+def _children(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list | tuple):
+        return list(value)
+    return [value]
+
+
+def _first(value: Any) -> Any:
+    """Return the first element of a list/tuple, or the value itself."""
+    if isinstance(value, list | tuple):
+        return value[0] if value else None
+    return value
+
+
+def _bar_section_choice(raw_section: Any) -> Any:
+    for attr in _BAR_SECTION_CHOICE_ATTRS:
+        child = getattr(raw_section, attr, None)
+        if child is not None:
+            return child
+    return raw_section
+
+
+class OcxV3Builder(IOcxBuilder):
+    """Builds an ``IrVessel`` from an OCX v3.x root dataclass."""
+
+    def supported_versions(self) -> list[tuple[int, int]]:
+        return [(3, 0), (3, 1), (3, 2)]
+
+    # ------------------------------------------------------------------
+    # Public entry point
+    # ------------------------------------------------------------------
+
+    def build(self, root) -> IrVessel:
+        """Translate the raw OCX root into a fully-populated ``IrVessel``."""
+        vessel_raw = getattr(root, "vessel", None)
+        if vessel_raw is None:
+            raise ValueError("OCX root contains no <Vessel> element.")
+
+        schema_version: str = getattr(root, "schema_version", "unknown")
+        vessel_id: str = getattr(vessel_raw, "id", "") or ""
+        vessel_name: str = getattr(vessel_raw, "name", None)
+
+        ir = IrVessel(
+            id=vessel_id,
+            name=vessel_name,
+            schema_version=schema_version,
+        )
+
+        logger.info(
+            f"Building IR for vessel {vessel_name!r} (schema {schema_version})"
+        )
+
+        # --- units first — registry is needed for geometry conversion later ---
+        self._build_unit_registry(root, ir)
+
+        # --- catalogues first (needed for ref resolution later) ---
+        self._build_materials(root, ir)
+        self._build_sections(root, ir)
+
+        # --- vessel-level structural parts ---
+        vessel_parent = ParentRef(kind=ParentKind.VESSEL, id=vessel_id)
+        self._build_vessel_plates(vessel_raw, ir, vessel_parent)
+        self._build_vessel_brackets(vessel_raw, ir, vessel_parent)
+        self._build_vessel_stiffeners(vessel_raw, ir, vessel_parent)
+        self._build_vessel_pillars(vessel_raw, ir, vessel_parent)
+
+        # --- panels + their nested children ---
+        for panel_raw in getattr(vessel_raw, "panel", []):
+            ir_panel = self._build_panel(panel_raw, ir, vessel_id)
+            if ir_panel is not None:
+                ir.panels[ir_panel.id] = ir_panel
+
+        # --- arrangement ---
+        arrangement = getattr(vessel_raw, "arrangement", None)
+        if arrangement is not None:
+            self._build_compartments(arrangement, ir)
+            self._build_physical_spaces(arrangement, ir)
+
+        # --- geometry: coordinate system + reference surfaces ---
+        self._build_coordinate_system(getattr(vessel_raw, "coordinate_system", None), ir)
+        self._build_reference_surfaces(getattr(vessel_raw, "reference_surfaces", None), ir)
+
+        # --- design view (product/occurrence tree) ---
+        self._build_design_view(getattr(vessel_raw, "design_view", None), ir)
+
+        # --- hole-shape catalogue (root- or vessel-level) ---
+        self._build_hole_catalogue(
+            getattr(root, "hole_shape_catalogue", None)
+            or getattr(vessel_raw, "hole_shape_catalogue", None),
+            ir,
+        )
+
+        # --- vessel metadata (typed) ---
+        self._build_metadata(vessel_raw, ir)
+        self._build_header(root, ir)
+
+        # --- integrity checks ---
+        self._check_integrity(ir)
+
+        logger.success(
+            f"IR built: {len(ir.panels)} panels, {len(ir.plates)} plates, "
+            f"{len(ir.brackets)} brackets, {len(ir.stiffeners)} stiffeners, "
+            f"{len(ir.pillars)} pillars, {len(ir.edge_reinforcements)} edge_reinforcements, "
+            f"{len(ir.materials)} materials, "
+            f"{len(ir.sections)} sections, {len(ir.compartments)} compartments."
+        )
+        return ir
+
+    # ------------------------------------------------------------------
+    # Safe primitive extractors
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _qty(obj) -> Quantity | None:
+        """Safely extract a Quantity from an OCX QuantityT dataclass."""
+        if obj is None:
+            return None
+        try:
+            value = getattr(obj, "numericvalue", None)
+            unit = getattr(obj, "unit", None)
+            if value is None:
+                return None
+            return Quantity(float(value), str(unit) if unit else "")
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _enum(obj) -> str | None:
+        """Safely extract the string value of an OCX enum field."""
+        if obj is None:
+            return None
+        try:
+            return obj.value
+        except AttributeError:
+            return str(obj) if obj else None
+
+    @staticmethod
+    def _ref(obj) -> Ref | None:
+        """Safely build a Ref from an OCX *Ref dataclass."""
+        if obj is None:
+            return None
+        local = getattr(obj, "local_ref", None) or ""
+        guid = getattr(obj, "guidref", None)
+        return Ref(
+            local_ref=local,
+            guidref=guid,
+            offset=OcxV3Builder._qty(getattr(obj, "offset", None)),
+            offset_direction=OcxV3Builder._vec(getattr(obj, "offset_direction", None)),
+        )
+
+    @staticmethod
+    def _material_ref(plate_material_obj) -> tuple[Ref | None, Quantity | None]:
+        """Extract (material_ref, thickness) from a PlateMaterialT."""
+        if plate_material_obj is None:
+            return None, None
+        local = getattr(plate_material_obj, "local_ref", None) or ""
+        guid = getattr(plate_material_obj, "guidref", None)
+        mat_ref = Ref(local_ref=local, guidref=guid) if local or guid else None
+        thickness_raw = getattr(plate_material_obj, "thickness", None)
+        thickness = OcxV3Builder._qty(thickness_raw)
+        return mat_ref, thickness
+
+    @staticmethod
+    def _section_scantlings(section_ref_obj) -> dict[str, Quantity | None]:
+        """Extract 3.2.0 renewal/voluntary-addition quantities from a SectionRef."""
+        q = OcxV3Builder._qty
+        s = section_ref_obj
+        return {
+            "web_renewal_thickness": q(getattr(s, "web_renewal_thickness", None)) if s else None,
+            "flange_renewal_thickness": q(getattr(s, "flange_renewal_thickness", None)) if s else None,
+            "voluntary_web_thickness_addition": q(getattr(s, "voluntary_web_thickness_addition", None)) if s else None,
+            "voluntary_flange_thickness_addition": q(getattr(s, "voluntary_flange_thickness_addition", None)) if s else None,
+        }
+
+    @staticmethod
+    def _cog_point(cog_raw) -> IrCog | None:
+        """Extract an IrCog from a CoG-style element (coordinates + unit)."""
+        if cog_raw is None:
+            return None
+        coords = getattr(cog_raw, "coordinates", None)
+        unit = getattr(cog_raw, "unit", None)
+        if not coords or len(coords) < 3:
+            return None
+        try:
+            return IrCog(
+                x=float(coords[0]),
+                y=float(coords[1]),
+                z=float(coords[2]),
+                unit=str(unit) if unit else "",
+            )
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _cog(physical_properties) -> IrCog | None:
+        """Extract centre of gravity from a legacy PhysicalPropertiesT."""
+        if physical_properties is None:
+            return None
+        return OcxV3Builder._cog_point(
+            getattr(physical_properties, "center_of_gravity", None))
+
+    @classmethod
+    def _mass_properties(cls, raw) -> IrMassProperties | None:
+        """Extract IrMassProperties: 3.2.0 MassProperties first, legacy
+        3.0/3.1 PhysicalProperties fallback (mapped onto moulded fields)."""
+        mp = getattr(raw, "mass_properties", None)
+        if mp is not None:
+            return IrMassProperties(
+                moulded_dry_weight=cls._qty(getattr(mp, "moulded_dry_weight", None)),
+                physical_dry_weight=cls._qty(getattr(mp, "physical_dry_weight", None)),
+                moulded_cog=cls._cog_point(getattr(mp, "moulded_center_of_gravity", None)),
+                physical_cog=cls._cog_point(getattr(mp, "physical_center_of_gravity", None)),
+            )
+        pp = getattr(raw, "physical_properties", None)
+        if pp is None:
+            return None
+        dw = cls._qty(getattr(pp, "dry_weight", None))
+        cog = cls._cog(pp)
+        if dw is None and cog is None:
+            return None
+        return IrMassProperties(moulded_dry_weight=dw, moulded_cog=cog)
+
+    @staticmethod
+    def _register(ir_dict: dict, obj_id: str, obj, duplicates: list[str]) -> None:
+        """Register an object into a dict, recording duplicate ids."""
+        if not obj_id:
+            return
+        if obj_id in ir_dict:
+            duplicates.append(obj_id)
+            logger.warning(f"Duplicate id detected: {obj_id!r}")
+        else:
+            ir_dict[obj_id] = obj
+
+    @staticmethod
+    def _pt(elem) -> IrPoint3D | None:
+        """Build an IrPoint3D from an OCX Point3D (coordinates list + unit)."""
+        if elem is None:
+            return None
+        coords = list(getattr(elem, "coordinates", None) or [])
+        x, y, z = (coords + [0.0, 0.0, 0.0])[:3]
+        try:
+            return IrPoint3D(x=float(x), y=float(y), z=float(z),
+                             unit=str(getattr(elem, "unit", None) or ""))
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _vec(elem) -> IrVector3D | None:
+        """Build an IrVector3D from an OCX Vector3D (direction list)."""
+        if elem is None:
+            return None
+        d = list(getattr(elem, "direction", None) or [])
+        x, y, z = (d + [0.0, 0.0, 0.0])[:3]
+        try:
+            return IrVector3D(x=float(x), y=float(y), z=float(z))
+        except (TypeError, ValueError):
+            return None
+
+    # ------------------------------------------------------------------
+    # Geometry — curves and surfaces
+    # ------------------------------------------------------------------
+
+    _CONTOUR_ATTRS = ("composite_curve3_d", "nurbs3_d", "line3_d",
+                      "poly_line3_d", "circum_arc3_d", "ellipse3_d",
+                      "circle3_d", "circum_circle3_d")
+
+    def _build_curve(self, elem):
+        """Dispatch a raw OCX curve element to its IR curve type."""
+        if elem is None:
+            return None
+        name = type(elem).__name__.lower()
+        cl = self._qty(getattr(elem, "curve_length", None))
+        cid = getattr(elem, "id", None)
+        if "compositecurve" in name:
+            segs = []
+            for attr in ("line3_d", "poly_line3_d", "circum_arc3_d",
+                         "circle3_d", "ellipse3_d", "nurbs3_d"):
+                for seg in getattr(elem, attr, None) or []:
+                    built = self._build_curve(seg)
+                    if built is not None:
+                        segs.append(built)
+            return IrCompositeCurve3D(curve_length=cl, id=cid, segments=segs)
+        if "polyline" in name:
+            verts = [self._pt(p) for p in getattr(elem, "point3_d", None) or []]
+            return IrPolyLine3D(curve_length=cl, id=cid,
+                                vertices=[v for v in verts if v],
+                                is_closed=bool(getattr(elem, "is_closed", False)))
+        if "circumarc" in name:
+            return IrCircumArc3D(curve_length=cl, id=cid,
+                                 start=self._pt(getattr(elem, "start_point", None)),
+                                 intermediate=self._pt(getattr(elem, "intermediate_point", None)),
+                                 end=self._pt(getattr(elem, "end_point", None)))
+        if "circumcircle" in name:
+            # CircumCircle3D is a full circle defined only by three positions;
+            # the current IR has no faithful three-point full-circle form.
+            return None
+        if "circle" in name:
+            return IrCircle3D(curve_length=cl, id=cid,
+                              center=self._pt(getattr(elem, "center", None)),
+                              diameter=self._qty(getattr(elem, "diameter", None)),
+                              normal=self._vec(getattr(elem, "normal", None)))
+        if "ellipse" in name:
+            return IrEllipse3D(curve_length=cl, id=cid,
+                               center=self._pt(getattr(elem, "center", None)),
+                               major_diameter=self._qty(getattr(elem, "major_diameter", None)),
+                               minor_diameter=self._qty(getattr(elem, "minor_diameter", None)),
+                               major_axis=self._vec(getattr(elem, "major_axis", None)),
+                               minor_axis=self._vec(getattr(elem, "minor_axis", None)),
+                               normal=self._vec(getattr(elem, "normal", None)))
+        if "nurbs" in name:
+            props = getattr(elem, "nurbsproperties", None)
+            kv = getattr(elem, "knot_vector", None)
+            cpl = getattr(elem, "control_pt_list", None)
+            pts = []
+            weights = []
+            if cpl is not None:
+                control_points = getattr(cpl, "control_point", None) or []
+                pts = [self._pt(p) for p in control_points]
+                for p in control_points:
+                    w = getattr(p, "weight", None)
+                    weights.append(float(w) if w is not None else 1.0)
+            form = getattr(props, "form", None) if props else None
+            return IrNurbs3D(curve_length=cl, id=cid,
+                             degree=getattr(props, "degree", None) if props else None,
+                             knot_vector=list(getattr(kv, "value", None) or []) if kv else [],
+                             control_points=[p for p in pts if p],
+                             weights=weights,
+                             is_rational=bool(getattr(props, "is_rational", False)) if props else False,
+                             form=getattr(form, "value", None) if form is not None else None)
+        if "line3d" in name:
+            return IrLine3D(curve_length=cl, id=cid,
+                            start=self._pt(getattr(elem, "start_point", None)),
+                            end=self._pt(getattr(elem, "end_point", None)))
+        logger.debug("Unknown curve type: {}", type(elem).__name__)
+        return None
+
+    def _build_contour(self, container):
+        """Build one IR curve from a TraceLine/OuterContour container."""
+        if isinstance(container, (list, tuple)):
+            container = container[0] if container else None
+        if container is None:
+            return None
+        curves = []
+        for attr in self._CONTOUR_ATTRS:
+            val = getattr(container, attr, None)
+            if val is None:
+                continue
+            elems = val if isinstance(val, (list, tuple)) else [val]
+            for elem in elems:
+                built = self._build_curve(elem)
+                if built is not None:
+                    curves.append(built)
+        if not curves:
+            return None
+        if len(curves) == 1:
+            return curves[0]
+        return IrCompositeCurve3D(curve_length=None, segments=curves)
+
+    _TRACE_REF_ATTRS = ("edge_curve_ref", "edge_reinforcement_ref", "grid_ref",
+                        "panel_ref", "seam_ref", "stiffener_ref", "surface_ref")
+
+    def _trace_refs(self, trace_line) -> list[Ref]:
+        """Extract 3.2.0 TraceLine child refs (empty for 3.0/3.1 models)."""
+        refs: list[Ref] = []
+        if trace_line is None:
+            return refs
+        for attr in self._TRACE_REF_ATTRS:
+            r = self._ref(_first(getattr(trace_line, attr, None)))
+            if r is not None and (r.local_ref or r.guidref):
+                refs.append(r)
+        return refs
+
+    def _cut_by_contours(self, pcb) -> list[Any]:
+        """Extract PlateCutBy contours from 3.2.0 inner_contour or 3.1.0 outer_contour."""
+        if pcb is None:
+            return []
+        contours = []
+        raw_list = (
+            getattr(pcb, "inner_contour", None)
+            or getattr(pcb, "outer_contour", None)
+            or []
+        )
+        for c in _children(raw_list):
+            built = self._build_contour(c)
+            if built is not None:
+                contours.append(built)
+        return contours
+
+    def _build_surface(self, elem):
+        """Dispatch a raw OCX surface element to its IR surface type."""
+        if elem is None:
+            return None
+        name = type(elem).__name__.lower()
+        sid = getattr(elem, "id", None)
+        pos = self._pt(getattr(elem, "point_on_surface", None))
+        normal = self._vec(getattr(elem, "normal", None))
+        if "plane" in name:
+            return IrPlane3D(id=sid,
+                             point_on_surface=pos or self._pt(getattr(elem, "origin", None)),
+                             normal=normal,
+                             udirection=self._vec(getattr(elem, "udirection", None)))
+        if "sphere" in name:
+            return IrSphere3D(id=sid, origin=self._pt(getattr(elem, "origin", None)),
+                              radius=self._qty(getattr(elem, "radius", None)),
+                              normal=normal, point_on_surface=pos)
+        if "cone" in name:
+            return IrCone3D(id=sid, origin=self._pt(getattr(elem, "origin", None)),
+                            tip=self._pt(getattr(elem, "tip", None)),
+                            base_radius=self._qty(getattr(elem, "base_radius", None)),
+                            tip_radius=self._qty(getattr(elem, "tip_radius", None)),
+                            normal=normal, point_on_surface=pos)
+        if "cylinder" in name:
+            return IrCylinder3D(id=sid, origin=self._pt(getattr(elem, "origin", None)),
+                                axis=self._vec(getattr(elem, "axis", None)),
+                                radius=self._qty(getattr(elem, "radius", None)),
+                                height=self._qty(getattr(elem, "height", None)),
+                                normal=normal, point_on_surface=pos)
+        if "extruded" in name:
+            return IrExtrudedSurface(
+                id=sid,
+                base_curve=self._build_curve(getattr(elem, "base_curve", None)),
+                sweep=self._vec(getattr(elem, "sweep", None)),
+                sweep_curve=self._build_curve(getattr(elem, "sweep_curve", None)),
+                face_boundary_curve=self._build_curve(getattr(elem, "face_boundary_curve", None)),
+                normal=normal, point_on_surface=pos)
+        if "nurbssurface" in name or "nurbs" in name:
+            return IrNurbsSurface(id=sid, normal=normal, point_on_surface=pos)
+        logger.debug("Unknown surface type: {}", type(elem).__name__)
+        return None
+
+    # ------------------------------------------------------------------
+    # Reference surfaces and coordinate system
+    # ------------------------------------------------------------------
+
+    _SURFACE_ATTRS = ("plane3_d", "nurbssurface", "extruded_surface",
+                      "sphere3_d", "cone3_d", "cylinder3_d")
+
+    def _build_unbounded(self, ug):
+        """Build IrUnboundedGeometry from a Panel/Plate UnboundedGeometry."""
+        if ug is None:
+            return None
+        surface = None
+        for attr in self._SURFACE_ATTRS:
+            val = getattr(ug, attr, None)
+            if val is None:
+                continue
+            elems = val if isinstance(val, (list, tuple)) else [val]
+            for elem in elems:
+                surface = self._build_surface(elem)
+                if surface is not None:
+                    break
+            if surface is not None:
+                break
+        grid = _first(getattr(ug, "unbounded_grid_ref", None)) or getattr(ug, "grid_ref", None)
+        sref = _first(getattr(ug, "unbounded_surface_ref", None)) or getattr(ug, "surface_ref", None)
+        return IrUnboundedGeometry(
+            surface=surface,
+            surface_ref=(getattr(sref, "local_ref", None) or None) if sref else None,
+            grid_ref=(getattr(grid, "local_ref", None) or None) if grid else None,
+        )
+
+    def _build_reference_surfaces(self, rs, ir: IrVessel) -> None:
+        if rs is None:
+            return
+        for attr in self._SURFACE_ATTRS:
+            for elem in getattr(rs, attr, None) or []:
+                geom = self._build_surface(elem)
+                sid = getattr(elem, "id", None) or getattr(elem, "guidref", None)
+                if sid is None:
+                    continue
+                self._register(ir.surfaces, sid, IrSurface(
+                    id=sid, name=getattr(elem, "name", None),
+                    guidref=getattr(elem, "guidref", None), geometry=geom), ir.duplicate_ids)
+        for coll in getattr(rs, "surface_collection", None) or []:
+            cid = getattr(coll, "id", None)
+            if cid is None:
+                continue
+            members = []
+            for attr in self._SURFACE_ATTRS:
+                for elem in getattr(coll, attr, None) or []:
+                    members.append(IrSurface(id=getattr(elem, "id", None),
+                                             geometry=self._build_surface(elem)))
+            self._register(ir.surface_collections, cid, IrSurfaceCollection(
+                id=cid, name=getattr(coll, "name", None), surfaces=members), ir.duplicate_ids)
+
+    def _build_coordinate_system(self, cs, ir: IrVessel) -> None:
+        if cs is None:
+            return
+        if isinstance(cs, list | tuple):
+            for item in cs:
+                self._build_coordinate_system(item, ir)
+            return
+        cid = getattr(cs, "id", None) or "CoordinateSystem"
+
+        def _plane_ids(group):
+            ids = []
+            if group is None:
+                return ids
+            for rp in _children(getattr(group, "ref_plane", None)):
+                rid = getattr(rp, "id", None)
+                if rid:
+                    ids.append(rid)
+                    self._register(ir.ref_planes, rid,
+                                   IrRefPlane(
+                                       id=rid,
+                                       name=getattr(rp, "name", None),
+                                       location=self._qty(getattr(rp, "reference_location", None)),
+                                       display_grid=getattr(rp, "display_grid", None),
+                                   ),
+                                   ir.duplicate_ids)
+            return ids
+
+        local = getattr(cs, "local_cartesian", None)
+        origin = self._pt(getattr(local, "origin", None)) if local else None
+        self._register(ir.coordinate_systems, cid, IrCoordinateSystem(
+            id=cid, name=getattr(cs, "name", None),
+            is_global=bool(getattr(cs, "is_global", False)),
+            local_origin=origin,
+            x_ref_plane_ids=_plane_ids(getattr(cs, "xref_planes", None)),
+            y_ref_plane_ids=_plane_ids(getattr(cs, "yref_planes", None)),
+            z_ref_plane_ids=_plane_ids(getattr(cs, "zref_planes", None))), ir.duplicate_ids)
+
+    # ------------------------------------------------------------------
+    # End cuts, seams, cargoes, design view, hole catalogue
+    # ------------------------------------------------------------------
+
+    def _build_end_cut(self, ec) -> IrEndCut | None:
+        if ec is None:
+            return None
+        fc = getattr(ec, "feature_cope", None)
+        cope = None
+        if fc is not None:
+            cope = IrFeatureCope(id=getattr(fc, "id", None) or "",
+                                 name=getattr(fc, "name", None))
+        return IrEndCut(
+            id=getattr(ec, "id", None), name=getattr(ec, "name", None),
+            cutback_distance=self._qty(getattr(ec, "cutback_distance", None)),
+            web_cut_back_angle=self._qty(getattr(ec, "web_cut_back_angle", None)),
+            web_nose_height=self._qty(getattr(ec, "web_nose_height", None)),
+            flange_cut_back_angle=self._qty(getattr(ec, "flange_cut_back_angle", None)),
+            flange_nose_height=self._qty(getattr(ec, "flange_nose_height", None)),
+            symmetric_flange=bool(getattr(ec, "symmetric_flange", False)),
+            sniped=bool(getattr(ec, "sniped", False)),
+            feature_cope=cope)
+
+    def _build_inclinations(self, raw_list) -> list[IrInclination]:
+        result: list[IrInclination] = []
+        for raw in raw_list or []:
+            result.append(IrInclination(
+                web_direction=self._vec(getattr(raw, "web_direction", None)),
+                flange_direction=self._vec(getattr(raw, "flange_direction", None)),
+                position=self._pt(getattr(raw, "position", None)),
+            ))
+        return result
+
+    def _build_seams_for_panel(self, panel_raw, ir: IrVessel) -> list[str]:
+        """Extract seams from Panel.split_by; register and return their ids."""
+        seam_ids: list[str] = []
+        split = getattr(panel_raw, "split_by", None)
+        if split is None:
+            return seam_ids
+        for seam in getattr(split, "seam", None) or []:
+            sid = getattr(seam, "id", None)
+            if sid is None:
+                continue
+            tl = getattr(seam, "trace_line", None)
+            curve = self._build_curve(getattr(tl, "composite_curve3_d", None)) if tl else None
+            self._register(ir.seams, sid, IrSeam(
+                id=sid, name=getattr(seam, "name", None),
+                guidref=getattr(seam, "guidref", None),
+                trace_line=curve,
+                trace_refs=self._trace_refs(tl)), ir.duplicate_ids)
+            seam_ids.append(sid)
+        return seam_ids
+
+    def _build_cargoes_for_compartment(self, comp, ir: IrVessel) -> None:
+        cid = getattr(comp, "id", None)
+        ref = Ref(local_ref=cid or "", guidref=getattr(comp, "guidref", None))
+        for i, lc in enumerate(_children(getattr(comp, "liquid_cargo", None))):
+            cargo_id = f"{cid}/liquid/{i}"
+            self._register(ir.liquid_cargoes, cargo_id, IrLiquidCargo(
+                id=cargo_id, compartment_ref=ref,
+                cargo_type=self._enum(getattr(lc, "liquid_cargo_type", None)),
+                density=self._qty(getattr(lc, "density", None)),
+                carriage_pressure=self._qty(getattr(lc, "carriage_pressure", None))), ir.duplicate_ids)
+        for i, gc in enumerate(_children(getattr(comp, "gaseous_cargo", None))):
+            cargo_id = f"{cid}/gas/{i}"
+            self._register(ir.gaseous_cargoes, cargo_id, IrGaseousCargo(
+                id=cargo_id, compartment_ref=ref,
+                cargo_type=self._enum(getattr(gc, "liquid_cargo_type", None)),
+                density=self._qty(getattr(gc, "density", None)),
+                carriage_pressure=self._qty(getattr(gc, "carriage_pressure", None)),
+                liquid_state=bool(getattr(gc, "liquid_state", False))), ir.duplicate_ids)
+        for i, bc in enumerate(_children(getattr(comp, "bulk_cargo", None))):
+            cargo_id = f"{cid}/bulk/{i}"
+            self._register(ir.bulk_cargoes, cargo_id, IrBulkCargo(
+                id=cargo_id, compartment_ref=ref,
+                cargo_type=self._enum(getattr(bc, "bulk_cargo_type", None)),
+                density=self._qty(getattr(bc, "density", None)),
+                stowage_factor=self._qty(getattr(bc, "stowage_factor", None)),
+                permeability=self._qty(getattr(bc, "permeability", None)),
+                angle_of_repose=self._qty(getattr(bc, "angle_of_repose", None))), ir.duplicate_ids)
+        for i, uc in enumerate(_children(getattr(comp, "unit_cargo", None))):
+            cargo_id = f"{cid}/unit/{i}"
+            self._register(ir.unit_cargoes, cargo_id, IrUnitCargo(
+                id=cargo_id, compartment_ref=ref,
+                cargo_type=self._enum(getattr(uc, "unit_cargo_type", None))), ir.duplicate_ids)
+
+    # (3.2.0 attr, 3.1.0 fallback attr, IrOccurrence field)
+    _OCC_REF_ATTRS = (
+        ("plate_ref", None, "plate_ref"),
+        ("str_stiffener_ref", "stiffener_ref", "stiffener_ref"),
+        ("str_seam_ref", "seam_ref", "seam_ref"),
+        ("bracket_ref", None, "bracket_ref"),
+        ("pillar_ref", None, "pillar_ref"),
+        ("hole_contour_ref", None, "hole_contour_ref"),
+        ("str_edge_reinforcement_ref", "edge_reinforcement_ref", "edge_reinforcement_ref"),
+        ("lug_plate_ref", None, "lug_plate_ref"),
+        ("connected_bracket_ref", None, "connected_bracket_ref"),
+    )
+
+    def _build_occurrence(self, occ) -> IrOccurrence:
+        kwargs = {}
+        for new_attr, old_attr, field_name in self._OCC_REF_ATTRS:
+            raw = _first(getattr(occ, new_attr, None))
+            if raw is None and old_attr:
+                raw = _first(getattr(occ, old_attr, None))
+            kwargs[field_name] = self._ref(raw)
+        return IrOccurrence(id=getattr(occ, "id", None) or "",
+                            name=getattr(occ, "name", None),
+                            type_value=getattr(occ, "type_value", None), **kwargs)
+
+    def _build_occurrence_group(self, grp) -> IrOccurrenceGroup:
+        children: list = []
+        for sub in getattr(grp, "occurrence_group", None) or []:
+            children.append(self._build_occurrence_group(sub))
+        for occ in getattr(grp, "occurrence", None) or []:
+            children.append(self._build_occurrence(occ))
+        return IrOccurrenceGroup(id=getattr(grp, "id", None) or "",
+                                 name=getattr(grp, "name", None),
+                                 type_value=getattr(grp, "type_value", None),
+                                 children=children)
+
+    def _build_design_view(self, dv, ir: IrVessel) -> None:
+        if dv is None:
+            return
+        children: list = []
+        for grp in getattr(dv, "occurrence_group", None) or []:
+            children.append(self._build_occurrence_group(grp))
+        for occ in getattr(dv, "occurrence", None) or []:
+            children.append(self._build_occurrence(occ))
+        did = getattr(dv, "id", None) or "DesignView"
+        self._register(ir.design_views, did, IrDesignView(
+            id=did, name=getattr(dv, "name", None),
+            vessel_ref=self._ref(getattr(dv, "vessel_ref", None)),
+            children=children), ir.duplicate_ids)
+
+    def _build_hole_catalogue(self, cat, ir: IrVessel) -> None:
+        if cat is None:
+            return
+        holes: dict = {}
+        for h in getattr(cat, "hole2_d", None) or []:
+            hid = getattr(h, "id", None)
+            if hid is None:
+                continue
+            contour = getattr(h, "contour", None)
+            curve = None
+            if contour is not None:
+                for attr in self._CONTOUR_ATTRS:
+                    val = getattr(contour, attr, None)
+                    target = val[0] if isinstance(val, list) and val else val
+                    if target is not None:
+                        curve = self._build_curve(target)
+                        if curve is not None:
+                            break
+            parametric = None
+            for attr in ("ellipse", "rectangular_mickey_mouse_ears",
+                         "rectangular_hole", "super_elliptical",
+                         "symmetrical_hole", "parametric_circle"):
+                if getattr(h, attr, None) is not None:
+                    parametric = {"variant": attr}
+                    break
+            holes[hid] = IrHole2D(id=hid, name=getattr(h, "name", None),
+                                  guidref=getattr(h, "guidref", None),
+                                  contour=curve, parametric=parametric)
+        ir.hole_shape_catalogue = IrHoleShapeCatalogue(
+            id=getattr(cat, "id", None) or "HoleShapeCatalogue",
+            name=getattr(cat, "name", None), holes=holes)
+
+    def _build_header(self, root, ir: IrVessel) -> None:
+        header = getattr(root, "header", None)
+        if header is None:
+            return
+        time_stamp = getattr(header, "time_stamp", None)
+        ir.header = IrHeader(
+            time_stamp=str(time_stamp) if time_stamp is not None else None,
+            name=getattr(header, "name", None),
+            author=getattr(header, "author", None),
+            organization=getattr(header, "organization", None),
+            originating_system=getattr(header, "originating_system", None),
+            application_version=getattr(header, "application_version", None),
+            documentation=getattr(header, "documentation", None))
+
+    def _build_metadata(self, vessel_raw, ir: IrVessel) -> None:
+        sd = getattr(vessel_raw, "ship_designation", None)
+        if sd is not None:
+            ir.ship_designation = IrShipDesignation(
+                ship_name=getattr(sd, "ship_name", None),
+                call_sign=getattr(sd, "call_sign", None),
+                number_imo=getattr(sd, "number_imo", None),
+                ship_type=getattr(sd, "ship_type", None))
+        td = getattr(vessel_raw, "tonnage_data", None)
+        if td is not None:
+            ir.tonnage_data = IrTonnageData(
+                tonnage=self._qty(getattr(td, "tonnage", None)),
+                dead_weight=self._qty(getattr(td, "dead_weight", None)))
+        st = getattr(vessel_raw, "statutory_data", None)
+        if st is not None:
+            ir.statutory_data = IrStatutoryData(
+                port_registration=getattr(st, "port_registration", None),
+                flag_state=getattr(st, "flag_state", None))
+        bi = getattr(vessel_raw, "builder_information", None)
+        if bi is not None:
+            yob = getattr(bi, "year_of_build", None)
+            ir.builder_info = IrBuilderInformation(
+                yard=getattr(bi, "yard", None), designer=getattr(bi, "designer", None),
+                owner=getattr(bi, "owner", None),
+                year_of_build=str(yob) if yob is not None else None)
+        cd = getattr(vessel_raw, "classification_data", None)
+        if cd is not None:
+            ir.classification = {
+                "classification_society": (
+                    getattr(cd, "society_name", None)
+                    or getattr(cd, "newbuilding_society_name", None)),
+            }
+        pp = getattr(cd, "principal_particulars", None) if cd else None
+        if pp is not None:
+            ir.principal_particulars = IrPrincipalParticulars(
+                lpp=self._qty(getattr(pp, "lpp", None)),
+                rule_length=self._qty(getattr(pp, "rule_length", None)),
+                block_coefficient=self._qty(getattr(pp, "block_coefficient", None)),
+                moulded_breadth=self._qty(getattr(pp, "moulded_breadth", None)),
+                moulded_depth=self._qty(getattr(pp, "moulded_depth", None)),
+                scantling_draught=self._qty(getattr(pp, "scantling_draught", None)),
+                design_speed=self._qty(getattr(pp, "design_speed", None)),
+                freeboard_length=self._qty(getattr(pp, "freeboard_length", None)),
+                normal_ballast_draught=self._qty(getattr(pp, "normal_ballast_draught", None)),
+                heavy_ballast_draught=self._qty(getattr(pp, "heavy_ballast_draught", None)),
+                minimum_ballast_draught=self._qty(getattr(pp, "minimum_ballast_draught", None)),
+                length_of_waterline=self._qty(getattr(pp, "length_of_waterline", None)),
+                upper_deck_area=self._qty(getattr(pp, "upper_deck_area", None)),
+                freeboard_type=self._enum(getattr(pp, "freeboard_type", None)))
+
+    # ------------------------------------------------------------------
+    # Unit registry
+    # ------------------------------------------------------------------
+
+    def _build_unit_registry(self, root, ir: IrVessel) -> None:
+        """Populate ``ir.unit_registry`` from the OCX ``<UnitsMl>`` element."""
+        units_ml = getattr(root, "units_ml", None)
+        ir.unit_registry = build_unit_registry(units_ml)
+
+    # ------------------------------------------------------------------
+    # Material catalogue
+    # ------------------------------------------------------------------
+
+    def _build_materials(self, root, ir: IrVessel) -> None:
+        cc = getattr(root, "class_catalogue", None)
+        if cc is None:
+            return
+        mc = getattr(cc, "material_catalogue", None)
+        if mc is None:
+            return
+
+        def _common(m, mid: str, material_type: str | None) -> IrMaterial:
+            return IrMaterial(
+                id=mid,
+                name=getattr(m, "name", None),
+                guidref=getattr(m, "guidref", None),
+                material_type=material_type,
+                density=self._qty(getattr(m, "density", None)),
+                youngs_modulus=self._qty(getattr(m, "youngs_modulus", None)),
+                poisson_ratio=self._qty(getattr(m, "poisson_ratio", None)),
+                thermal_expansion=self._qty(
+                    getattr(m, "thermal_expansion", None)
+                    or getattr(m, "thermal_expansion_coefficient", None)
+                ),
+            )
+
+        for m in getattr(mc, "steel", None) or []:
+            mid = getattr(m, "id", None) or getattr(m, "guidref", None)
+            if not mid:
+                continue
+            ir_mat = _common(m, mid, "steel")
+            ir_mat.grade = self._enum(getattr(m, "grade", None))
+            ir_mat.yield_stress = self._qty(getattr(m, "yield_stress", None))
+            ir_mat.ultimate_stress = self._qty(getattr(m, "ultimate_stress", None))
+            self._register(ir.materials, mid, ir_mat, ir.duplicate_ids)
+
+        for m in getattr(mc, "aluminium", None) or []:
+            mid = getattr(m, "id", None) or getattr(m, "guidref", None)
+            if not mid:
+                continue
+            ir_mat = _common(m, mid, "aluminium")
+            ir_mat.unwelded_yield_strength = self._qty(
+                getattr(m, "unwelded_yield_strength", None)
+            )
+            ir_mat.welded_yield_strength = self._qty(
+                getattr(m, "welded_yield_strength", None)
+            )
+            ir_mat.unwelded_tensile_strength = self._qty(
+                getattr(m, "unwelded_tensile_strength", None)
+            )
+            ir_mat.welded_tensile_strength = self._qty(
+                getattr(m, "welded_tensile_strength", None)
+            )
+            ir_mat.alloy_designation = getattr(m, "alloy_designation", None)
+            self._register(ir.materials, mid, ir_mat, ir.duplicate_ids)
+
+        for m in getattr(mc, "material", None) or []:
+            mid = getattr(m, "id", None) or getattr(m, "guidref", None)
+            if not mid:
+                continue
+            ir_mat = _common(m, mid, None)
+            ir_mat.grade = self._enum(getattr(m, "grade", None))
+            ir_mat.yield_stress = self._qty(getattr(m, "yield_stress", None))
+            ir_mat.ultimate_stress = self._qty(getattr(m, "ultimate_stress", None))
+            self._register(ir.materials, mid, ir_mat, ir.duplicate_ids)
+
+    # ------------------------------------------------------------------
+    # Section catalogue
+    # ------------------------------------------------------------------
+
+    def _detect_section_type(self, raw_section) -> str:
+        """Infer the OCX section type from the class Metadata or class name.
+
+        Tries ``Meta.name`` first (real xsdata dataclasses); falls back to the
+        class name for duck-typed stub objects that have no ``Meta`` attribute.
+        Matching is case-insensitive against ``_SECTION_TYPE_MAP`` keys.
+        """
+        try:
+            ocx_name = MetaData.name(raw_section)
+        except AttributeError:
+            ocx_name = None
+        if not ocx_name:
+            ocx_name = type(raw_section).__name__
+        lowered = ocx_name.lower()
+        for key, mapped in _SECTION_TYPE_MAP.items():
+            if key in lowered:
+                return mapped
+        return "Generic"
+
+    def _build_section(self, raw_section) -> IrSection:
+        """Dispatch to the correct typed subclass factory."""
+        sid = getattr(raw_section, "id", None) or getattr(raw_section, "guidref", None) or ""
+        name = getattr(raw_section, "name", None)
+        guid = getattr(raw_section, "guidref", None)
+        catalogue_reference = getattr(raw_section, "catalogue_reference", None)
+        data = raw_section
+        stype = self._detect_section_type(raw_section)
+        if stype == "Generic":
+            data = _bar_section_choice(raw_section)
+            stype = self._detect_section_type(data)
+
+        if stype == "RectangularTube":
+            return IrRectangularTubeSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                thickness=self._qty(getattr(data, "thickness", None)),
+            )
+
+        if stype == "OctagonBar":
+            return IrOctagonSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+            )
+
+        if stype == "SquareBar":
+            return IrSquareSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+            )
+
+        if stype == "BulbFlat":
+            return IrBulbFlatSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_width=self._qty(getattr(data, "flange_width", None)),
+                bulb_angle=self._qty(getattr(data, "bulb_angle", None)),
+                bulb_outer_radius=self._qty(getattr(data, "bulb_outer_radius", None)),
+                bulb_inner_radius=self._qty(getattr(data, "bulb_inner_radius", None)),
+                bulb_top_radius=self._qty(getattr(data, "bulb_top_radius", None)),
+                bulb_bottom_radius=self._qty(getattr(data, "bulb_bottom_radius", None)),
+            )
+
+        if stype == "FlatBar":
+            return IrFlatBarSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+            )
+
+        if stype == "UBar":
+            return IrUSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+            )
+
+        if stype == "IBar":
+            return IrISection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+            )
+
+        if stype == "LBarOF":
+            return IrLSectionOvershootFlange(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+                overshoot=self._qty(getattr(data, "overshoot", None)),
+            )
+        if stype == "ZBar":
+            return IrZSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+            )
+        if stype == "RoundBar":
+            return IrRoundSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                diameter=self._qty(
+                    getattr(data, "diameter", None) or getattr(data, "height", None)
+                ),
+            )
+        if stype == "LBar":
+            return IrLSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+            )
+
+        if stype == "TBar":
+            return IrTSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+            )
+
+        if stype == "LBarOW":
+            return IrLSectionOvershootWeb(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+                width=self._qty(getattr(data, "width", None)),
+                web_thickness=self._qty(getattr(data, "web_thickness", None)),
+                flange_thickness=self._qty(getattr(data, "flange_thickness", None)),
+                overshoot=self._qty(getattr(data, "overshoot", None)),
+            )
+
+        if stype == "HalfRoundBar":
+            return IrHalfRoundSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                diameter=self._qty(getattr(data, "diameter", None)),
+            )
+        if stype == "HexagonBar":
+            return IrHexagonSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                height=self._qty(getattr(data, "height", None)),
+            )
+
+        if stype == "Tube":
+            return IrTubeSection(
+                id=sid, name=name, guidref=guid, section_type=stype, catalogue_reference=catalogue_reference,
+                diameter=self._qty(getattr(data, "diameter", None)),
+                thickness=self._qty(getattr(data, "thickness", None)),
+            )
+        # Generic fallback — capture all scalar fields
+        extra: dict[str, Any] = {}
+        if dataclasses.is_dataclass(raw_section):
+            for f in dataclasses.fields(raw_section):
+                val = getattr(raw_section, f.name, None)
+                if val is None or dataclasses.is_dataclass(val) or isinstance(val, list):
+                    continue
+                extra[f.name] = val.value if hasattr(val, "value") else val
+        logger.warning(f'Not mapped section type detected: {type(raw_section).__name__!r}, defaulting to "GenericSection".')
+        return IrGenericSection(
+            id=sid,
+            name=name,
+            guidref=guid,
+            section_type="Generic",
+            catalogue_reference=catalogue_reference,
+            extra=extra,
+        )
+
+    def _build_sections(self, root, ir: IrVessel) -> None:
+        cc = getattr(root, "class_catalogue", None)
+        if cc is None:
+            return
+        xc = getattr(cc, "xsection_catalogue", None)
+        if xc is None:
+            return
+        for raw_s in getattr(xc, "bar_section", []):
+            ir_sec = self._build_section(raw_s)
+            if ir_sec.id:
+                self._register(ir.sections, ir_sec.id, ir_sec, ir.duplicate_ids)
+                # Also index by guidref if different from id
+                if ir_sec.guidref and ir_sec.guidref != ir_sec.id:
+                    if ir_sec.guidref not in ir.sections:
+                        ir.sections[ir_sec.guidref] = ir_sec
+
+    # ------------------------------------------------------------------
+    # Structural part builders (individual objects)
+    # ------------------------------------------------------------------
+
+    def _build_plate(self, raw, parent: ParentRef) -> IrPlate | None:
+        pid = getattr(raw, "id", None)
+        if not pid:
+            return None
+        pm = getattr(raw, "plate_material", None)
+        mat_ref, thickness = self._material_ref(pm)
+        return IrPlate(
+            id=pid,
+            parent_ref=parent,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            material_ref=mat_ref,
+            thickness=thickness,
+            renewal_thickness=self._qty(getattr(pm, "renewal_thickness", None) if pm else None),
+            voluntary_thickness_addition=self._qty(
+                getattr(pm, "voluntary_thickness_addition", None) if pm else None
+            ),
+            mass_properties=self._mass_properties(raw),
+            net_area=self._qty(getattr(raw, "net_area", None)),
+            function_type=self._enum(getattr(raw, "function_type", None)),
+            outer_contour=self._build_contour(getattr(raw, "outer_contour", None)),
+            point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),
+            cut_by_contours=self._cut_by_contours(getattr(raw, "plate_cut_by", None)),
+        )
+
+    def _build_bracket(self, raw, parent: ParentRef) -> IrBracket | None:
+        bid = getattr(raw, "id", None)
+        if not bid:
+            return None
+        pm = getattr(raw, "plate_material", None)
+        mat_ref, thickness = self._material_ref(pm)
+        bp = getattr(raw, "bracket_parameters", None)
+        fer = getattr(bp, "flange_edge_reinforcement", None) if bp else None
+        return IrBracket(
+            id=bid,
+            parent_ref=parent,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            material_ref=mat_ref,
+            thickness=thickness,
+            renewal_thickness=self._qty(getattr(pm, "renewal_thickness", None) if pm else None),
+            voluntary_thickness_addition=self._qty(
+                getattr(pm, "voluntary_thickness_addition", None) if pm else None
+            ),
+            mass_properties=self._mass_properties(raw),
+            arm_length_u=self._qty(getattr(bp, "arm_length_u", None) if bp else None),
+            arm_length_v=self._qty(getattr(bp, "arm_length_v", None) if bp else None),
+            unose=self._qty(getattr(bp, "unose", None) if bp else None),
+            vnose=self._qty(getattr(bp, "vnose", None) if bp else None),
+            free_edge_radius=self._qty(getattr(bp, "free_edge_radius", None) if bp else None),
+            has_edge_reinforcement=bool(getattr(bp, "has_edge_reinforcement", False) if bp else False),
+            number_of_supports=getattr(bp, "number_of_supports", None) if bp else None,
+            reinforcement_type=self._enum(getattr(bp, "reinforcement_type", None) if bp else None),
+            feature_cope=self._build_feature_cope(getattr(bp, "feature_cope", None) if bp else None),
+            flange_width=self._qty(getattr(fer, "flange_width", None) if fer else None),
+            flange_radius=self._qty(getattr(fer, "radius", None) if fer else None),
+            origin=self._pt(getattr(bp, "origin", None) if bp else None),
+            udirection=self._vec(getattr(bp, "udirection", None) if bp else None),
+            vdirection=self._vec(getattr(bp, "vdirection", None) if bp else None),
+        )
+
+    def _build_feature_cope(self, fc) -> IrFeatureCope | None:
+        if fc is None:
+            return None
+        return IrFeatureCope(
+            id=getattr(fc, "id", None) or "",
+            name=getattr(fc, "name", None),
+            guidref=getattr(fc, "guidref", None),
+            cope_height=self._qty(getattr(fc, "cope_height", None)),
+            cope_length=self._qty(getattr(fc, "cope_length", None)),
+            cope_radius=self._qty(getattr(fc, "cope_radius", None)),
+        )
+
+    def _build_stiffener(self, raw, parent: ParentRef) -> IrStiffener | None:
+        sid = getattr(raw, "id", None)
+        if not sid:
+            return None
+        raw_sec = getattr(raw, "section_ref", None)
+        return IrStiffener(
+            id=sid,
+            parent_ref=parent,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            material_ref=self._ref(getattr(raw, "material_ref", None)),
+            section_ref=self._ref(raw_sec),
+            **self._section_scantlings(raw_sec),
+            mass_properties=self._mass_properties(raw),
+            function_type=self._enum(getattr(raw, "function_type", None)),
+            end_cut_end1=self._build_end_cut(getattr(raw, "end_cut_end1", None)),
+            end_cut_end2=self._build_end_cut(getattr(raw, "end_cut_end2", None)),
+            trace=self._build_contour(getattr(raw, "trace_line", None)),
+            orientation_rule=self._enum(getattr(raw, "orientation_rule", None)),
+            trace_refs=self._trace_refs(getattr(raw, "trace_line", None)),
+            inclinations=self._build_inclinations(getattr(raw, "inclination", None)),
+        )
+
+    def _build_pillar(self, raw, parent: ParentRef) -> IrPillar | None:
+        pid = getattr(raw, "id", None)
+        if not pid:
+            return None
+        raw_sec = getattr(raw, "section_ref", None)
+        return IrPillar(
+            id=pid,
+            parent_ref=parent,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            material_ref=self._ref(getattr(raw, "material_ref", None)),
+            section_ref=self._ref(raw_sec),
+            **self._section_scantlings(raw_sec),
+            mass_properties=self._mass_properties(raw),
+            function_type=self._enum(getattr(raw, "function_type", None)),
+            trace=self._build_contour(getattr(raw, "trace_line", None)),
+            inclinations=self._build_inclinations(getattr(raw, "inclination", None)),
+        )
+
+    def _build_edge_reinforcement(self, raw, parent: ParentRef) -> IrEdgeReinforcement | None:
+        """Build an IrEdgeReinforcement from a raw OCX EdgeReinforcement element."""
+        eid = getattr(raw, "id", None)
+        if not eid:
+            return None
+        raw_sec = getattr(raw, "section_ref", None)
+        return IrEdgeReinforcement(
+            id=eid,
+            parent_ref=parent,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            material_ref=self._ref(getattr(raw, "material_ref", None)),
+            section_ref=self._ref(raw_sec),
+            **self._section_scantlings(raw_sec),
+            mass_properties=self._mass_properties(raw),
+            function_type=self._enum(getattr(raw, "function_type", None)),
+            orientation_rule=self._enum(getattr(raw, "orientation_rule", None)),
+            trace_refs=self._trace_refs(_first(getattr(raw, "trace_line", None))),
+        )
+
+    # ------------------------------------------------------------------
+    # Vessel-level structural collections
+    # ------------------------------------------------------------------
+
+    def _build_vessel_plates(self, vessel_raw, ir: IrVessel, parent: ParentRef) -> None:
+        for raw in getattr(vessel_raw, "plate", []):
+            obj = self._build_plate(raw, parent)
+            if obj:
+                self._register(ir.plates, obj.id, obj, ir.duplicate_ids)
+
+    def _build_vessel_brackets(self, vessel_raw, ir: IrVessel, parent: ParentRef) -> None:
+        for raw in getattr(vessel_raw, "bracket", []):
+            obj = self._build_bracket(raw, parent)
+            if obj:
+                self._register(ir.brackets, obj.id, obj, ir.duplicate_ids)
+
+    def _build_vessel_stiffeners(self, vessel_raw, ir: IrVessel, parent: ParentRef) -> None:
+        for raw in getattr(vessel_raw, "stiffener", []):
+            obj = self._build_stiffener(raw, parent)
+            if obj:
+                self._register(ir.stiffeners, obj.id, obj, ir.duplicate_ids)
+
+    def _build_vessel_pillars(self, vessel_raw, ir: IrVessel, parent: ParentRef) -> None:
+        for raw in getattr(vessel_raw, "pillar", []):
+            obj = self._build_pillar(raw, parent)
+            if obj:
+                self._register(ir.pillars, obj.id, obj, ir.duplicate_ids)
+
+    # ------------------------------------------------------------------
+    # Panel
+    # ------------------------------------------------------------------
+
+    def _build_panel(self, raw, ir: IrVessel, vessel_id: str) -> IrPanel | None:
+        pid = getattr(raw, "id", None)
+        if not pid:
+            return None
+
+        panel_parent = ParentRef(kind=ParentKind.PANEL, id=pid)
+
+        # --- composed-of children ---
+        plate_ids: list[str] = []
+        bracket_ids: list[str] = []
+        pillar_ids: list[str] = []
+        composed_of = getattr(raw, "composed_of", None)
+        if composed_of is not None:
+            for rp in getattr(composed_of, "plate", []):
+                obj = self._build_plate(rp, panel_parent)
+                if obj:
+                    self._register(ir.plates, obj.id, obj, ir.duplicate_ids)
+                    plate_ids.append(obj.id)
+            for rb in getattr(composed_of, "bracket", []):
+                obj = self._build_bracket(rb, panel_parent)
+                if obj:
+                    self._register(ir.brackets, obj.id, obj, ir.duplicate_ids)
+                    bracket_ids.append(obj.id)
+            for rpi in getattr(composed_of, "pillar", []):
+                obj = self._build_pillar(rpi, panel_parent)
+                if obj:
+                    self._register(ir.pillars, obj.id, obj, ir.duplicate_ids)
+                    pillar_ids.append(obj.id)
+
+        # --- stiffened-by children ---
+        stiffener_ids: list[str] = []
+        edge_reinforcement_ids: list[str] = []
+        stiffened_by = getattr(raw, "stiffened_by", None)
+        if stiffened_by is not None:
+            for rs in getattr(stiffened_by, "stiffener", []):
+                obj = self._build_stiffener(rs, panel_parent)
+                if obj:
+                    self._register(ir.stiffeners, obj.id, obj, ir.duplicate_ids)
+                    stiffener_ids.append(obj.id)
+            for re in getattr(stiffened_by, "edge_reinforcement", []):
+                obj = self._build_edge_reinforcement(re, panel_parent)
+                if obj:
+                    self._register(ir.edge_reinforcements, obj.id, obj, ir.duplicate_ids)
+                    edge_reinforcement_ids.append(obj.id)
+
+        # --- limited-by references — collect ALL boundary ref types ---
+        limited_by_refs: list[IrLimitedByRef] = []
+        limited_by = getattr(raw, "limited_by", None)
+        if limited_by is not None:
+            # Each tuple: (attribute name on LimitedByT, normalised ref_type label)
+            # Standard *Ref elements carry local_ref + guidref.
+            _LB_ATTRS: list[tuple[str, str]] = [
+                ("panel_ref",               "PanelRef"),
+                ("stiffener_ref",           "StiffenerRef"),
+                ("seam_ref",                "SeamRef"),
+                ("surface_ref",             "SurfaceRef"),
+                ("edge_curve_ref",          "EdgeCurveRef"),
+                ("grid_ref",                "GridRef"),
+                ("edge_reinforcement_ref",  "EdgeReinforcementRef"),
+            ]
+            for attr, ref_type in _LB_ATTRS:
+                for ref_raw in getattr(limited_by, attr, []):
+                    local = getattr(ref_raw, "local_ref", None) or ""
+                    guid  = getattr(ref_raw, "guidref", None)
+                    # ref_type attr on the OCX element itself (e.g. "ocx:PanelRef")
+                    ocx_rt = getattr(ref_raw, "ref_type", None)
+                    limited_by_refs.append(
+                        IrLimitedByRef(
+                            ref_type=ref_type,
+                            local_ref=local,
+                            guidref=guid,
+                            ocx_ref_type=ocx_rt,
+                            offset=self._qty(getattr(ref_raw, "offset", None)),
+                            offset_direction=self._vec(getattr(ref_raw, "offset_direction", None)),
+                            contour_mid_point=self._pt(
+                                getattr(
+                                    getattr(ref_raw, "contour_bounds", None),
+                                    "contour_mid_point",
+                                    None,
+                                )
+                            ),
+                        )
+                    )
+
+            # FreeEdgeCurve3D is an inline geometry element (no local_ref).
+            # Use guidref as identifier; fall back to name if guidref is absent.
+            for fec in getattr(limited_by, "free_edge_curve3_d", []):
+                guid = getattr(fec, "guidref", None)
+                name_val = getattr(fec, "name", None)
+                limited_by_refs.append(
+                    IrLimitedByRef(
+                        ref_type="FreeEdgeCurve3D",
+                        local_ref=name_val or "",
+                        guidref=guid,
+                    )
+                )
+
+        seam_ids = self._build_seams_for_panel(raw, ir)
+
+        return IrPanel(
+            id=pid,
+            name=getattr(raw, "name", None),
+            guidref=getattr(raw, "guidref", None),
+            function_type=self._enum(getattr(raw, "function_type", None)),
+            tightness=self._enum(getattr(raw, "tightness", None)),
+            point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),
+            mass_properties=self._mass_properties(raw),
+            plate_ids=plate_ids,
+            bracket_ids=bracket_ids,
+            stiffener_ids=stiffener_ids,
+            pillar_ids=pillar_ids,
+            edge_reinforcement_ids=edge_reinforcement_ids,
+            seam_ids=seam_ids,
+            limited_by=limited_by_refs,
+            unbounded_geometry=self._build_unbounded(getattr(raw, "unbounded_geometry", None)),
+        )
+
+    # ------------------------------------------------------------------
+    # Arrangement
+    # ------------------------------------------------------------------
+
+    def _build_compartments(self, arrangement, ir: IrVessel) -> None:
+        for raw in getattr(arrangement, "compartment", []):
+            cid = getattr(raw, "id", None)
+            if not cid:
+                continue
+            cp = getattr(raw, "compartment_properties", None)
+            face_refs = [
+                Ref(
+                    local_ref=getattr(f, "id", None) or getattr(f, "local_ref", "") or "",
+                    guidref=getattr(f, "guidref", None),
+                )
+                for f in getattr(raw, "compartment_face", [])
+            ]
+            face_curves = []
+            for f in getattr(raw, "compartment_face", []):
+                curve = self._build_contour(getattr(f, "face_boundary_curve", None))
+                if curve is not None:
+                    face_curves.append(curve)
+            ir_c = IrCompartment(
+                id=cid,
+                name=getattr(raw, "name", None),
+                guidref=getattr(raw, "guidref", None),
+                compartment_purpose=self._enum(getattr(raw, "compartment_purpose", None)),
+                volume=self._qty(getattr(cp, "volume", None) if cp else None),
+                filling_height=self._qty(getattr(cp, "filling_height", None) if cp else None),
+                air_pipe_height=self._qty(getattr(cp, "air_pipe_height", None) if cp else None),
+                relief_valve_pressure=self._qty(getattr(cp, "relief_valve_pressure", None) if cp else None),
+                face_refs=face_refs,
+                face_boundary_curves=face_curves,
+                cog=self._cog(cp),
+            )
+            self._register(ir.compartments, cid, ir_c, ir.duplicate_ids)
+            self._build_cargoes_for_compartment(raw, ir)
+
+    def _build_physical_spaces(self, arrangement, ir: IrVessel) -> None:
+        for raw in getattr(arrangement, "physical_space", []):
+            sid = getattr(raw, "id", None)
+            if not sid:
+                continue
+            ir_ps = IrPhysicalSpace(
+                id=sid,
+                name=getattr(raw, "name", None),
+                guidref=getattr(raw, "guidref", None),
+                space_type=self._enum(getattr(raw, "space_type", None)),
+            )
+            self._register(ir.physical_spaces, sid, ir_ps, ir.duplicate_ids)
+
+    # ------------------------------------------------------------------
+    # Integrity checks
+    # ------------------------------------------------------------------
+
+    def _check_integrity(self, ir: IrVessel) -> None:
+        """Detect dangling references and report them on the IrVessel."""
+        dangling: list[str] = []
+
+        # Check panel adjacency refs
+        for panel in ir.panels.values():
+            for ref in panel.panel_refs:
+                if ref.local_ref and ref.local_ref not in ir.panels:
+                    dangling.append(f"Panel {panel.id!r} PanelRef {ref.local_ref!r} not found")
+            for ref in panel.stiffener_refs:
+                if ref.local_ref and ref.local_ref not in ir.stiffeners:
+                    dangling.append(f"Panel {panel.id!r} StiffenerRef {ref.local_ref!r} not found")
+
+        # Check panel child id lists
+        for panel in ir.panels.values():
+            for pid in panel.plate_ids:
+                if pid not in ir.plates:
+                    dangling.append(f"Panel {panel.id!r} plate_id {pid!r} not in plates dict")
+            for bid in panel.bracket_ids:
+                if bid not in ir.brackets:
+                    dangling.append(f"Panel {panel.id!r} bracket_id {bid!r} not in brackets dict")
+            for sid in panel.stiffener_ids:
+                if sid not in ir.stiffeners:
+                    dangling.append(f"Panel {panel.id!r} stiffener_id {sid!r} not in stiffeners dict")
+            for pid in panel.pillar_ids:
+                if pid not in ir.pillars:
+                    dangling.append(f"Panel {panel.id!r} pillar_id {pid!r} not in pillars dict")
+            for eid in panel.edge_reinforcement_ids:
+                if eid not in ir.edge_reinforcements:
+                    dangling.append(f"Panel {panel.id!r} edge_reinforcement_id {eid!r} not in edge_reinforcements dict")
+
+        # Check material refs on plates / brackets
+        for plate in ir.plates.values():
+            if plate.material_ref and plate.material_ref.local_ref:
+                if plate.material_ref.local_ref not in ir.materials:
+                    dangling.append(
+                        f"Plate {plate.id!r} material_ref {plate.material_ref.local_ref!r} not in materials"
+                    )
+        for bracket in ir.brackets.values():
+            if bracket.material_ref and bracket.material_ref.local_ref:
+                if bracket.material_ref.local_ref not in ir.materials:
+                    dangling.append(
+                        f"Bracket {bracket.id!r} material_ref {bracket.material_ref.local_ref!r} not in materials"
+                    )
+
+        # Check section refs on stiffeners / pillars
+        for stiffener in ir.stiffeners.values():
+            if stiffener.section_ref and stiffener.section_ref.local_ref:
+                if stiffener.section_ref.local_ref not in ir.sections:
+                    dangling.append(
+                        f"Stiffener {stiffener.id!r} section_ref {stiffener.section_ref.local_ref!r} not in sections"
+                    )
+
+        ir.dangling_refs = dangling
+        if dangling:
+            logger.warning(f"Integrity check: {len(dangling)} dangling reference(s) detected.")
+        if ir.duplicate_ids:
+            logger.warning(f"Integrity check: {len(ir.duplicate_ids)} duplicate id(s) detected.")

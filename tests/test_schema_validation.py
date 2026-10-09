@@ -1,4 +1,4 @@
-"""Tests for XSD schema validation (ocx_model_validator.validation.schema)."""
+"""Tests for XSD schema validation (ocx_model_core.validation.schema)."""
 from __future__ import annotations
 
 import subprocess
@@ -6,8 +6,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
-from ocx_model_validator.exeptions import SchemaVersionError, XmlParserError
+from ocx_model_core.exeptions import SchemaVersionError, XmlParserError
 
 STUB_MODEL = Path(__file__).parent / "data" / "ocx_310_stubs" / "ocxxml.3docx"
 
@@ -33,7 +32,7 @@ def invalid_model(tmp_path: Path) -> Path:
 
 class TestValidateSchema:
     def test_valid_model(self, valid_model: Path):
-        from ocx_model_validator.validation.schema import validate_schema
+        from ocx_model_core.validation.schema import validate_schema
 
         result = validate_schema(valid_model)
         assert result.valid is True
@@ -44,7 +43,7 @@ class TestValidateSchema:
         assert result.validated_at  # ISO timestamp set
 
     def test_invalid_model_reports_errors_with_lines(self, invalid_model: Path):
-        from ocx_model_validator.validation.schema import validate_schema
+        from ocx_model_core.validation.schema import validate_schema
 
         result = validate_schema(invalid_model)
         assert result.valid is False
@@ -54,7 +53,7 @@ class TestValidateSchema:
         assert "NotARealElement" in first.message
 
     def test_unknown_schema_version_raises(self, tmp_path: Path):
-        from ocx_model_validator.validation.schema import validate_schema
+        from ocx_model_core.validation.schema import validate_schema
 
         model = tmp_path / "odd.3docx"
         model.write_text(
@@ -66,7 +65,7 @@ class TestValidateSchema:
         assert "3.1.0" in str(exc_info.value)  # lists supported versions
 
     def test_missing_schema_version_raises(self, tmp_path: Path):
-        from ocx_model_validator.validation.schema import validate_schema
+        from ocx_model_core.validation.schema import validate_schema
 
         model = tmp_path / "noversion.3docx"
         model.write_text("<foo/>", encoding="utf-8")
@@ -74,7 +73,7 @@ class TestValidateSchema:
             validate_schema(model)
 
     def test_malformed_xml_raises(self, tmp_path: Path):
-        from ocx_model_validator.validation.schema import validate_schema
+        from ocx_model_core.validation.schema import validate_schema
 
         model = tmp_path / "malformed.3docx"
         model.write_text('<ocx:ocxXML schemaVersion="3.1.0"><unclosed>', encoding="utf-8")
@@ -85,7 +84,7 @@ class TestValidateSchema:
 class TestSchemaRegistry:
     def test_all_vendored_schemas_compile(self):
         """Every vendored schema dir must compile (catches corrupt files)."""
-        from ocx_model_validator.validation.schema import SUPPORTED_VERSIONS, load_schema
+        from ocx_model_core.validation.schema import SUPPORTED_VERSIONS, load_schema
 
         for version in SUPPORTED_VERSIONS:
             assert load_schema(version) is not None
@@ -98,7 +97,7 @@ class TestSchemaRegistry:
         for var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
             env[var] = "http://127.0.0.1:1"
         code = (
-            "from ocx_model_validator.validation.schema import SUPPORTED_VERSIONS, load_schema\n"
+            "from ocx_model_core.validation.schema import SUPPORTED_VERSIONS, load_schema\n"
             "for v in SUPPORTED_VERSIONS:\n"
             "    load_schema(v)\n"
             "print('OK')\n"

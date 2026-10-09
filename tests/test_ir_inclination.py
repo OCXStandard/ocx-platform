@@ -1,7 +1,7 @@
 """IR: stiffener inclination records."""
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef
-from ocx_model_validator.model.ir.geometry import IrPoint3D, IrVector3D
-from ocx_model_validator.model.ir.structural import IrInclination, IrStiffener
+from ocx_model_core.model.ir.base import ParentKind, ParentRef
+from ocx_model_core.model.ir.geometry import IrPoint3D, IrVector3D
+from ocx_model_core.model.ir.structural import IrInclination, IrStiffener
 
 
 def test_inclination_fields():

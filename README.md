@@ -15,7 +15,7 @@ making downstream tools independent of any particular OCX schema version.
 - Builds a typed, frozen IR (`IrVessel`, `IrPanel`, `IrPlate`, `IrBracket`, `IrStiffener`, …)
 - Supports OCX schema **3.0 / 3.1 / 3.2** out of the box
 - Converts UnitsML unit definitions to SI factors via `build_unit_registry`
-- CLI subcommands for model reports; xsdata test stubs are generated with the repo-internal script `ocx_model_validator/generate_stubs.py`
+- CLI subcommands for model reports; xsdata test stubs are generated with the repo-internal script `python -m ocx_model_core.generate_stubs`
 - Duplicate-id and dangling-ref integrity checks built into the builder
 - **Frame table extraction** (`ocx_model_validator.frame_table`): derives frame
   labels, positions and spacings (mm) from the model's X reference planes
@@ -46,8 +46,8 @@ uv sync --dev
 ## Quick start
 
 ```python
-from ocx_model_validator.parsers.parser import OcxParser
-from ocx_model_validator.builders.factory import get_builder
+from ocx_model_core.parsers.parser import OcxParser
+from ocx_model_core.builders.factory import get_builder
 
 parser = OcxParser()
 root   = parser.parse("path/to/model.3docx")
@@ -105,45 +105,54 @@ MCP client configuration (e.g. `mcp.json`):
 
 ## Project structure
 
+A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with three packages:
+
 ```
-ocx-model-validator/
-├── pyproject.toml
-├── ocx_model_validator/
-│   ├── __init__.py
-│   ├── cli.py                  ← validator CLI entrypoint
-│   ├── generate_stubs.py       ← xsdata stub generator
-│   ├── exeptions.py            ← custom exception hierarchy
-│   ├── utils.py                ← MetaData helpers
-│   ├── frame_table.py          ← FrameTable, build_frame_table
-│   ├── writeback.py            ← apply scantling reports to .3docx files
-│   ├── model/
-│   │   ├── ir/                 ← IR dataclasses (base, structural, sections, …)
-│   │   └── units.py            ← UnitConverter, build_unit_registry, SI helpers
-│   ├── reporting/
-│   │   ├── model.py            ← Report, ReportSection, ReportTable
-│   │   ├── generators/         ← frame table, compartments, catalogues, BOM
-│   │   └── renderers/          ← rich and markdown renderers
-│   ├── mcp/
-│   │   ├── state.py            ← session state (loaded vessel)
-│   │   └── server.py           ← FastMCP "ocx-mcp" server (5 tools)
-│   ├── parsers/
-│   │   ├── base_parser.py
-│   │   ├── dynamic_loader.py   ← runtime xsdata module loader
-│   │   └── parser.py           ← OcxParser (version detection)
-│   └── builders/
-│       ├── base.py             ← IOcxBuilder ABC
-│       ├── factory.py          ← get_builder() registry
-│       └── v3_builder.py       ← OcxV3Builder (v3.0 – v3.2)
+ocx-model-validator/               ← workspace root (virtual — no package here)
+├── pyproject.toml                 ← [tool.uv.workspace], shared dev deps, ruff, pytest
+├── uv.lock                        ← single lockfile for all members
+├── packages/
+│   ├── ocx-model-core/            ← parse .3docx → schema-neutral IR (no CLI)
+│   │   └── src/ocx_model_core/
+│   │       ├── parsers/           ← OcxParser, dynamic xsdata loader, serializer
+│   │       ├── builders/          ← IOcxBuilder ABC, get_builder() registry, OcxV3Builder
+│   │       ├── model/
+│   │       │   ├── ir/            ← IR dataclasses (base, structural, sections, …)
+│   │       │   └── units.py       ← UnitConverter, build_unit_registry, SI helpers
+│   │       ├── validation/        ← offline XSD validation
+│   │       ├── schemas/           ← vendored OCX + UnitsML XSDs (package data)
+│   │       ├── writeback.py       ← apply scantling reports to .3docx files
+│   │       ├── generate_stubs.py  ← xsdata stub generator (repo-internal)
+│   │       ├── utils.py           ← MetaData helpers
+│   │       └── exeptions.py       ← custom exception hierarchy
+│   ├── ocx-geometry/              ← geometry evaluation kernel (numpy, no display)
+│   │   └── src/ocx_geometry/
+│   │       └── measure.py         ← length/area/closure measurements on the IR
+│   └── ocx-model-validator/       ← validation, reports, CLI, MCP server
+│       └── src/ocx_model_validator/
+│           ├── cli.py             ← validator / ocx-validate CLI entrypoint
+│           ├── frame_table.py     ← FrameTable, build_frame_table
+│           ├── reporting/
+│           │   ├── model.py       ← Report, ReportSection, ReportTable
+│           │   ├── generators/    ← frame table, compartments, catalogues, BOM, …
+│           │   └── renderers/     ← rich, markdown and html renderers
+│           └── mcp/
+│               ├── state.py       ← session state (loaded vessel)
+│               └── server.py      ← FastMCP "ocx-mcp" server (5 tools)
 └── tests/
     ├── conftest.py
-    ├── stubs.py                ← stub loaders for each OCX entity
-    ├── object_stubs.py         ← duck-typed helpers for unit tests
+    ├── stubs.py                   ← stub loaders for each OCX entity
+    ├── object_stubs.py            ← duck-typed helpers for unit tests
     ├── data/
-    │   ├── ocx_310_stubs/      ← generated XML stubs for 3.1.0
-    │   ├── ocx_320rc8_stubs/   ← generated XML stubs for 3.2.0rc8
-    │   └── unitsml_stubs/      ← generated UnitsML stubs
+    │   ├── ocx_310_stubs/         ← generated XML stubs for 3.1.0
+    │   ├── ocx_320rc8_stubs/      ← generated XML stubs for 3.2.0rc8
+    │   └── unitsml_stubs/         ← generated UnitsML stubs
     └── test_*.py
 ```
+
+Dependency direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`.
+A tessellation render/viewer can depend on core + geometry without ever being
+deployed with the validator.
 
 ---
 
@@ -168,10 +177,10 @@ validator validate schema model.3docx
 validator validate schema model.3docx --max-errors 100
 
 # generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
-uv run python ocx_model_validator/generate_stubs.py
+uv run python -m ocx_model_core.generate_stubs
 
 # wipe and regenerate all stubs
-uv run python ocx_model_validator/generate_stubs.py --force
+uv run python -m ocx_model_core.generate_stubs --force
 ```
 
 ---

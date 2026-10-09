@@ -1,6 +1,6 @@
 """Builder extraction of trace and inclinations onto IrPillar."""
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir.base import ParentKind, ParentRef
 
 
 class _Pillar:

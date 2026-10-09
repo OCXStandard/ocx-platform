@@ -4,9 +4,8 @@ from __future__ import annotations
 from types import SimpleNamespace as NS
 
 import pytest
-
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir import (
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir import (
     IrCone3D,
     IrCylinder3D,
     IrExtrudedSurface,
@@ -81,7 +80,7 @@ def _material_root(**mc_kwargs):
 
 
 def test_build_materials_steel_and_aluminium_320():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     steel = NS(id="M1", name="NV A36", guidref=None, grade=NS(value="A36"),
                density=_qty(7850.0, "Ukgoverm3"),
                yield_stress=_qty(355.0, "UNOvermm2"),
@@ -111,7 +110,7 @@ def test_build_materials_steel_and_aluminium_320():
 
 
 def test_build_materials_legacy_material_fallback():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     legacy = NS(id="M9", name="steel", guidref=None, grade=None,
                 density=_qty(7850.0, "Ukgoverm3"),
                 yield_stress=_qty(235.0, "UNOvermm2"),
@@ -343,7 +342,7 @@ def test_plate_cut_by_inner_contour():
 
 
 def test_limited_by_offset_and_contour_mid_point():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     lb_ref = NS(local_ref="PN9", guidref=None, ref_type="ocx:PanelRef",
                 offset=_qty(10.0, "Umm"),
                 offset_direction=_dir3(0.0, 0.0, 1.0),
@@ -365,7 +364,7 @@ def test_limited_by_offset_and_contour_mid_point():
 
 
 def test_hole2d_ellipse_parametric_variant():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     hole = NS(id="H1", name=None, guidref=None, contour=None,
               ellipse=NS(major_diameter=_qty(100.0, "Umm"),
                          minor_diameter=_qty(50.0, "Umm")),
@@ -379,13 +378,13 @@ def test_hole2d_ellipse_parametric_variant():
 
 
 def test_penetration_bracket_ref_field():
-    from ocx_model_validator.model.ir import IrPenetration
+    from ocx_model_core.model.ir import IrPenetration
     p = IrPenetration(id="PEN1", bracket_ref=Ref(local_ref="BR1"))
     assert p.bracket_ref.local_ref == "BR1"
 
 
 def test_principal_particulars_minimum_ballast_draught():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     pp = NS(lpp=None, rule_length=None, block_coefficient=None,
             moulded_breadth=None, moulded_depth=None, scantling_draught=None,
             design_speed=None, freeboard_length=None,
@@ -403,7 +402,7 @@ def test_principal_particulars_minimum_ballast_draught():
 
 
 def test_bulk_cargo_density():
-    from ocx_model_validator.model.ir import IrVessel
+    from ocx_model_core.model.ir import IrVessel
     comp = NS(id="C1", guidref=None,
               liquid_cargo=None, gaseous_cargo=None, unit_cargo=None,
               bulk_cargo=NS(bulk_cargo_type=None,

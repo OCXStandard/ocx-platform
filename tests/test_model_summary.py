@@ -3,11 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from loguru import logger
-
-from ocx_model_validator.model.ir import IrVessel
-from ocx_model_validator.model.ir.metadata import IrHeader
+from ocx_model_core.model.ir import IrVessel
+from ocx_model_core.model.ir.metadata import IrHeader
 
 STUB_MODEL = Path(__file__).parent / "data" / "ocx_310_stubs" / "ocxxml.3docx"
 

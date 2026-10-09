@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ocx_model_validator.validation.schema import validate_schema
+from ocx_model_core.validation.schema import validate_schema
 
 DATA = Path(__file__).parent / "data"
 STUB_320 = DATA / "ocx_320_stubs" / "ocxxml.3docx"
@@ -127,7 +127,7 @@ def _assert_valid(result) -> None:
 
 class TestRegistry:
     def test_330_schema_compiles(self):
-        from ocx_model_validator.validation.schema import SUPPORTED_VERSIONS, load_schema
+        from ocx_model_core.validation.schema import SUPPORTED_VERSIONS, load_schema
 
         assert SUPPORTED_VERSIONS["3.3.0"] == "ocx_330"
         assert load_schema("3.3.0") is not None

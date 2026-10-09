@@ -1,5 +1,5 @@
 """Tests for shared OCX schema-version detection."""
-from ocx_model_validator.parsers.version import detect_schema_version
+from ocx_model_core.parsers.version import detect_schema_version
 
 
 def test_detects_schema_version_attribute():

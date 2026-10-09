@@ -1,7 +1,7 @@
 """Smoke test: every name in ir.__all__ is importable and matches re-exports."""
 from __future__ import annotations
 
-import ocx_model_validator.model.ir as ir
+import ocx_model_core.model.ir as ir
 
 
 def test_all_names_are_importable():
@@ -23,7 +23,7 @@ def test_representative_new_types_present():
 
 
 def test_backward_compatible_core_imports_still_work():
-    from ocx_model_validator.model.ir import (  # noqa: F401
+    from ocx_model_core.model.ir import (  # noqa: F401
         IrMaterial,
         IrPanel,
         IrPlate,

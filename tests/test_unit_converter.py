@@ -12,14 +12,14 @@ from __future__ import annotations
 import math
 
 import pytest
-
-from ocx_model_validator.builders import OcxV3Builder
-from ocx_model_validator.model import IrUnit, Quantity
-from ocx_model_validator.model.units import (
+from ocx_model_core.builders import OcxV3Builder
+from ocx_model_core.model import IrUnit, Quantity
+from ocx_model_core.model.units import (
     UnitConverter,
     _compute_to_si_factor,
     build_unit_registry,
 )
+
 from tests.object_stubs import (
     StubEnumeratedRootUnit,
     StubRoot,
@@ -165,7 +165,7 @@ class TestBuildUnitRegistry:
     def test_real_model_unit_set(self):
         from pathlib import Path
 
-        from ocx_model_validator.parsers.load_tools import OcxParser
+        from ocx_model_core.parsers.load_tools import OcxParser
         model = Path("models/TR03_TC10_nast.3docx")
         if not model.exists():
             pytest.skip("Model not found")
@@ -254,8 +254,8 @@ class TestBuilderUnitRegistry:
     def test_real_model_vessel_has_registry(self):
         from pathlib import Path
 
-        from ocx_model_validator.builders import get_builder
-        from ocx_model_validator.parsers.load_tools import OcxParser
+        from ocx_model_core.builders import get_builder
+        from ocx_model_core.parsers.load_tools import OcxParser
         model = Path("models/TR03_TC10_nast.3docx")
         if not model.exists():
             pytest.skip("Model not found")

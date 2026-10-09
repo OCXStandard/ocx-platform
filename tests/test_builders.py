@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import pytest
-
-from ocx_model_validator.builders.base import UnsupportedSchemaVersionError
-from ocx_model_validator.builders.factory import get_builder
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir import IrVessel, ParentKind, ParentRef
+from ocx_model_core.builders.base import UnsupportedSchemaVersionError
+from ocx_model_core.builders.factory import get_builder
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir import IrVessel, ParentKind, ParentRef
 
 
 class TestBuilderFactory:
@@ -66,7 +65,7 @@ class TestOcxV3BuilderFromStub:
         assert b._qty(None) is None
 
     def test_v3_builder_qty_valid(self):
-        from ocx_model_validator.model.ir import Quantity
+        from ocx_model_core.model.ir import Quantity
         b = OcxV3Builder()
 
         class _Q:

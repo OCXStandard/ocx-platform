@@ -1,10 +1,10 @@
 """Builder population of cross-section IR fields (spec §3)."""
 from types import SimpleNamespace as NS
 
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef
-from ocx_model_validator.model.ir.geometry import IrCircle3D, IrCompositeCurve3D, IrLine3D
-from ocx_model_validator.model.ir.structural import IrVessel
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir.base import ParentKind, ParentRef
+from ocx_model_core.model.ir.geometry import IrCircle3D, IrCompositeCurve3D, IrLine3D
+from ocx_model_core.model.ir.structural import IrVessel
 
 PARENT = ParentRef(kind=ParentKind.PANEL, id="panel1")
 

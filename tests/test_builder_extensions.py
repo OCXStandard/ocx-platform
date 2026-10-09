@@ -6,8 +6,8 @@ of ``tests/test_ir_builder.py``.
 """
 from __future__ import annotations
 
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir import (
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir import (
     IrCircle3D,
     IrCircumArc3D,
     IrCompositeCurve3D,

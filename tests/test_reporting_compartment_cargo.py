@@ -1,13 +1,13 @@
 """Tests for cargo information in the compartments report."""
-from ocx_model_validator.model.ir.arrangement import (
+from ocx_model_core.model.ir.arrangement import (
     IrBulkCargo,
     IrCompartment,
     IrGaseousCargo,
     IrLiquidCargo,
     IrUnitCargo,
 )
-from ocx_model_validator.model.ir.base import Quantity, Ref
-from ocx_model_validator.model.ir.structural import IrVessel
+from ocx_model_core.model.ir.base import Quantity, Ref
+from ocx_model_core.model.ir.structural import IrVessel
 from ocx_model_validator.reporting.generators import compartments as compartments_gen
 
 

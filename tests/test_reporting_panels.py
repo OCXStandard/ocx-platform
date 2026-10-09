@@ -1,7 +1,7 @@
 """Tests for the panel report generator."""
-from ocx_model_validator.model.ir import IrMassProperties
-from ocx_model_validator.model.ir.base import IrCog, Quantity, Ref
-from ocx_model_validator.model.ir.structural import IrLimitedByRef, IrPanel, IrVessel
+from ocx_model_core.model.ir import IrMassProperties
+from ocx_model_core.model.ir.base import IrCog, Quantity, Ref
+from ocx_model_core.model.ir.structural import IrLimitedByRef, IrPanel, IrVessel
 from ocx_model_validator.reporting.generators import panels as panels_gen
 
 

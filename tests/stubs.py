@@ -36,7 +36,7 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, TypeVar
 
-from ocx_model_validator.parsers.load_tools import DeclarationOfOcxImport, OcxParser
+from ocx_model_core.parsers.load_tools import DeclarationOfOcxImport, OcxParser
 
 if TYPE_CHECKING:
     from lxml import etree
@@ -104,13 +104,13 @@ class OcxStubLoader:
     The ``load()`` classmethod:
 
     1. Reads the stub XML file.
-    2. Parses it via :class:`~ocx_model_validator.parsers.parser.OcxParser`.
+    2. Parses it via :class:`~ocx_model_core.parsers.parser.OcxParser`.
     3. Returns the typed OCX dataclass instance.
 
     Usage::
 
         from tests.stubs import StubMaterial, STUBS_DATA_DIR
-        from ocx_model_validator.parsers.load_tools import DeclarationOfOcxImport
+        from ocx_model_core.parsers.load_tools import DeclarationOfOcxImport
 
         stub_dir = STUBS_DATA_DIR / "ocx_310_stubs"
         decl = DeclarationOfOcxImport(name="ocx", version="3.1.0")

@@ -1,9 +1,9 @@
 """Tests for internal cross-link emission by report generators."""
-from ocx_model_validator.model.ir import IrMassProperties
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef, Quantity, Ref
-from ocx_model_validator.model.ir.catalogues import IrMaterial
-from ocx_model_validator.model.ir.sections import IrFlatBarSection
-from ocx_model_validator.model.ir.structural import IrPlate, IrStiffener, IrVessel
+from ocx_model_core.model.ir import IrMassProperties
+from ocx_model_core.model.ir.base import ParentKind, ParentRef, Quantity, Ref
+from ocx_model_core.model.ir.catalogues import IrMaterial
+from ocx_model_core.model.ir.sections import IrFlatBarSection
+from ocx_model_core.model.ir.structural import IrPlate, IrStiffener, IrVessel
 from ocx_model_validator.reporting.generators import bom as bom_gen
 from ocx_model_validator.reporting.generators import catalogues as catalogues_gen
 from ocx_model_validator.reporting.model import Link

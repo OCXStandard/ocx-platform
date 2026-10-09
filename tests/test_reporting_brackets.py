@@ -1,9 +1,9 @@
 """Tests for the bracket report generator."""
-from ocx_model_validator.model.ir import IrMassProperties
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef, Quantity, Ref
-from ocx_model_validator.model.ir.catalogues import IrMaterial
-from ocx_model_validator.model.ir.geometry import IrPoint3D, IrVector3D
-from ocx_model_validator.model.ir.structural import (
+from ocx_model_core.model.ir import IrMassProperties
+from ocx_model_core.model.ir.base import ParentKind, ParentRef, Quantity, Ref
+from ocx_model_core.model.ir.catalogues import IrMaterial
+from ocx_model_core.model.ir.geometry import IrPoint3D, IrVector3D
+from ocx_model_core.model.ir.structural import (
     IrBracket,
     IrFeatureCope,
     IrPanel,

@@ -1,7 +1,7 @@
 """Unit tests for cargo and design-view IR dataclasses."""
 from __future__ import annotations
 
-from ocx_model_validator.model.ir import (
+from ocx_model_core.model.ir import (
     IrBulkCargo,
     IrDesignView,
     IrGaseousCargo,

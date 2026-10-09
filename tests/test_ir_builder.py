@@ -15,9 +15,8 @@ a developer who adds a new Ir* type is reminded to create a real builder test.
 from __future__ import annotations
 
 import pytest
-
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir import (
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir import (
     IrBracket,
     IrBulbFlatSection,
     IrEdgeReinforcement,
@@ -39,6 +38,7 @@ from ocx_model_validator.model.ir import (
     ParentKind,
     ParentRef,
 )
+
 from tests.stubs import (
     StubBarSection,
     StubBracket,
@@ -503,7 +503,7 @@ class TestMissingIrClasses:
         ids=[entry[0] for entry in MISSING_IR_CLASSES],
     )
     def test_ir_class_not_yet_implemented(self, ocx_name, reason):
-        import ocx_model_validator.model.ir as ir_module
+        import ocx_model_core.model.ir as ir_module
 
         ir_class_name = f"Ir{ocx_name}"
         assert not hasattr(ir_module, ir_class_name), (

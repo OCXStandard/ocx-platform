@@ -2,33 +2,57 @@
 
 ## Project layout
 
+A **uv workspace** (virtual root — the root `pyproject.toml` holds only
+`[tool.uv.workspace]`, shared dev deps, ruff and pytest config). Dependency
+direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`.
+
 ```
-ocx-model-validator/           ← repo root (pyproject.toml here)
-├── pyproject.toml
+ocx-model-validator/           ← repo / workspace root
+├── pyproject.toml              ← workspace config (not a package)
+├── uv.lock                     ← single lockfile for all members
 ├── ocx_model_validator.md
-├── ocx_model_validator/       ← Python package
-│   ├── __init__.py             ← public API surface
-│   ├── exeptions.py            ← exception hierarchy (note: intentional spelling)
-│   ├── utils.py                ← MetaData helpers for xsdata dataclasses
-│   ├── model/
-│   │   ├── ir.py               ← all IR dataclasses (IrVessel, IrPanel, …)
-│   │   └── units.py            ← UnitConverter, build_unit_registry
-│   ├── parsers/
-│   │   ├── base_parser.py      ← IParser, IModuleDeclaration interfaces
-│   │   ├── dynamic_loader.py   ← DynamicLoader, DeclarationOfOcxImport
-│   │   └── parser.py           ← OcxParser (detects version, delegates to DynamicLoader)
-│   ├── validation/
-│   │   └── schema.py           ← offline XSD validation (lxml + vendored schemas/)
-│   ├── schemas/                 ← vendored OCX + UnitsML XSDs (package data)
-│   └── builders/
-│       ├── base.py             ← IOcxBuilder ABC, UnsupportedSchemaVersionError
-│       ├── factory.py          ← get_builder(version) — _BUILDER_REGISTRY dispatch
-│       └── v3_builder.py       ← OcxV3Builder (handles all v3.x)
-└── tests/
+├── packages/
+│   ├── ocx-model-core/         ← parse .3docx → IR; no CLI
+│   │   └── src/ocx_model_core/
+│   │       ├── __init__.py      ← core public API surface
+│   │       ├── exeptions.py     ← exception hierarchy (note: intentional spelling)
+│   │       ├── utils.py         ← MetaData helpers for xsdata dataclasses
+│   │       ├── writeback.py     ← apply scantling reports to .3docx files
+│   │       ├── generate_stubs.py← xsdata stub generator (repo-internal)
+│   │       ├── model/
+│   │       │   ├── ir/          ← IR dataclasses (IrVessel, IrPanel, …)
+│   │       │   └── units.py     ← UnitConverter, build_unit_registry
+│   │       ├── parsers/
+│   │       │   ├── base_parser.py    ← IParser, IModuleDeclaration interfaces
+│   │       │   ├── dynamic_loader.py ← DynamicLoader, DeclarationOfOcxImport
+│   │       │   └── parser.py         ← OcxParser (detects version, delegates to DynamicLoader)
+│   │       ├── validation/
+│   │       │   └── schema.py    ← offline XSD validation (lxml + vendored schemas/)
+│   │       ├── schemas/         ← vendored OCX + UnitsML XSDs (package data)
+│   │       └── builders/
+│   │           ├── base.py      ← IOcxBuilder ABC, UnsupportedSchemaVersionError
+│   │           ├── factory.py   ← get_builder(version) — _BUILDER_REGISTRY dispatch
+│   │           └── v3_builder.py← OcxV3Builder (handles all v3.x)
+│   ├── ocx-geometry/           ← geometry evaluation kernel (numpy, no display stack)
+│   │   └── src/ocx_geometry/
+│   │       └── measure.py       ← length/area/closure measurements on the IR
+│   └── ocx-model-validator/    ← reports, CLI, MCP server
+│       └── src/ocx_model_validator/
+│           ├── __init__.py      ← re-exports the core public API (back-compat)
+│           ├── cli.py           ← validator / ocx-validate entrypoint
+│           ├── frame_table.py
+│           ├── reporting/       ← generators/ + renderers/ (rich, md, html)
+│           └── mcp/             ← FastMCP "ocx-mcp" server + session state
+└── tests/                      ← single shared test suite, run from the root
     ├── conftest.py             ← fixtures; discovers stub dirs matching ocx_\d+_stubs
     ├── stubs.py / object_stubs.py
     └── test_*.py
 ```
+
+Import rule: parser/builder/IR/units/schema-validation code lives under
+`ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`.
+The validator never reaches into render/tessellation code — a future
+`ocx-render` package depends on core + geometry, not the other way around.
 
 ## Build, test, and lint
 
@@ -68,10 +92,10 @@ validator report all          model.3docx --destination report.html
 validator validate schema model.3docx [--max-errors N]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
-uv run python ocx_model_validator/generate_stubs.py
+uv run python -m ocx_model_core.generate_stubs
 
 # Wipe and regenerate all stubs
-uv run python ocx_model_validator/generate_stubs.py --force
+uv run python -m ocx_model_core.generate_stubs --force
 ```
 
 The `models/` directory at the repo root is the source for stub generation. Place `.3docx` files there before running the stub-generation script. Generated stubs land in `tests/data/ocx_{version}_stubs/` and `tests/data/unitsml_stubs/`.

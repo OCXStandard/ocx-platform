@@ -3,9 +3,8 @@ import os
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
-
 from ocx_model_validator.cli import app
+from typer.testing import CliRunner
 
 MODEL = Path(os.environ.get("OCX_VLCC_MODEL",
                             r"models\D-VLCC_1-HOLD-OCX-simple_v3.3docx"))

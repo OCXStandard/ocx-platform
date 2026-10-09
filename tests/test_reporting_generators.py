@@ -1,17 +1,16 @@
 """Tests for report generators."""
 import pytest
-
-from ocx_model_validator.model.ir.arrangement import IrCompartment
-from ocx_model_validator.model.ir.base import IrCog, IrMassProperties, Quantity
-from ocx_model_validator.model.ir.catalogues import IrHole2D, IrHoleShapeCatalogue, IrMaterial
-from ocx_model_validator.model.ir.geometry import IrCoordinateSystem, IrRefPlane
-from ocx_model_validator.model.ir.sections import (
+from ocx_model_core.model.ir.arrangement import IrCompartment
+from ocx_model_core.model.ir.base import IrCog, IrMassProperties, Quantity
+from ocx_model_core.model.ir.catalogues import IrHole2D, IrHoleShapeCatalogue, IrMaterial
+from ocx_model_core.model.ir.geometry import IrCoordinateSystem, IrRefPlane
+from ocx_model_core.model.ir.sections import (
     IrBulbFlatSection,
     IrFlatBarSection,
     IrGenericSection,
     IrTSection,
 )
-from ocx_model_validator.model.ir.structural import IrVessel
+from ocx_model_core.model.ir.structural import IrVessel
 from ocx_model_validator.reporting.generators import catalogues as catalogues_gen
 from ocx_model_validator.reporting.generators import compartments as compartments_gen
 from ocx_model_validator.reporting.generators import frame_table as frame_table_gen
@@ -296,7 +295,7 @@ def test_compartments_report_includes_compartment_properties():
 
 
 def _vessel_with_frames_and_compartment() -> IrVessel:
-    from ocx_model_validator.model.ir.geometry import IrLine3D, IrPoint3D
+    from ocx_model_core.model.ir.geometry import IrLine3D, IrPoint3D
 
     vessel = _vessel_with_frames()  # grid frames FR0/FR1/FR2 at 0/800/1600 mm
     vessel.compartments["C1"] = IrCompartment(
@@ -324,7 +323,7 @@ def test_compartment_extent_x_shown_as_frame_position():
 
 def test_compartment_extent_x_falls_back_to_mm_without_frame_table():
     vessel = IrVessel(id="V1", name="MV Test")
-    from ocx_model_validator.model.ir.geometry import IrLine3D, IrPoint3D
+    from ocx_model_core.model.ir.geometry import IrLine3D, IrPoint3D
     vessel.compartments["C1"] = IrCompartment(
         id="C1", name="Tank 1", compartment_purpose="void",
         face_boundary_curves=[
@@ -341,9 +340,9 @@ def test_compartment_extent_x_falls_back_to_mm_without_frame_table():
 
 
 def test_model_extent_report():
-    from ocx_model_validator.model.ir.base import ParentKind, ParentRef
-    from ocx_model_validator.model.ir.geometry import IrLine3D, IrPoint3D
-    from ocx_model_validator.model.ir.structural import IrStiffener
+    from ocx_model_core.model.ir.base import ParentKind, ParentRef
+    from ocx_model_core.model.ir.geometry import IrLine3D, IrPoint3D
+    from ocx_model_core.model.ir.structural import IrStiffener
     from ocx_model_validator.reporting.generators import model_extent as extent_gen
 
     parent = ParentRef(kind=ParentKind.VESSEL, id="V1")

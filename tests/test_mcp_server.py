@@ -2,8 +2,8 @@
 import asyncio
 
 import pytest
-
 from ocx_model_validator.mcp import server, state
+
 from tests.section_fixtures import make_synthetic_vessel
 
 

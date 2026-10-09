@@ -4,8 +4,8 @@ Covers nose dimensions, free edge radius, reinforcement type, the
 FeatureCope sub-element and the FlangeEdgeReinforcement sub-element.
 Uses inline stub objects (builders access raw OCX fields via getattr).
 """
-from ocx_model_validator.builders.v3_builder import OcxV3Builder
-from ocx_model_validator.model.ir.base import ParentKind, ParentRef, Quantity
+from ocx_model_core.builders.v3_builder import OcxV3Builder
+from ocx_model_core.model.ir.base import ParentKind, ParentRef, Quantity
 
 
 class _Qty:

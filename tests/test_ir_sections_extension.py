@@ -1,13 +1,13 @@
 """IR extensions for cross-section extraction (spec §3)."""
-from ocx_model_validator.model.ir.arrangement import IrCompartment
-from ocx_model_validator.model.ir.base import IrCog, ParentKind, ParentRef, Quantity
-from ocx_model_validator.model.ir.geometry import (
+from ocx_model_core.model.ir.arrangement import IrCompartment
+from ocx_model_core.model.ir.base import IrCog, ParentKind, ParentRef, Quantity
+from ocx_model_core.model.ir.geometry import (
     IrLine3D,
     IrPlane3D,
     IrRefPlane,
     IrUnboundedGeometry,
 )
-from ocx_model_validator.model.ir.structural import IrPanel, IrPlate, IrStiffener
+from ocx_model_core.model.ir.structural import IrPanel, IrPlate, IrStiffener
 
 PARENT = ParentRef(kind=ParentKind.PANEL, id="panel1")
 
