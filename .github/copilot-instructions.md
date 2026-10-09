@@ -1,4 +1,4 @@
-# Copilot Instructions — ocx-model-validator
+# Copilot Instructions — ocx-platform
 
 ## Project layout
 
@@ -7,7 +7,7 @@ A **uv workspace** (virtual root — the root `pyproject.toml` holds only
 direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`.
 
 ```
-ocx-model-validator/           ← repo / workspace root
+ocx-platform/                  ← repo / workspace root
 ├── pyproject.toml              ← workspace config (not a package)
 ├── uv.lock                     ← single lockfile for all members
 ├── ocx_model_validator.md

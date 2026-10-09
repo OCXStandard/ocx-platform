@@ -1,9 +1,9 @@
-# OCX Model Validator
+# OCX Platform
 
 [![Python](https://img.shields.io/badge/python-%3E%3D3.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A Python library for parsing and validating [OCX](https://3docx.org/) `.3docx` ship-model files.
+A Python workspace for parsing and validating [OCX](https://3docx.org/) `.3docx` ship-model files.
 It translates versioned OCX xsdata dataclasses into a **schema-neutral Intermediate Representation (IR)**,
 making downstream tools independent of any particular OCX schema version.
 
@@ -87,7 +87,7 @@ MCP client configuration (e.g. `mcp.json`):
   "mcpServers": {
     "ocx": {
       "command": "uv",
-      "args": ["run", "--directory", "C:\\PythonDev\\ocx-model-validator", "ocx-mcp"]
+      "args": ["run", "--directory", "C:\\PythonDev\\ocx-platform", "ocx-mcp"]
     }
   }
 }
@@ -108,7 +108,7 @@ MCP client configuration (e.g. `mcp.json`):
 A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with three packages:
 
 ```
-ocx-model-validator/               ← workspace root (virtual — no package here)
+ocx-platform/                      ← workspace root (virtual — no package here)
 ├── pyproject.toml                 ← [tool.uv.workspace], shared dev deps, ruff, pytest
 ├── uv.lock                        ← single lockfile for all members
 ├── packages/

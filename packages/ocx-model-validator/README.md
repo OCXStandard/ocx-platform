@@ -5,5 +5,5 @@ Validate OCX `.3docx` ship model files: schema validation, model reports
 BOM), the `validator` / `ocx-validate` CLI and the `ocx-mcp` MCP server.
 
 Depends on `ocx-model-core` (parsing + IR) and `ocx-geometry` (geometry
-checks). Part of the OCX model validator workspace. See the repository root
+checks). Part of the ocx-platform workspace. See the repository root
 README.
