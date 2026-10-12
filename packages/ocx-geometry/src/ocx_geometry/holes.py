@@ -26,7 +26,7 @@ def _circle_segments(r: float, tol: float) -> int:
     the chordal tolerance as well (relative area error ~ (2*pi/n)**2 / 6).
     """
     sag = tol / 2.0
-    if r <= sag:
+    if sag <= 0 or r <= sag:
         return _MIN_SEGMENTS
     return max(_MIN_SEGMENTS,
                int(np.ceil(2.0 * np.pi / (2.0 * np.arccos(1.0 - sag / r)))))
@@ -66,6 +66,8 @@ def parametric_profile(hole: IrParametricHole | None, length: LengthResolver,
         e = 2.0
         if v == "super_elliptical" and hole.exponent is not None:
             e = hole.exponent.value or 2.0
+            if e <= 0:
+                return None
         t = np.linspace(0.0, 2.0 * np.pi, _circle_segments(max(a, b), tol),
                         endpoint=False)
         c, s = np.cos(t), np.sin(t)

@@ -69,6 +69,19 @@ class TestParametricProfiles:
                              exponent=Quantity(2.0, "UDimless")), L, TOL)
         assert _poly(p).area == pytest.approx(np.pi * 0.6 * 0.3, rel=0.02)
 
+    def test_superellipse_negative_exponent_returns_none(self):
+        assert parametric_profile(
+            IrParametricHole("super_elliptical", major_diameter=q(1.2),
+                             minor_diameter=q(0.6),
+                             exponent=Quantity(-2.0, "UDimless")),
+            L, TOL) is None
+
+    def test_non_positive_tol_does_not_crash(self):
+        p = parametric_profile(
+            IrParametricHole("parametric_circle", diameter=q(0.5)), L, 0.0)
+        assert len(p) >= 12
+        assert np.isfinite(p).all()
+
     def test_mickey_ears_bigger_than_rectangle(self):
         p = parametric_profile(
             IrParametricHole("rectangular_mickey_mouse_ears", height=q(0.8),
