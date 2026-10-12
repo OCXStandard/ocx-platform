@@ -485,6 +485,16 @@ class OcxV3Builder(IOcxBuilder):
         logger.debug("Unknown curve type: {}", type(elem).__name__)
         return None
 
+    def _curve_or_contour(self, elem):
+        """Build a curve element directly, or unwrap a 3.2.0 wrapper
+        (e.g. BaseCurve) that holds the actual curve(s) as children."""
+        if elem is None:
+            return None
+        built = self._build_curve(elem) if not isinstance(elem, (list, tuple)) else None
+        if built is not None:
+            return built
+        return self._build_contour(elem)
+
     def _build_contour(self, container):
         """Build one IR curve from a TraceLine/OuterContour container."""
         if isinstance(container, (list, tuple)):
@@ -590,12 +600,17 @@ class OcxV3Builder(IOcxBuilder):
                                 height=self._qty(getattr(elem, "height", None)),
                                 normal=normal, point_on_surface=pos)
         if "extruded" in name:
+            # 3.2.0 wraps the sweep direction in a Sweep element
+            # (Vector3D + SweepLength); 3.1.0 has a bare Vector3D.
+            sweep_el = _first(getattr(elem, "sweep", None))
+            if sweep_el is not None and getattr(sweep_el, "direction", None) is None:
+                sweep_el = _first(getattr(sweep_el, "vector3_d", None))
             return IrExtrudedSurface(
                 id=sid,
-                base_curve=self._build_curve(getattr(elem, "base_curve", None)),
-                sweep=self._vec(getattr(elem, "sweep", None)),
-                sweep_curve=self._build_curve(getattr(elem, "sweep_curve", None)),
-                face_boundary_curve=self._build_curve(getattr(elem, "face_boundary_curve", None)),
+                base_curve=self._curve_or_contour(getattr(elem, "base_curve", None)),
+                sweep=self._vec(sweep_el),
+                sweep_curve=self._curve_or_contour(getattr(elem, "sweep_curve", None)),
+                face_boundary_curve=self._curve_or_contour(getattr(elem, "face_boundary_curve", None)),
                 normal=normal, point_on_surface=pos)
         if "nurbssurface" in name or "nurbs" in name:
             return IrNurbsSurface(id=sid, normal=normal, point_on_surface=pos)
