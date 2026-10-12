@@ -431,6 +431,12 @@ def make_lscm(members: list[SurfaceParam], tol_m: float,
         if not ok.any():
             logger.debug("LSCM: chart collapsed")
             return None
+        if not ok.all():
+            # drop UV-collapsed triangles: they would bypass the quality
+            # gates yet yield NaN barycentrics on queries
+            cm.F, cm.tri_member = cm.F[ok], cm.tri_member[ok]
+            tri3, a3, a2s = tri3[ok], a3[ok], a2s[ok]
+            ok = np.ones(len(cm.F), dtype=bool)
         maj = 1.0 if a2s[ok].sum() >= 0.0 else -1.0
         flipped = float((np.sign(a2s[ok]) != maj).mean())
         if flipped > _MAX_FLIPPED:
