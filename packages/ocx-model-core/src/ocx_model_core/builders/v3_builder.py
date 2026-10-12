@@ -810,6 +810,16 @@ class OcxV3Builder(IOcxBuilder):
 
     def _parametric_hole(self, h) -> IrParametricHole | None:
         """First present parametric variant on a raw Hole2D, with dimensions."""
+
+        def _exponent(exp) -> Quantity | None:
+            # SuperElliptical.exponent is a bare float in the real xsdata
+            # bindings; tolerate a quantity-shaped value for older stubs.
+            if exp is None:
+                return None
+            if hasattr(exp, "numericvalue"):
+                return self._qty(exp)
+            return Quantity(float(exp), "")
+
         for attr in self._PARAMETRIC_ATTRS:
             p = getattr(h, attr, None)
             if p is None:
@@ -824,7 +834,7 @@ class OcxV3Builder(IOcxBuilder):
                 major_diameter=self._qty(getattr(p, "major_diameter", None)),
                 minor_diameter=self._qty(getattr(p, "minor_diameter", None)),
                 displacement=self._qty(getattr(p, "displacement", None)),
-                exponent=self._qty(getattr(p, "exponent", None)))
+                exponent=_exponent(getattr(p, "exponent", None)))
         return None
 
     def _build_hole_catalogue(self, cat, ir: IrVessel) -> None:

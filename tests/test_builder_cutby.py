@@ -40,9 +40,21 @@ class TestParametricDimensions:
             _hole2d("H2", parametric_circle=NS(diameter=_qty(0.5))),
             _hole2d("H3", super_elliptical=NS(major_diameter=_qty(1.2),
                                               minor_diameter=_qty(0.6),
-                                              exponent=_qty(2.5, "UDimless")))])
+                                              exponent=2.5))])
         ir = IrVessel(id="v1")
         _b()._build_hole_catalogue(cat, ir)
         assert ir.hole_shape_catalogue.holes["H2"].parametric.diameter.value == 0.5
         p3 = ir.hole_shape_catalogue.holes["H3"].parametric
         assert p3.variant == "super_elliptical" and p3.exponent.value == 2.5
+        assert p3.exponent.unit == ""
+
+    def test_superellipse_quantity_shaped_exponent(self):
+        # Older/stub bindings may wrap the exponent as a quantity.
+        cat = NS(id="HC", name=None, hole2_d=[
+            _hole2d("H4", super_elliptical=NS(major_diameter=_qty(1.2),
+                                              minor_diameter=_qty(0.6),
+                                              exponent=_qty(2.5, "UDimless")))])
+        ir = IrVessel(id="v1")
+        _b()._build_hole_catalogue(cat, ir)
+        p4 = ir.hole_shape_catalogue.holes["H4"].parametric
+        assert p4.exponent.value == 2.5 and p4.exponent.unit == "UDimless"
