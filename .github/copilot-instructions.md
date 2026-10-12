@@ -107,7 +107,7 @@ validator report all          model.3docx --destination report.html
 # Validate against the bundled OCX XSD (exit 0 valid / 1 errors / 2 cannot validate)
 validator validate schema model.3docx [--max-errors N]
 
-# Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse)
+# Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse / 3 cannot write output)
 ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)

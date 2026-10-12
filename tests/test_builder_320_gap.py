@@ -250,6 +250,50 @@ def test_surfaces_extract_normal_and_point_on_surface(surface_cls, ir_cls, attrs
     assert ir.point_on_surface.z == 5.0
 
 
+class BaseCurve(NS):
+    pass
+
+
+class Sweep(NS):
+    pass
+
+
+def test_extruded_surface_unwraps_320_basecurve_and_sweep_wrappers():
+    """3.2.0 wraps the base curve in BaseCurve and the sweep in Sweep (Vector3D + SweepLength)."""
+    surface = ExtrudedSurface(
+        id="E2",
+        normal=_dir3(0.0, 0.0, 1.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        base_curve=BaseCurve(line3_d=[
+            Line3D(id="L1", start_point=_pt3(0.0, 0.0, 0.0), end_point=_pt3(1.0, 0.0, 0.0)),
+            Line3D(id="L2", start_point=_pt3(1.0, 0.0, 0.0), end_point=_pt3(1.0, 1.0, 0.0)),
+        ]),
+        sweep=Sweep(vector3_d=_dir3(1.0, 0.0, 0.0), sweep_length=_qty(12.0, "Um")),
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrExtrudedSurface)
+    assert ir.base_curve is not None
+    assert len(ir.base_curve.segments) == 2
+    assert (ir.sweep.x, ir.sweep.y, ir.sweep.z) == (1.0, 0.0, 0.0)
+
+
+def test_extruded_surface_accepts_310_bare_curve_and_vector():
+    """3.1.0 shape: base_curve is a bare curve element, sweep a bare Vector3D."""
+    surface = ExtrudedSurface(
+        id="E3",
+        normal=_dir3(0.0, 0.0, 1.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        base_curve=Line3D(id="L1", start_point=_pt3(0.0, 0.0, 0.0),
+                          end_point=_pt3(2.0, 0.0, 0.0)),
+        sweep=_dir3(0.0, 1.0, 0.0),
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrExtrudedSurface)
+    assert ir.base_curve is not None
+    assert ir.base_curve.end.x == 2.0
+    assert (ir.sweep.x, ir.sweep.y, ir.sweep.z) == (0.0, 1.0, 0.0)
+
+
 def test_ref_extracts_offset_and_direction():
     raw = NS(local_ref="X1", guidref="g-1",
              offset=_qty(50.0, "Umm"), offset_direction=_dir3(0.0, 1.0, 0.0))
