@@ -1,5 +1,6 @@
 """End-to-end render_model test on a synthetic IrVessel."""
 import numpy as np
+import pytest
 from ocx_geometry.backend import TessellationOptions
 from ocx_model_core.model.ir.base import IrVector3D, ParentKind, ParentRef, Quantity, Ref
 from ocx_model_core.model.ir.geometry import (
@@ -248,4 +249,56 @@ class TestRenderModel:
         on_side = (np.abs(v3[:, 1] - 2.0) < 1e-6) & (v3[:, 2] > 1.1)
         assert on_bottom.any(), "no vertices on the flat bottom"
         assert on_side.any(), "no vertices on the flat side"
+
+
+def _triangle_area(m):
+    v, t = m.vertices, m.triangles
+    a = v[t[:, 1]] - v[t[:, 0]]
+    b = v[t[:, 2]] - v[t[:, 0]]
+    return 0.5 * float(np.linalg.norm(np.cross(a, b), axis=1).sum())
+
+
+class TestCutByHoles:
+    def _vessel_with_hole(self, with_transformation=True):
+        from ocx_model_core.model.ir.catalogues import (
+            IrHole2D,
+            IrHoleShapeCatalogue,
+            IrParametricHole,
+        )
+        from ocx_model_core.model.ir.geometry import IrTransformation
+        from ocx_model_core.model.ir.structural import IrHole2DContour
+
+        vessel = make_vessel()
+        vessel.hole_shape_catalogue = IrHoleShapeCatalogue(
+            id="HC", holes={"H1": IrHole2D(
+                id="H1", parametric=IrParametricHole(
+                    "parametric_circle", diameter=Quantity(1.0, "Um")))})
+        tr = (IrTransformation(origin=pt(2, 1, 0),
+                               primary_axis=IrVector3D(1, 0, 0),
+                               secondary_axis=IrVector3D(0, 1, 0))
+              if with_transformation else None)
+        vessel.panels["pan1"].cut_by_holes.append(
+            IrHole2DContour(id="hc1", hole_ref=Ref("H1"), transformation=tr))
+        return vessel
+
+    def test_panel_hole_is_cut_from_plate(self):
+        full = _triangle_area(next(
+            m for m in render_model(make_vessel()).meshes if m.kind == "plate"))
+        holed = _triangle_area(next(
+            m for m in render_model(self._vessel_with_hole()).meshes
+            if m.kind == "plate"))
+        # plate is 4 x 2 m; the Ø1 m hole removes ~0.785 m²
+        assert holed == pytest.approx(full - np.pi * 0.5**2, rel=0.05)
+
+    def test_unresolvable_hole_ref_is_logged_not_fatal(self):
+        vessel = self._vessel_with_hole()
+        vessel.hole_shape_catalogue.holes.clear()
+        result = render_model(vessel)
+        assert any(m.kind == "plate" for m in result.meshes)
+        assert result.skipped.get("hole:hc1") == "unresolvable HoleRef"
+
+    def test_missing_transformation_is_logged_not_fatal(self):
+        result = render_model(self._vessel_with_hole(with_transformation=False))
+        assert any(m.kind == "plate" for m in result.meshes)
+        assert result.skipped.get("hole:hc1") == "missing or degenerate transformation"
 

@@ -18,6 +18,7 @@ from ocx_geometry.backend import (
     TessellationOptions,
 )
 from ocx_geometry.curves import sample_contour, sample_curve
+from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.mesh import PartMesh
 from ocx_geometry.sections_2d import fallback_polygon, section_polygon
@@ -112,6 +113,63 @@ def _best_param(candidates: list[SurfaceParam],
     return best
 
 
+def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
+                    options: TessellationOptions
+                    ) -> tuple[list[np.ndarray], dict[str, str]]:
+    """All hole polylines for one plate: inline contours + resolved CutBy holes.
+
+    Returns (hole polylines in metres, failures keyed ``hole:<id>``).
+    Panel-level holes are offered to every plate of the panel; the UV
+    polygon clean-up clips or drops holes outside the plate region.
+    """
+    holes: list[np.ndarray] = []
+    failures: dict[str, str] = {}
+
+    inline = list(plate.cut_by_contours)
+    if panel is not None:
+        inline += panel.cut_by_contours
+    for c in inline:
+        h = sample_contour(c, length, options.tolerance_m,
+                           options.snap_tolerance_m)
+        if h is not None:
+            holes.append(h)
+
+    entries = list(plate.cut_by_holes)
+    if panel is not None:
+        entries += panel.cut_by_holes
+    if not entries:
+        return holes, failures
+
+    cat = vessel.hole_shape_catalogue
+    for hc in entries:
+        key = f"hole:{hc.id or (hc.hole_ref.local_ref if hc.hole_ref else '?')}"
+        shape = None
+        if cat is not None and hc.hole_ref is not None:
+            shape = cat.holes.get(hc.hole_ref.local_ref)
+            if shape is None and hc.hole_ref.guidref:
+                shape = next((h for h in cat.holes.values()
+                              if h.guidref == hc.hole_ref.guidref), None)
+        if shape is None:
+            failures[key] = "unresolvable HoleRef"
+            continue
+        if shape.contour is not None:
+            pts = sample_contour(shape.contour, length, options.tolerance_m,
+                                 options.snap_tolerance_m)
+            profile = pts[:, :2] if pts is not None else None
+        else:
+            profile = parametric_profile(shape.parametric, length,
+                                         options.tolerance_m)
+        if profile is None or len(profile) < 3:
+            failures[key] = "unusable hole profile"
+            continue
+        placed = place_hole(profile, hc.transformation, length)
+        if placed is None:
+            failures[key] = "missing or degenerate transformation"
+            continue
+        holes.append(placed)
+    return holes, failures
+
+
 def _tessellate_plates(vessel: IrVessel,
                        params: dict[str, list[SurfaceParam]],
                        tess: ITessellator, length: LengthResolver,
@@ -139,12 +197,13 @@ def _tessellate_plates(vessel: IrVessel,
                      or _best_param(candidates, contour))
         else:
             param = candidates[0]
-        holes = []
-        for c in plate.cut_by_contours:
-            h = sample_contour(c, length, options.tolerance_m,
-                               options.snap_tolerance_m)
-            if h is not None:
-                holes.append(h)
+        panel = vessel.panels.get(panel_id)
+        holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
+                                               options)
+        for key, reason in hole_failures.items():
+            logger.warning("CutBy hole not applied to {} — {} ({})",
+                           plate.id, reason, key)
+        result.skipped.update(hole_failures)
         pm = tess.tessellate_trimmed_surface(
             plate.id, plate.name or plate.id, "plate", contour, holes,
             param, options)
