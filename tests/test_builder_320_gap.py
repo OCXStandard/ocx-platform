@@ -250,6 +250,95 @@ def test_surfaces_extract_normal_and_point_on_surface(surface_cls, ir_cls, attrs
     assert ir.point_on_surface.z == 5.0
 
 
+class BaseCurve(NS):
+    pass
+
+
+class Sweep(NS):
+    pass
+
+
+def test_extruded_surface_unwraps_320_basecurve_and_sweep_wrappers():
+    """3.2.0 wraps the base curve in BaseCurve and the sweep in Sweep (Vector3D + SweepLength)."""
+    surface = ExtrudedSurface(
+        id="E2",
+        normal=_dir3(0.0, 0.0, 1.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        base_curve=BaseCurve(line3_d=[
+            Line3D(id="L1", start_point=_pt3(0.0, 0.0, 0.0), end_point=_pt3(1.0, 0.0, 0.0)),
+            Line3D(id="L2", start_point=_pt3(1.0, 0.0, 0.0), end_point=_pt3(1.0, 1.0, 0.0)),
+        ]),
+        sweep=Sweep(vector3_d=_dir3(1.0, 0.0, 0.0), sweep_length=_qty(12.0, "Um")),
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrExtrudedSurface)
+    assert ir.base_curve is not None
+    assert len(ir.base_curve.segments) == 2
+    assert (ir.sweep.x, ir.sweep.y, ir.sweep.z) == (1.0, 0.0, 0.0)
+
+
+def test_extruded_surface_accepts_310_bare_curve_and_vector():
+    """3.1.0 shape: base_curve is a bare curve element, sweep a bare Vector3D."""
+    surface = ExtrudedSurface(
+        id="E3",
+        normal=_dir3(0.0, 0.0, 1.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        base_curve=Line3D(id="L1", start_point=_pt3(0.0, 0.0, 0.0),
+                          end_point=_pt3(2.0, 0.0, 0.0)),
+        sweep=_dir3(0.0, 1.0, 0.0),
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrExtrudedSurface)
+    assert ir.base_curve is not None
+    assert ir.base_curve.end.x == 2.0
+    assert (ir.sweep.x, ir.sweep.y, ir.sweep.z) == (0.0, 1.0, 0.0)
+
+
+def test_nurbs_surface_populates_degrees_knots_and_control_grid():
+    """NURBSSurface u/v properties, knot vectors and the u-major control grid."""
+    surface = NurbsSurface(
+        id="N2",
+        normal=_dir3(0.0, -1.0, 0.0),
+        point_on_surface=_pt3(5.0, 10.0, 10.6),
+        u_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        v_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        uknot_vector=NS(value=[0.0, 0.0, 2800.0, 2800.0]),
+        vknot_vector=NS(value=[0.0, 0.0, 10000.0, 10000.0]),
+        control_pt_list=[NS(control_point=[
+            _pt3(10.0, 10.0, 12.0), _pt3(0.0, 10.0, 12.0),
+            _pt3(10.0, 10.0, 9.2), _pt3(0.0, 10.0, 9.2),
+        ])],
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrNurbsSurface)
+    assert ir.u_degree == 1
+    assert ir.v_degree == 1
+    assert ir.u_knot_vector == [0.0, 0.0, 2800.0, 2800.0]
+    assert ir.v_knot_vector == [0.0, 0.0, 10000.0, 10000.0]
+    # Flat ControlPtList is u-major: rows are fixed-u, varying v.
+    assert len(ir.control_points) == 2
+    assert len(ir.control_points[0]) == 2
+    assert ir.control_points[0][1].x == 0.0
+    assert ir.control_points[1][0].z == 9.2
+
+
+def test_nurbs_surface_mismatched_grid_yields_empty_control_points():
+    """A control-point count that disagrees with numCtrlPts u*v degrades to []."""
+    surface = NurbsSurface(
+        id="N3",
+        normal=_dir3(0.0, -1.0, 0.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        u_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        v_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        uknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        vknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        control_pt_list=[NS(control_point=[_pt3(0.0, 0.0, 0.0)])],
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrNurbsSurface)
+    assert ir.control_points == []
+
+
 def test_ref_extracts_offset_and_direction():
     raw = NS(local_ref="X1", guidref="g-1",
              offset=_qty(50.0, "Umm"), offset_direction=_dir3(0.0, 1.0, 0.0))
@@ -374,7 +463,7 @@ def test_hole2d_ellipse_parametric_variant():
     cat = NS(id="HC1", name=None, hole2_d=[hole])
     ir = IrVessel(id="v1")
     _b()._build_hole_catalogue(cat, ir)
-    assert ir.hole_shape_catalogue.holes["H1"].parametric == {"variant": "ellipse"}
+    assert ir.hole_shape_catalogue.holes["H1"].parametric.variant == "ellipse"
 
 
 def test_penetration_bracket_ref_field():

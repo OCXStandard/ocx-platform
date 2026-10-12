@@ -4,7 +4,8 @@
 
 A **uv workspace** (virtual root — the root `pyproject.toml` holds only
 `[tool.uv.workspace]`, shared dev deps, ruff and pytest config). Dependency
-direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`.
+direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`, and
+`ocx-render` → `ocx-geometry` → `ocx-model-core`.
 
 ```
 ocx-platform/                  ← repo / workspace root
@@ -35,7 +36,21 @@ ocx-platform/                  ← repo / workspace root
 │   │           └── v3_builder.py← OcxV3Builder (handles all v3.x)
 │   ├── ocx-geometry/           ← geometry evaluation kernel (numpy, no display stack)
 │   │   └── src/ocx_geometry/
-│   │       └── measure.py       ← length/area/closure measurements on the IR
+│   │       ├── measure.py       ← length/area/closure measurements on the IR
+│   │       ├── backend.py       ← numpy backend helpers for tessellation
+│   │       ├── surfaces.py      ← IR surface → parametric surface evaluation
+│   │       ├── curves.py        ← IR curve sampling / evaluation
+│   │       ├── sweep.py         ← profile sweeps along traces (stiffeners, pillars)
+│   │       ├── sections_2d.py   ← 2-D section profile outlines
+│   │       ├── uv_tessellator.py← UV-domain triangulation of trimmed surfaces
+│   │       ├── holes.py         ← hole contour resolution + placement on surfaces
+│   │       └── mesh.py          ← triangle-mesh containers and utilities
+│   ├── ocx-render/             ← tessellated GLB/HTML renderer (depends on core + geometry)
+│   │   └── src/ocx_render/
+│   │       ├── render.py        ← render_model(vessel, options) → RenderResult
+│   │       ├── gltf_writer.py   ← write meshes to a .glb file
+│   │       ├── html_viewer.py   ← self-contained HTML viewer around the GLB
+│   │       └── cli.py           ← ocx-render entrypoint
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
@@ -50,9 +65,10 @@ ocx-platform/                  ← repo / workspace root
 ```
 
 Import rule: parser/builder/IR/units/schema-validation code lives under
-`ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`.
-The validator never reaches into render/tessellation code — a future
-`ocx-render` package depends on core + geometry, not the other way around.
+`ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`;
+tessellation/rendering code under `ocx_render.*`. The validator never reaches
+into render/tessellation code — `ocx-render` depends on core + geometry, not
+the other way around.
 
 ## Build, test, and lint
 
@@ -90,6 +106,9 @@ validator report all          model.3docx --destination report.html
 
 # Validate against the bundled OCX XSD (exit 0 valid / 1 errors / 2 cannot validate)
 validator validate schema model.3docx [--max-errors N]
+
+# Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse / 3 cannot write output)
+ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs

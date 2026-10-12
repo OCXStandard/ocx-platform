@@ -40,6 +40,7 @@ from ocx_model_core.model.ir.catalogues import (
     IrHole2D,
     IrHoleShapeCatalogue,
     IrMaterial,
+    IrParametricHole,
 )
 from ocx_model_core.model.ir.connections import (
     IrConnectionConfiguration,
@@ -66,6 +67,7 @@ from ocx_model_core.model.ir.geometry import (
     IrSurface,
     IrSurface3D,
     IrSurfaceCollection,
+    IrTransformation,
     IrUnboundedGeometry,
     IrVector3D,
 )
@@ -103,6 +105,7 @@ from ocx_model_core.model.ir.structural import (
     IrEdgeReinforcement,
     IrEndCut,
     IrFeatureCope,
+    IrHole2DContour,
     IrInclination,
     IrLimitedByRef,
     IrMember,
@@ -118,7 +121,7 @@ __all__ = [
     # base
     "IrCog", "IrMassProperties", "Quantity", "IrUnit", "Ref", "ParentKind", "ParentRef",
     # catalogues
-    "IrMaterial", "IrHole2D", "IrHoleShapeCatalogue",
+    "IrMaterial", "IrHole2D", "IrHoleShapeCatalogue", "IrParametricHole",
     # sections
     "IrSection", "IrRectangularTubeSection", "IrOctagonSection",
     "IrSquareSection", "IrBulbFlatSection", "IrFlatBarSection", "IrUSection",
@@ -131,12 +134,12 @@ __all__ = [
     "IrNurbs3D", "IrSurface3D", "IrPlane3D", "IrSphere3D", "IrCone3D",
     "IrCylinder3D", "IrExtrudedSurface", "IrNurbsSurface",
     "IrCoordinateSystem", "IrRefPlane", "IrSurface", "IrSurfaceCollection",
-    "IrUnboundedGeometry",
+    "IrTransformation", "IrUnboundedGeometry",
     # connections
     "IrConnectionConfiguration", "IrPenetration",
     # structural
     "IrPlate", "IrBracket", "IrStiffener", "IrPillar", "IrEdgeReinforcement",
-    "IrLimitedByRef", "IrPanel", "IrVessel",
+    "IrLimitedByRef", "IrPanel", "IrVessel", "IrHole2DContour",
     "IrSeam", "IrMember", "IrEndCut", "IrFeatureCope", "IrInclination",
     # arrangement
     "IrCompartment", "IrPhysicalSpace",

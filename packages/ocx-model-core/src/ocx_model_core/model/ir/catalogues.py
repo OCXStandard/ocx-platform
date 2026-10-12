@@ -43,13 +43,28 @@ class IrMaterial:
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
+class IrParametricHole:
+    """Dimensions of a parametric hole-shape variant from the catalogue."""
+    variant: str
+    height: Quantity | None = None
+    width: Quantity | None = None
+    radius: Quantity | None = None
+    fillet_radius: Quantity | None = None
+    diameter: Quantity | None = None
+    major_diameter: Quantity | None = None
+    minor_diameter: Quantity | None = None
+    displacement: Quantity | None = None
+    exponent: Quantity | None = None
+
+
+@dataclass(frozen=True)
 class IrHole2D:
     """Hole shape definition from HoleShapeCatalogue."""
     id: str
     name: str | None = None
     guidref: str | None = None
     contour: IrCurve3D | None = None
-    parametric: dict | None = None
+    parametric: IrParametricHole | None = None
 
 
 @dataclass

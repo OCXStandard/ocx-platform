@@ -20,6 +20,14 @@ class IrPoint3D:
     unit: str  # OCX unit id, e.g. 'Um', 'Umm'
 
 
+@dataclass(frozen=True)
+class IrTransformation:
+    """OCX Transformation — a local placement frame (origin + two axes)."""
+    origin: IrPoint3D | None = None
+    primary_axis: IrVector3D | None = None
+    secondary_axis: IrVector3D | None = None
+
+
 # --- curve hierarchy ---
 
 @dataclass(frozen=True)

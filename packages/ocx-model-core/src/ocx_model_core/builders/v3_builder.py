@@ -41,6 +41,7 @@ from ocx_model_core.model.ir import (
     IrHeader,
     IrHexagonSection,
     IrHole2D,
+    IrHole2DContour,
     IrHoleShapeCatalogue,
     IrInclination,
     IrISection,
@@ -58,6 +59,7 @@ from ocx_model_core.model.ir import (
     IrOccurrenceGroup,
     IrOctagonSection,
     IrPanel,
+    IrParametricHole,
     IrPhysicalSpace,
     IrPillar,
     IrPlane3D,
@@ -78,6 +80,7 @@ from ocx_model_core.model.ir import (
     IrSurface,
     IrSurfaceCollection,
     IrTonnageData,
+    IrTransformation,
     IrTSection,
     IrTubeSection,
     IrUnitCargo,
@@ -232,7 +235,9 @@ class OcxV3Builder(IOcxBuilder):
         # --- hole-shape catalogue (root- or vessel-level) ---
         self._build_hole_catalogue(
             getattr(root, "hole_shape_catalogue", None)
-            or getattr(vessel_raw, "hole_shape_catalogue", None),
+            or getattr(vessel_raw, "hole_shape_catalogue", None)
+            or _first(getattr(_first(getattr(root, "class_catalogue", None)),
+                              "hole_shape_catalogue", None)),
             ir,
         )
 
@@ -480,6 +485,16 @@ class OcxV3Builder(IOcxBuilder):
         logger.debug("Unknown curve type: {}", type(elem).__name__)
         return None
 
+    def _curve_or_contour(self, elem):
+        """Build a curve element directly, or unwrap a 3.2.0 wrapper
+        (e.g. BaseCurve) that holds the actual curve(s) as children."""
+        if elem is None:
+            return None
+        built = self._build_curve(elem) if not isinstance(elem, (list, tuple)) else None
+        if built is not None:
+            return built
+        return self._build_contour(elem)
+
     def _build_contour(self, container):
         """Build one IR curve from a TraceLine/OuterContour container."""
         if isinstance(container, (list, tuple)):
@@ -532,6 +547,29 @@ class OcxV3Builder(IOcxBuilder):
                 contours.append(built)
         return contours
 
+    def _build_hole2d_contours(self, cut_by) -> list[IrHole2DContour]:
+        """Extract CutBy/PlateCutBy Hole2DContour placements (ref + frame)."""
+        out: list[IrHole2DContour] = []
+        if cut_by is None:
+            return out
+        for hc in _children(getattr(cut_by, "hole2_dcontour", None)):
+            tr = getattr(hc, "transformation", None)
+            transformation = None
+            if tr is not None:
+                transformation = IrTransformation(
+                    origin=self._pt(getattr(tr, "origin", None)),
+                    primary_axis=self._vec(getattr(tr, "primary_axis", None)),
+                    secondary_axis=self._vec(getattr(tr, "secondary_axis", None)),
+                )
+            out.append(IrHole2DContour(
+                id=getattr(hc, "id", None) or "",
+                name=getattr(hc, "name", None),
+                guidref=getattr(hc, "guidref", None),
+                hole_ref=self._ref(getattr(hc, "hole_ref", None)),
+                transformation=transformation,
+            ))
+        return out
+
     def _build_surface(self, elem):
         """Dispatch a raw OCX surface element to its IR surface type."""
         if elem is None:
@@ -562,15 +600,43 @@ class OcxV3Builder(IOcxBuilder):
                                 height=self._qty(getattr(elem, "height", None)),
                                 normal=normal, point_on_surface=pos)
         if "extruded" in name:
+            # 3.2.0 wraps the sweep direction in a Sweep element
+            # (Vector3D + SweepLength); 3.1.0 has a bare Vector3D.
+            sweep_el = _first(getattr(elem, "sweep", None))
+            if sweep_el is not None and getattr(sweep_el, "direction", None) is None:
+                sweep_el = _first(getattr(sweep_el, "vector3_d", None))
             return IrExtrudedSurface(
                 id=sid,
-                base_curve=self._build_curve(getattr(elem, "base_curve", None)),
-                sweep=self._vec(getattr(elem, "sweep", None)),
-                sweep_curve=self._build_curve(getattr(elem, "sweep_curve", None)),
-                face_boundary_curve=self._build_curve(getattr(elem, "face_boundary_curve", None)),
+                base_curve=self._curve_or_contour(getattr(elem, "base_curve", None)),
+                sweep=self._vec(sweep_el),
+                sweep_curve=self._curve_or_contour(getattr(elem, "sweep_curve", None)),
+                face_boundary_curve=self._curve_or_contour(getattr(elem, "face_boundary_curve", None)),
                 normal=normal, point_on_surface=pos)
         if "nurbssurface" in name or "nurbs" in name:
-            return IrNurbsSurface(id=sid, normal=normal, point_on_surface=pos)
+            up = getattr(elem, "u_nurbsproperties", None)
+            vp = getattr(elem, "v_nurbsproperties", None)
+            uk = getattr(elem, "uknot_vector", None)
+            vk = getattr(elem, "vknot_vector", None)
+            raw_pts = []
+            for cpl in _children(getattr(elem, "control_pt_list", None)):
+                raw_pts.extend(_children(getattr(cpl, "control_point", None)))
+            # The flat ControlPtList is u-major: index = u * numV + v.
+            nu = getattr(up, "num_ctrl_pts", None) if up else None
+            nv = getattr(vp, "num_ctrl_pts", None) if vp else None
+            rows: list[list[IrPoint3D]] = []
+            if nu and nv and len(raw_pts) == int(nu) * int(nv):
+                built = [self._pt(p) for p in raw_pts]
+                if all(built):
+                    nv = int(nv)
+                    rows = [built[i * nv:(i + 1) * nv] for i in range(int(nu))]
+            return IrNurbsSurface(
+                id=sid,
+                u_degree=getattr(up, "degree", None) if up else None,
+                v_degree=getattr(vp, "degree", None) if vp else None,
+                u_knot_vector=[float(k) for k in (getattr(uk, "value", None) or [])] if uk else [],
+                v_knot_vector=[float(k) for k in (getattr(vk, "value", None) or [])] if vk else [],
+                control_points=rows,
+                normal=normal, point_on_surface=pos)
         logger.debug("Unknown surface type: {}", type(elem).__name__)
         return None
 
@@ -801,6 +867,39 @@ class OcxV3Builder(IOcxBuilder):
             vessel_ref=self._ref(getattr(dv, "vessel_ref", None)),
             children=children), ir.duplicate_ids)
 
+    _PARAMETRIC_ATTRS = ("ellipse", "rectangular_mickey_mouse_ears",
+                         "rectangular_hole", "super_elliptical",
+                         "symmetrical_hole", "parametric_circle")
+
+    def _parametric_hole(self, h) -> IrParametricHole | None:
+        """First present parametric variant on a raw Hole2D, with dimensions."""
+
+        def _exponent(exp) -> Quantity | None:
+            # SuperElliptical.exponent is a bare float in the real xsdata
+            # bindings; tolerate a quantity-shaped value for older stubs.
+            if exp is None:
+                return None
+            if hasattr(exp, "numericvalue"):
+                return self._qty(exp)
+            return Quantity(float(exp), "")
+
+        for attr in self._PARAMETRIC_ATTRS:
+            p = getattr(h, attr, None)
+            if p is None:
+                continue
+            return IrParametricHole(
+                variant=attr,
+                height=self._qty(getattr(p, "height", None)),
+                width=self._qty(getattr(p, "width", None)),
+                radius=self._qty(getattr(p, "radius", None)),
+                fillet_radius=self._qty(getattr(p, "fillet_radius", None)),
+                diameter=self._qty(getattr(p, "diameter", None)),
+                major_diameter=self._qty(getattr(p, "major_diameter", None)),
+                minor_diameter=self._qty(getattr(p, "minor_diameter", None)),
+                displacement=self._qty(getattr(p, "displacement", None)),
+                exponent=_exponent(getattr(p, "exponent", None)))
+        return None
+
     def _build_hole_catalogue(self, cat, ir: IrVessel) -> None:
         if cat is None:
             return
@@ -810,22 +909,10 @@ class OcxV3Builder(IOcxBuilder):
             if hid is None:
                 continue
             contour = getattr(h, "contour", None)
-            curve = None
-            if contour is not None:
-                for attr in self._CONTOUR_ATTRS:
-                    val = getattr(contour, attr, None)
-                    target = val[0] if isinstance(val, list) and val else val
-                    if target is not None:
-                        curve = self._build_curve(target)
-                        if curve is not None:
-                            break
-            parametric = None
-            for attr in ("ellipse", "rectangular_mickey_mouse_ears",
-                         "rectangular_hole", "super_elliptical",
-                         "symmetrical_hole", "parametric_circle"):
-                if getattr(h, attr, None) is not None:
-                    parametric = {"variant": attr}
-                    break
+            # A hole contour may consist of several curve segments
+            # (lines + arcs); collect them all into one composite.
+            curve = self._build_contour(contour)
+            parametric = self._parametric_hole(h)
             holes[hid] = IrHole2D(id=hid, name=getattr(h, "name", None),
                                   guidref=getattr(h, "guidref", None),
                                   contour=curve, parametric=parametric)
@@ -1196,6 +1283,7 @@ class OcxV3Builder(IOcxBuilder):
             outer_contour=self._build_contour(getattr(raw, "outer_contour", None)),
             point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),
             cut_by_contours=self._cut_by_contours(getattr(raw, "plate_cut_by", None)),
+            cut_by_holes=self._build_hole2d_contours(getattr(raw, "plate_cut_by", None)),
         )
 
     def _build_bracket(self, raw, parent: ParentRef) -> IrBracket | None:
@@ -1455,6 +1543,8 @@ class OcxV3Builder(IOcxBuilder):
             seam_ids=seam_ids,
             limited_by=limited_by_refs,
             unbounded_geometry=self._build_unbounded(getattr(raw, "unbounded_geometry", None)),
+            cut_by_holes=self._build_hole2d_contours(getattr(raw, "cut_by", None)),
+            cut_by_contours=self._cut_by_contours(getattr(raw, "cut_by", None)),
         )
 
     # ------------------------------------------------------------------
