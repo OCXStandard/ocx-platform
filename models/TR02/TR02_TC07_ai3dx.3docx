@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ocx:ocxXML schemaVersion="3.1.0" xsi:schemaLocation="https://3docx.org/fileadmin//ocx_schema//V310//OCX_Schema.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ocx="https://3docx.org/fileadmin//ocx_schema//V310//OCX_Schema.xsd">
+  <ocx:Header name="OCX-MODEL7" author="Mateo" organization="AITAC" originating_system="AITAC Structure" application_version="V01" documentation="OCX Export" time_stamp="2025-08-25T09:13:07+01:00"/>
+  <ocx:Vessel id="nplcid1" name="OCX-model-version301" ocx:GUIDRef="5ee95747-262f-4860-9b06-870d770fb27b">
+    <ocx:DistanceTolerance numericvalue="1" unit="Umm"/>
+    <ocx:AngleTolerance numericvalue="0.05" unit="URad"/>
+    <ocx:CoordinateSystem id="nplcid6" ocx:GUIDRef="6cc86cad-b623-4856-ba19-508cc9f3ab26" isGlobal="true">
+      <ocx:XRefPlanes>
+        <ocx:RefPlane id="F.0" name="Frame.0" displayGrid="true" ocx:GUIDRef="9d40e945-f178-4fad-a4f4-48428691def2">
+          <ocx:ReferenceLocation numericvalue="0.000000" unit="Um"/>
+        </ocx:RefPlane>
+        <ocx:RefPlane id="X.5000" name="X.5000" displayGrid="true" ocx:GUIDRef="b195709d-8e8e-4a5e-8b49-c2a9ee0bc8b6">
+          <ocx:ReferenceLocation numericvalue="5.000000" unit="Um"/>
+        </ocx:RefPlane>
+      </ocx:XRefPlanes>
+      <ocx:YRefPlanes>
+        <ocx:RefPlane id="BPY" name="BasePlaneY" displayGrid="true" ocx:GUIDRef="efe3ff49-e612-46b8-9de4-7df03ba23a0a">
+          <ocx:ReferenceLocation numericvalue="0.000" unit="Um"/>
+        </ocx:RefPlane>
+      </ocx:YRefPlanes>
+      <ocx:ZRefPlanes>
+        <ocx:RefPlane id="Z.1000" name="Z.1000" displayGrid="true" ocx:GUIDRef="85020962-1d91-4140-a7be-789fdf0b7765">
+          <ocx:ReferenceLocation numericvalue="1.000000" unit="Um"/>
+        </ocx:RefPlane>
+        <ocx:RefPlane id="Z.3000" name="Z.3000" displayGrid="true" ocx:GUIDRef="c2823847-69df-4915-b1a1-b8af5cfc0dbf">
+          <ocx:ReferenceLocation numericvalue="3.000000" unit="Um"/>
+        </ocx:RefPlane>
+      </ocx:ZRefPlanes>
+    </ocx:CoordinateSystem>
+    <ocx:ClassificationData ocx:newbuildingSociety="DNV" identification="S01">
+      <ocx:PrincipalParticulars>
+        <ocx:Lpp numericvalue="10" unit="Um"/>
+        <ocx:RuleLength numericvalue="10" unit="Um"/>
+        <ocx:BlockCoefficient numericvalue="0" unit="UDimless"/>
+        <ocx:FP_Pos numericvalue="10" unit="Um"/>
+        <ocx:MouldedBreadth numericvalue="10" unit="Um"/>
+        <ocx:MouldedDepth numericvalue="NaN" unit="Um"/>
+        <ocx:ScantlingDraught numericvalue="1" unit="Um"/>
+        <ocx:DesignSpeed numericvalue="0" unit="UKnots"/>
+        <ocx:FreeboardLength numericvalue="NaN" unit="Um"/>
+      </ocx:PrincipalParticulars>
+    </ocx:ClassificationData>
+    <ocx:BuilderInformation yard="OCX" designer="Marko" owner="Fran" yearOfBuild="2030-01-01"/>
+    <ocx:ReferenceSurfaces>
+      <ocx:ExtrudedSurface id="nplcid9">
+        <ocx:BaseCurve id="nplcid10">
+          <ocx:CurveLength numericvalue="41974.410" unit="Umm"/>
+          <ocx:Line3D id="nplcid11">
+            <ocx:CurveLength numericvalue="13.328" unit="Um"/>
+            <ocx:StartPoint coordinates="0.000 -9.408 0.000" unit="Um"/>
+            <ocx:EndPoint coordinates="0.000 3.919 0.000" unit="Um"/>
+          </ocx:Line3D>
+          <ocx:Line3D id="nplcid12">
+            <ocx:CurveLength numericvalue="16.966" unit="Um"/>
+            <ocx:StartPoint coordinates="0.000 10.000 9.200" unit="Um"/>
+            <ocx:EndPoint coordinates="0.000 10.000 26.166" unit="Um"/>
+          </ocx:Line3D>
+          <ocx:CircumArc3D id="nplcid13">
+            <ocx:CurveLength numericvalue="11.681" unit="Um"/>
+            <ocx:StartPoint coordinates="0.000 3.919 0.000" unit="Um"/>
+            <ocx:IntermediatePoint coordinates="0.000 8.342 3.686" unit="Um"/>
+            <ocx:EndPoint coordinates="0.000 10.000 9.200" unit="Um"/>
+          </ocx:CircumArc3D>
+        </ocx:BaseCurve>
+        <ocx:Sweep>
+          <ocx:Vector3D direction="1.000 0.000 0.000"/>
+          <ocx:SweepLength numericvalue="8000.000" unit="Umm"/>
+        </ocx:Sweep>
+      </ocx:ExtrudedSurface>
+    </ocx:ReferenceSurfaces>
+    <ocx:Panel id="nplcid7" name="Sh-Extrude.3" ocx:GUIDRef="b7ee0555-c498-4472-96ae-dd3212a292fe" ocx:functionType="SHELL" ocx:tightness="Undefined">
+      <ocx:UnboundedGeometry>
+        <ocx:SurfaceRef localRef="nplcid9" ocx:refType="ocx:Surface"/>
+      </ocx:UnboundedGeometry>
+      <ocx:LimitedBy>
+        <ocx:GridRef localRef="F.0" ocx:refType="ocx:ReferencePlane" ocx:GUIDRef="9d40e945-f178-4fad-a4f4-48428691def2"/>
+        <ocx:GridRef localRef="X.5000" ocx:refType="ocx:ReferencePlane" ocx:GUIDRef="b195709d-8e8e-4a5e-8b49-c2a9ee0bc8b6"/>
+        <ocx:GridRef localRef="Z.1000" ocx:refType="ocx:ReferencePlane" ocx:GUIDRef="85020962-1d91-4140-a7be-789fdf0b7765"/>
+        <ocx:GridRef localRef="Z.3000" ocx:refType="ocx:ReferencePlane" ocx:GUIDRef="c2823847-69df-4915-b1a1-b8af5cfc0dbf"/>
+      </ocx:LimitedBy>
+      <ocx:ComposedOf>
+        <ocx:Plate id="nplcid15" name="-10mm" ocx:GUIDRef="d3833fe0-7ce7-4c5f-80ad-ed764bc26a35">
+          <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1148.723" unit="UKg"/>
+            <ocx:CenterOfGravity coordinates="2.500 6.834 1.948" unit="Um"/>
+          </ocx:PhysicalProperties>
+          <ocx:NetArea numericvalue="14.633" unit="Um2"/>
+          <ocx:OuterContour>
+            <ocx:Line3D id="nplcid16">
+              <ocx:CurveLength numericvalue="5.000" unit="Um"/>
+              <ocx:StartPoint coordinates="0.000 5.724 1.000" unit="Um"/>
+              <ocx:EndPoint coordinates="5.000 5.724 1.000" unit="Um"/>
+            </ocx:Line3D>
+            <ocx:Line3D id="nplcid17">
+              <ocx:CurveLength numericvalue="5.000" unit="Um"/>
+              <ocx:StartPoint coordinates="0.000 7.846 3.000" unit="Um"/>
+              <ocx:EndPoint coordinates="5.000 7.846 3.000" unit="Um"/>
+            </ocx:Line3D>
+            <ocx:CircumArc3D id="nplcid18">
+              <ocx:CurveLength numericvalue="2.927" unit="Um"/>
+              <ocx:StartPoint coordinates="5.000 5.724 1.000" unit="Um"/>
+              <ocx:IntermediatePoint coordinates="5.000 6.858 1.922" unit="Um"/>
+              <ocx:EndPoint coordinates="5.000 7.846 3.000" unit="Um"/>
+            </ocx:CircumArc3D>
+            <ocx:CircumArc3D id="nplcid19">
+              <ocx:CurveLength numericvalue="2.927" unit="Um"/>
+              <ocx:StartPoint coordinates="0.000 5.724 1.000" unit="Um"/>
+              <ocx:IntermediatePoint coordinates="0.000 6.858 1.922" unit="Um"/>
+              <ocx:EndPoint coordinates="0.000 7.846 3.000" unit="Um"/>
+            </ocx:CircumArc3D>
+          </ocx:OuterContour>
+          <ocx:PlateMaterial localRef="nplcid14" ocx:GUIDRef="48543ea1-56c3-4fbc-9976-6958bdcf7efe" ocx:refType="ocx:Material">
+            <ocx:Thickness numericvalue="0.010" unit="Um"/>
+          </ocx:PlateMaterial>
+          <ocx:Offset numericvalue="-0.005" unit="Um"/>
+        </ocx:Plate>
+      </ocx:ComposedOf>
+      <ocx:PhysicalProperties>
+        <ocx:DryWeight numericvalue="1148.723" unit="UKg"/>
+        <ocx:CenterOfGravity coordinates="2.500 6.834 1.948" unit="Um"/>
+      </ocx:PhysicalProperties>
+      <ocx:OuterContour>
+        <ocx:Line3D id="nplcid20">
+          <ocx:CurveLength numericvalue="5.000" unit="Um"/>
+          <ocx:StartPoint coordinates="0.000 5.724 1.000" unit="Um"/>
+          <ocx:EndPoint coordinates="5.000 5.724 1.000" unit="Um"/>
+        </ocx:Line3D>
+        <ocx:Line3D id="nplcid21">
+          <ocx:CurveLength numericvalue="5.000" unit="Um"/>
+          <ocx:StartPoint coordinates="0.000 7.846 3.000" unit="Um"/>
+          <ocx:EndPoint coordinates="5.000 7.846 3.000" unit="Um"/>
+        </ocx:Line3D>
+        <ocx:CircumArc3D id="nplcid22">
+          <ocx:CurveLength numericvalue="2.927" unit="Um"/>
+          <ocx:StartPoint coordinates="5.000 5.724 1.000" unit="Um"/>
+          <ocx:IntermediatePoint coordinates="5.000 6.858 1.922" unit="Um"/>
+          <ocx:EndPoint coordinates="5.000 7.846 3.000" unit="Um"/>
+        </ocx:CircumArc3D>
+        <ocx:CircumArc3D id="nplcid23">
+          <ocx:CurveLength numericvalue="2.927" unit="Um"/>
+          <ocx:StartPoint coordinates="0.000 5.724 1.000" unit="Um"/>
+          <ocx:IntermediatePoint coordinates="0.000 6.858 1.922" unit="Um"/>
+          <ocx:EndPoint coordinates="0.000 7.846 3.000" unit="Um"/>
+        </ocx:CircumArc3D>
+      </ocx:OuterContour>
+    </ocx:Panel>
+  </ocx:Vessel>
+  <ocx:ClassCatalogue id="nplcid2">
+    <ocx:MaterialCatalogue id="nplcid3">
+      <ocx:Material id="nplcid14" name="Steel A" ocx:grade="A" ocx:GUIDRef="48543ea1-56c3-4fbc-9976-6958bdcf7efe">
+        <ocx:Density numericvalue="7850.000" unit="UKgOverm3"/>
+        <ocx:YoungsModulus numericvalue="210000000000.000" unit="UNOverm2"/>
+        <ocx:PoissonRatio numericvalue="0.300" unit="UDimless"/>
+        <ocx:YieldStress numericvalue="235000000.000" unit="UNOverm2"/>
+        <ocx:UltimateStress numericvalue="400000000.000" unit="UNOverm2"/>
+      </ocx:Material>
+    </ocx:MaterialCatalogue>
+  </ocx:ClassCatalogue>
+  <unitsml:UnitsML xmlns:unitsml="urn:oasis:names:tc:unitsml:schema:xsd:UnitsMLSchema_lite-0.9.18">
+    <unitsml:UnitSet>
+      <unitsml:Unit xml:id="Um" dimensionURL="D_L">
+        <unitsml:UnitName xml:lang="en-us">meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="m" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="1" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Um2" dimensionURL="D_L2">
+        <unitsml:UnitName xml:lang="en-us">square meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="m2" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="2" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Um3" dimensionURL="D_L3">
+        <unitsml:UnitName xml:lang="en-us">cubic meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="m3" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="3" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Ucm" dimensionURL="D_L">
+        <unitsml:UnitName xml:lang="en-us">centimeter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="cm" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="1" prefix="c" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Ucm2" dimensionURL="D_L2">
+        <unitsml:UnitName xml:lang="en-us">square centimeter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="cm2" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="2" prefix="c" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Ucm4" dimensionURL="D_L4">
+        <unitsml:UnitName xml:lang="en-us">double square centimeter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="cm4" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="4" prefix="c" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Umm" dimensionURL="D_L">
+        <unitsml:UnitName xml:lang="en-us">millimeter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="mm" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="1" prefix="m" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UKnots" dimensionURL="D_L.T-1">
+        <unitsml:UnitName xml:lang="en-us">knot</unitsml:UnitName>
+        <unitsml:UnitSymbol type="kn" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="knot" powerNumerator="1" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="URad" dimensionURL="D_L">
+        <unitsml:UnitName xml:lang="en-us">radian</unitsml:UnitName>
+        <unitsml:UnitSymbol type="rad" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="radian" powerNumerator="1" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UKg" dimensionURL="D_Kg">
+        <unitsml:UnitName xml:lang="en-us">kilogram</unitsml:UnitName>
+        <unitsml:UnitSymbol type="kg" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="gram" powerNumerator="1" prefix="k" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UKgOverm3" dimensionURL="D_Kg.M-3">
+        <unitsml:UnitName xml:lang="en-us">kilogram per cubic meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="kg/m3" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="gram" powerNumerator="1" prefix="k" />
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="-3" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UNOvermm2" dimensionURL="D_N.MM-2">
+        <unitsml:UnitName xml:lang="en-us">newton per square millimeter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="N/mm2" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="newton" powerNumerator="1" />
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="-2" prefix="m" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UNOverm2" dimensionURL="D_N.MM-2">
+        <unitsml:UnitName xml:lang="en-us">newton per square meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="N/m2" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="newton" powerNumerator="1" />
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="-2" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UDimless" dimensionURL="D_None">
+        <unitsml:UnitName xml:lang="en-us">dimensionless</unitsml:UnitName>
+        <unitsml:UnitSymbol type="" />
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="Ut" dimensionURL="D_Kg">
+        <unitsml:UnitName xml:lang="en-us">ton</unitsml:UnitName>
+        <unitsml:UnitSymbol type="t" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="metric_ton" powerNumerator="1" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UkN" dimensionURL="D_Kg">
+        <unitsml:UnitName xml:lang="en-us">kilo newton</unitsml:UnitName>
+        <unitsml:UnitSymbol type="kN" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="newton" powerNumerator="1" prefix="k" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+      <unitsml:Unit xml:id="UkN-M" dimensionURL="D_NM">
+        <unitsml:UnitName xml:lang="en-us">kilonewton meter</unitsml:UnitName>
+        <unitsml:UnitSymbol type="kNm" />
+        <unitsml:RootUnits>
+          <unitsml:EnumeratedRootUnit unit="newton" powerNumerator="1" prefix="k" />
+          <unitsml:EnumeratedRootUnit unit="meter" powerNumerator="1" />
+        </unitsml:RootUnits>
+      </unitsml:Unit>
+    </unitsml:UnitSet>
+    <unitsml:DimensionSet>
+      <unitsml:Dimension xml:id="D_L">
+        <unitsml:Length symbol="L" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_L2">
+        <unitsml:Length symbol="L" powerNumerator="2" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_L3">
+        <unitsml:Length symbol="L" powerNumerator="3" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_L4">
+        <unitsml:Length symbol="L" powerNumerator="4" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_L.T-1">
+        <unitsml:Length symbol="L" />
+        <unitsml:Time symbol="T" powerNumerator="-1" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_Kg">
+        <unitsml:Mass symbol="M" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_Kg.M-3">
+        <unitsml:Mass symbol="M" />
+        <unitsml:Length symbol="L" powerNumerator="-3" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_N.MM-2">
+        <unitsml:Length symbol="L" powerNumerator="-1" />
+        <unitsml:Mass symbol="M" />
+        <unitsml:Time symbol="T" powerNumerator="-2" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_NM">
+        <unitsml:Mass symbol="M" />
+        <unitsml:Length symbol="L" />
+      </unitsml:Dimension>
+      <unitsml:Dimension xml:id="D_None" dimensionless="true" />
+    </unitsml:DimensionSet>
+  </unitsml:UnitsML>
+</ocx:ocxXML>

@@ -49,7 +49,6 @@ junit*.xml
 Stubs_Log.md
 
 # Models (large binary-like 3docx files — tracked separately)
-models/
 
 # Local env files
 .env

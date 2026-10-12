@@ -1,0 +1,1509 @@
+{
+  "model": "models\\D-VLCC_1-HOLD-OCX-simple_v3.3docx",
+  "schema_version": "3.0.0",
+  "valid": false,
+  "error_count": 250,
+  "errors": [
+    {
+      "line": 8936,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Plane3D': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SurfaceCollection ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 18192,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 23687,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 29206,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 30839,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 32693,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 34547,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 36401,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 38255,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 40109,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 41963,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 43817,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 45671,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 47304,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 47657,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 48007,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 48360,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 48710,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 48999,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 49285,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 49571,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 49883,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 50185,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 50471,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 50757,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 51069,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 51371,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 51532,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 51693,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 51854,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 52015,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 52176,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 52337,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 53642,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 54166,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 54451,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 54645,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 55950,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 56595,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 56880,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 57071,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 58376,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 58900,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 59185,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 59379,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 60684,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 61329,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 61614,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 61805,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 63110,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 63634,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 63919,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 64113,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 65418,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 66064,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 66349,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 66540,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 67845,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 68369,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 68654,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 68848,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 70153,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 70798,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 71083,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 71274,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 72579,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 73103,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 73388,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 73582,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 74887,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 75532,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 75817,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 76008,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 77313,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 77837,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 78122,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 78316,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 79621,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 80266,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 80551,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 80742,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 82047,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 82571,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 82856,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 83050,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 84355,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 85000,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 85285,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 85476,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 86781,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 87305,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 87590,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 87784,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 89089,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 89734,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 90019,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}NURBS3D': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CustomProperties, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Description, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CurveLength ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 90210,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 91205,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 92200,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 93193,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 94186,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 94891,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 95596,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 96313,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 97030,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 97747,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 98464,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 99181,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 99898,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 100615,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 101332,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 102049,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 102766,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 103483,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 104200,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 104917,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 105634,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 106351,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 107068,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 107772,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 108476,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 111543,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 113982,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 116421,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 121522,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 124005,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 126488,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 127279,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 127307,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 127864,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 127892,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 128449,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 128477,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 129294,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 129322,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 129879,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 129907,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 130464,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 130492,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 131309,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 131337,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 131868,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 131896,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 132427,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 132455,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 132610,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 136359,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 138842,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 141325,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 144362,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 144876,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 147026,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 147420,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 149570,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 149964,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 152998,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 153512,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 155662,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 156056,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 158206,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 158600,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 161637,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 162151,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 164301,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 164695,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 166845,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 167239,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 167394,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 169491,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 171588,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 177058,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 177842,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 179581,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 179952,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 181691,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 182062,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 187460,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 188803,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 190404,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 190752,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 192353,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 192693,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 198091,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 199434,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 201035,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 201383,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 202984,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 203324,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 208722,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 210065,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 211666,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 212014,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 213615,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 213955,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 219353,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 220696,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 222297,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 222645,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 224246,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 224586,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 229984,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 231327,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 232928,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 233276,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 234877,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 235217,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 240615,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 241958,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 243559,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 243907,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 245508,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 245848,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 251246,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 252589,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 254190,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 254538,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 256139,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 256479,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected.",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 257208,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 257409,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 258138,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 258339,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 259068,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 259269,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 259998,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 260199,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 260928,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 261129,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 261858,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 262059,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 262788,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 262989,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 263718,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 263919,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 264648,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 264849,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 265578,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 265779,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 266508,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 266709,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 267438,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 267639,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 268368,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 268569,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 269298,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 269499,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 270228,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 270429,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 271158,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}EdgeReinforcement': This element is not expected. Expected is ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}Stiffener ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    },
+    {
+      "line": 271359,
+      "column": 0,
+      "message": "Element '{https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}PhysicalProperties': This element is not expected. Expected is one of ( {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}SplitBy, {https://3docx.org/fileadmin//ocx_schema//V300//OCX_Schema.xsd}CutBy ).",
+      "domain": "SCHEMAV_ELEMENT_CONTENT"
+    }
+  ],
+  "validated_at": "2026-10-04T18:46:38.166372+00:00"
+}

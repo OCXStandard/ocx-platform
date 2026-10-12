@@ -8,7 +8,7 @@
 
 - The renderer currently lives only on `feature/tessellated-renderer` (pre-workspace-split flat layout, `ocx_model_validator/render/`). The workspace-split layout (`packages/ocx-model-core`, `packages/ocx-geometry`, `packages/ocx-model-validator`) has no render code.
 - The UV tessellator already supports holes end-to-end (`hole_pts` → UV inversion → periodic-u shift → shapely clean → earcut-with-holes), but is only fed from `IrPlate.cut_by_contours`, which the builder fills solely from inline `PlateCutBy` contours.
-- Reference model `models/TR04/tr04_tc13_nast.3docx` (OCX 3.2.0rc8, NAPA Steel) attaches `CutBy` at **panel** level. Each `CutBy` child is a `Hole2DContour`: a `HoleRef` into the vessel `HoleShapeCatalogue` plus a placement `Transformation` (`Origin`, `PrimaryAxis`, `SecondaryAxis`). The catalogue contains one contour-based `Hole2D` and parametric variants: `SymmetricalHole`, `ParametricCircle`, `RectangularHole` (with and without fillet), `RectangularMickeyMouseEars`, `Ellipse`. The model defines 9 openings on one panel (curved surface + flat region).
+- Reference model `models/TR04/tr04_tc13_nast.3docx` (OCX 3.2.0, NAPA Steel) attaches `CutBy` at **panel** level. Each `CutBy` child is a `Hole2DContour`: a `HoleRef` into the vessel `HoleShapeCatalogue` plus a placement `Transformation` (`Origin`, `PrimaryAxis`, `SecondaryAxis`). The catalogue contains one contour-based `Hole2D` and parametric variants: `SymmetricalHole`, `ParametricCircle`, `RectangularHole` (with and without fillet), `RectangularMickeyMouseEars`, `Ellipse`. The model defines 9 openings on one panel (curved surface + flat region).
 
 ### Gaps closed by this design
 
@@ -51,7 +51,7 @@ Branch `test_render_*.py` tests move to the shared root `tests/` with imports up
 
 **Builder (`OcxV3Builder`):**
 - Parse `getattr(raw, "cut_by", None)` on panels and plates → `Hole2DContour` children → `hole_ref` + `transformation`, using existing `_ref` / `_pt` / `_vec` helpers with `getattr`-safe access. A `Hole2DContour` carrying an inline contour instead of a ref falls back into the existing `cut_by_contours` list.
-- Extend `_build_hole_catalogue` to read each parametric variant's dimensions via `_qty` into `IrParametricHole`.
+- Extend `_build_hole_catalogue` to read each parametric variant's dimensions via `_qty` into `IrParametricHole`, and to also discover the `HoleShapeCatalogue` nested under `ClassCatalogue` (where the reference model places it — currently missed, so `vessel.hole_shape_catalogue` is `None`).
 
 ## Section 3 — Hole resolution & cutting (ocx-geometry / ocx-render)
 
