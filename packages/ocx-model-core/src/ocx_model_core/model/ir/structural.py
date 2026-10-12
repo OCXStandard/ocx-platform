@@ -35,6 +35,7 @@ from ocx_model_core.model.ir.geometry import (
     IrRefPlane,
     IrSurface,
     IrSurfaceCollection,
+    IrTransformation,
     IrUnboundedGeometry,
     IrVector3D,
 )
@@ -60,6 +61,16 @@ class IrInclination:
     position: IrPoint3D | None = None
 
 
+@dataclass(frozen=True)
+class IrHole2DContour:
+    """A CutBy opening placement: catalogue hole ref + local placement frame."""
+    id: str
+    name: str | None = None
+    guidref: str | None = None
+    hole_ref: Ref | None = None
+    transformation: IrTransformation | None = None
+
+
 @dataclass
 class IrPlate:
     """Schema-neutral plate record."""
@@ -77,6 +88,7 @@ class IrPlate:
     outer_contour: IrCurve3D | None = None
     point_on_surface: IrPoint3D | None = None
     cut_by_contours: list[IrCurve3D] = field(default_factory=list)
+    cut_by_holes: list[IrHole2DContour] = field(default_factory=list)
 
 
 @dataclass
@@ -307,6 +319,8 @@ class IrPanel:
     # All boundary references, each tagged with ref_type
     limited_by: list[IrLimitedByRef] = field(default_factory=list)
     unbounded_geometry: IrUnboundedGeometry | None = None
+    cut_by_holes: list[IrHole2DContour] = field(default_factory=list)
+    cut_by_contours: list[IrCurve3D] = field(default_factory=list)
 
     # ------------------------------------------------------------------
     # Typed filter helpers
