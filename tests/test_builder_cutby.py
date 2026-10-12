@@ -58,3 +58,62 @@ class TestParametricDimensions:
         _b()._build_hole_catalogue(cat, ir)
         p4 = ir.hole_shape_catalogue.holes["H4"].parametric
         assert p4.exponent.value == 2.5 and p4.exponent.unit == "UDimless"
+
+
+def _transformation():
+    return NS(origin=NS(coordinates=[8.5, 10.0, 9.9], unit="Um"),
+              primary_axis=NS(direction=[0.0, 0.0, -1.0]),
+              secondary_axis=NS(direction=[1.0, 0.0, 0.0]))
+
+
+def _hole2d_contour(cid, ref):
+    return NS(id=cid, name=None, guidref=f"guid-{cid}",
+              hole_ref=NS(local_ref=ref, guidref=f"guid-{ref}", ref_type="ocx:Hole2D",
+                          offset=None, offset_direction=None),
+              transformation=_transformation())
+
+
+class TestCutByParsing:
+    def test_panel_cut_by_holes(self):
+        raw = NS(id="pan1", name="P", guidref=None, function_type=None,
+                 tightness=None, point_on_surface=None,
+                 composed_of=None, stiffened_by=None, limited_by=None,
+                 unbounded_geometry=None,
+                 cut_by=NS(hole2_dcontour=[_hole2d_contour("hc1", "H1"),
+                                           _hole2d_contour("hc2", "H2")],
+                           inner_contour=[]))
+        ir = IrVessel(id="v1")
+        panel = _b()._build_panel(raw, ir, "v1")
+        assert len(panel.cut_by_holes) == 2
+        hc = panel.cut_by_holes[0]
+        assert hc.id == "hc1"
+        assert hc.hole_ref.local_ref == "H1"
+        assert hc.transformation.origin.x == 8.5
+        assert hc.transformation.primary_axis.z == -1.0
+        assert hc.transformation.secondary_axis.x == 1.0
+
+    def test_panel_without_cut_by_is_empty(self):
+        raw = NS(id="pan2", name=None, guidref=None, function_type=None,
+                 tightness=None, point_on_surface=None, composed_of=None,
+                 stiffened_by=None, limited_by=None, unbounded_geometry=None)
+        ir = IrVessel(id="v1")
+        panel = _b()._build_panel(raw, ir, "v1")
+        assert panel.cut_by_holes == [] and panel.cut_by_contours == []
+
+    def test_plate_cut_by_holes_from_plate_cut_by(self):
+        from ocx_model_core.model.ir.base import ParentKind, ParentRef
+        raw = NS(id="pl1", name=None, guidref=None, plate_material=None,
+                 net_area=None, function_type=None, outer_contour=None,
+                 point_on_surface=None,
+                 plate_cut_by=NS(hole2_dcontour=[_hole2d_contour("hc3", "H3")],
+                                 inner_contour=[], slot_contour=[]))
+        plate = _b()._build_plate(raw, ParentRef(ParentKind.PANEL, "pan1"))
+        assert len(plate.cut_by_holes) == 1
+        assert plate.cut_by_holes[0].hole_ref.local_ref == "H3"
+
+    def test_missing_transformation_is_none(self):
+        hc = _hole2d_contour("hc4", "H4")
+        hc.transformation = None
+        raw_cut_by = NS(hole2_dcontour=[hc], inner_contour=[])
+        out = _b()._build_hole2d_contours(raw_cut_by)
+        assert out[0].transformation is None

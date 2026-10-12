@@ -41,6 +41,7 @@ from ocx_model_core.model.ir import (
     IrHeader,
     IrHexagonSection,
     IrHole2D,
+    IrHole2DContour,
     IrHoleShapeCatalogue,
     IrParametricHole,
     IrInclination,
@@ -79,6 +80,7 @@ from ocx_model_core.model.ir import (
     IrSurface,
     IrSurfaceCollection,
     IrTonnageData,
+    IrTransformation,
     IrTSection,
     IrTubeSection,
     IrUnitCargo,
@@ -534,6 +536,29 @@ class OcxV3Builder(IOcxBuilder):
             if built is not None:
                 contours.append(built)
         return contours
+
+    def _build_hole2d_contours(self, cut_by) -> list[IrHole2DContour]:
+        """Extract CutBy/PlateCutBy Hole2DContour placements (ref + frame)."""
+        out: list[IrHole2DContour] = []
+        if cut_by is None:
+            return out
+        for hc in _children(getattr(cut_by, "hole2_dcontour", None)):
+            tr = getattr(hc, "transformation", None)
+            transformation = None
+            if tr is not None:
+                transformation = IrTransformation(
+                    origin=self._pt(getattr(tr, "origin", None)),
+                    primary_axis=self._vec(getattr(tr, "primary_axis", None)),
+                    secondary_axis=self._vec(getattr(tr, "secondary_axis", None)),
+                )
+            out.append(IrHole2DContour(
+                id=getattr(hc, "id", None) or "",
+                name=getattr(hc, "name", None),
+                guidref=getattr(hc, "guidref", None),
+                hole_ref=self._ref(getattr(hc, "hole_ref", None)),
+                transformation=transformation,
+            ))
+        return out
 
     def _build_surface(self, elem):
         """Dispatch a raw OCX surface element to its IR surface type."""
@@ -1226,6 +1251,7 @@ class OcxV3Builder(IOcxBuilder):
             outer_contour=self._build_contour(getattr(raw, "outer_contour", None)),
             point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),
             cut_by_contours=self._cut_by_contours(getattr(raw, "plate_cut_by", None)),
+            cut_by_holes=self._build_hole2d_contours(getattr(raw, "plate_cut_by", None)),
         )
 
     def _build_bracket(self, raw, parent: ParentRef) -> IrBracket | None:
@@ -1485,6 +1511,8 @@ class OcxV3Builder(IOcxBuilder):
             seam_ids=seam_ids,
             limited_by=limited_by_refs,
             unbounded_geometry=self._build_unbounded(getattr(raw, "unbounded_geometry", None)),
+            cut_by_holes=self._build_hole2d_contours(getattr(raw, "cut_by", None)),
+            cut_by_contours=self._cut_by_contours(getattr(raw, "cut_by", None)),
         )
 
     # ------------------------------------------------------------------
