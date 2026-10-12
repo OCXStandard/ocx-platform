@@ -64,9 +64,10 @@ def test_tr04_tc14a_outer_shell_renders_all_plates():
     """Outer-shell plates spanning a 2-D NURBS patch grid must all render,
     and each plate's mesh boundary must track its sampled outer contour.
 
-    Regression for distorted/missing shell plates: composite charts over
-    patch-grid surface collections mis-routed points to patches from the
-    wrong spine band and lost contour points whose own patch had too few
+    Regression for distorted/missing shell plates: the LSCM chart over
+    patch-grid surface collections must route every contour point onto the
+    correct patch; the old heuristic chart mis-routed points to patches from
+    the wrong spine band and lost contour points whose own patch had too few
     contour samples to fit an affine chart.
     """
     from ocx_geometry.curves import sample_contour

@@ -46,22 +46,16 @@ class _ChartMesh:
         self.tri_member = tri_member    # (m,) member per triangle, -1 = none
 
 
-def _member_domain(member: SurfaceParam, hint_pts: np.ndarray | None,
-                   on_tol: float):
+def _member_domain(member: SurfaceParam, fit, on: np.ndarray | None):
     """Member UV sampling domain: intrinsic knot domain when available,
-    else the bbox of on-surface hint points in member-local UV."""
+    else the bbox of the member's assigned on-surface hint points in
+    member-local UV."""
     du, dv = getattr(member, "du", None), getattr(member, "dv", None)
     if du is not None and dv is not None:
         return (float(du[0]), float(du[1])), (float(dv[0]), float(dv[1]))
-    if hint_pts is None or len(hint_pts) < 3:
+    if fit is None or on is None or int(on.sum()) < 3:
         return None
-    fit = _member_fit(member, hint_pts)
-    if fit is None:
-        return None
-    uv, _, res = fit
-    on = res <= on_tol
-    if int(on.sum()) < 3:
-        return None
+    uv = fit[0]
     u0, u1 = float(uv[on, 0].min()), float(uv[on, 0].max())
     v0, v1 = float(uv[on, 1].min()), float(uv[on, 1].max())
     if u1 - u0 < 1e-9 or v1 - v0 < 1e-9:
@@ -199,10 +193,27 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
                 hint_pts: np.ndarray | None) -> _ChartMesh | None:
     weld_tol = max(1e-6, 0.1 * tol_m)
     on_tol = max(10.0 * weld_tol, tol_m)
+    # Assign each hint point to its best-fitting member (ties shared):
+    # at tangent seams (e.g. bottom plane / bilge cylinder) near-seam arc
+    # points lie within on_tol of the plane too and would otherwise
+    # inflate its bbox into an overhanging flap.
+    fits: list | None = None
+    res = min_res = None
+    if hint_pts is not None and len(hint_pts) >= 3:
+        hint_pts = np.asarray(hint_pts, dtype=float)
+        fits = [_member_fit(m, hint_pts) for m in members]
+        res = np.full((len(members), len(hint_pts)), np.inf)
+        for i, f in enumerate(fits):
+            if f is not None:
+                res[i] = f[2]
+        min_res = res.min(axis=0)
     pts_all, src_all, faces_all = [], [], []
     offset = 0
     for k, member in enumerate(members):
-        dom = _member_domain(member, hint_pts, on_tol)
+        on = None
+        if res is not None:
+            on = (res[k] <= on_tol) & (res[k] <= min_res + 1e-9)
+        dom = _member_domain(member, fits[k] if fits else None, on)
         if dom is None:
             continue
         try:

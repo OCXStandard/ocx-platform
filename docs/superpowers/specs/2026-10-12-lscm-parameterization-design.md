@@ -57,8 +57,14 @@ Changes elsewhere:
   `_member_fit` stays while `_best_param` uses it.
 - `render.py` `_tessellate_plates`: per-panel lazy cache
   `dict[str, LscmParam | None]`; fallback chain per plate is
-  `lscm_param or _best_param(candidates, contour)`. The chart is
-  contour-independent, which makes per-panel caching sound.
+  `lscm_param or _best_param(candidates, contour)`.
+  **Amendment (implementation):** `make_lscm(members, tol_m, hint_pts)` takes
+  the panel's concatenated sampled plate contours as *hint points*: members
+  without an intrinsic UV domain (planes, cylinders — only
+  `NurbsSurfaceParam` carries knot-domain bounds) are bounded by the bbox of
+  their on-surface hint points in member-local UV. `_tessellate_plates` runs
+  two passes — contour sampling first, then chart build + tessellation — so
+  the per-panel chart and cache remain sound.
 - `ocx-geometry/pyproject.toml`: add `scipy>=1.14`.
 
 Dependency direction unchanged: lscm.py uses numpy/scipy/trimesh/shapely —
@@ -70,7 +76,12 @@ all within ocx-geometry.
 
 1. **Facet members.** Sample each member param on its own UV grid; density per
    axis `n = clamp(ceil(span / chord_edge(curvature, tol_m)), 2, 48)` reusing
-   the existing chord-tolerance logic; planes get 2×2. Each cell → 2
+   the existing chord-tolerance logic; planes get 2×2. Members without an
+   intrinsic domain use the hint-point bbox (see Architecture amendment);
+   members with no on-surface hints or no 2-D extent are excluded from the
+   mesh. T-junctions left by density mismatches along member seams are
+   stitched by splitting the hosting boundary triangle at the junction
+   vertex. Each cell → 2
    triangles. Every vertex keeps a back-pointer `(member_index, local_uv)`.
 2. **Weld seams.** `scipy.spatial.cKDTree` pairs vertices within
    `weld_tol = max(1e-6, tol_m * 0.1)` m; union-find merges them. A merged

@@ -76,61 +76,6 @@ def curved_nurbs_surface():
     )
 
 
-def _grid_patch(pid, x0, y0, size=2.0):
-    """Flat bilinear NURBS patch spanning [x0,x0+size] x [y0,y0+size], z=0."""
-    return IrNurbsSurface(
-        id=pid, u_degree=1, v_degree=1,
-        u_knot_vector=[0, 0, 1, 1], v_knot_vector=[0, 0, 1, 1],
-        control_points=[[pt(x0, y0, 0), pt(x0, y0 + size, 0)],
-                        [pt(x0 + size, y0, 0), pt(x0 + size, y0 + size, 0)]],
-    )
-
-
-class TestComposite2DGrid:
-    """Composite charts over 2-D patch grids (hull patch layouts).
-
-    Regression for the TR04 tc14a outer shell: members of a surface
-    collection form a grid in both the girth and spine directions, so
-    several members share the same girth range.  Member selection in
-    ``evaluate`` must consider both chart axes, otherwise points are routed
-    to a patch from the wrong spine band and clamped to its border.
-    """
-
-    def _composite(self):
-        from ocx_geometry.surfaces import make_composite
-        members = [make_param(_grid_patch(f"p{i}{j}", 2.0 * i, 2.0 * j), LR,
-                              tol_m=0.01)
-                   for i in range(2) for j in range(2)]
-        assert all(m is not None for m in members)
-        # closed perimeter of the full [0,4]x[0,4] region, spanning all four
-        t = np.arange(0.0, 4.0, 0.25)
-        contour = np.concatenate([
-            np.column_stack([t, np.zeros_like(t), np.zeros_like(t)]),
-            np.column_stack([np.full_like(t, 4.0), t, np.zeros_like(t)]),
-            np.column_stack([4.0 - t, np.full_like(t, 4.0), np.zeros_like(t)]),
-            np.column_stack([np.zeros_like(t), 4.0 - t, np.zeros_like(t)]),
-        ])
-        comp = make_composite(members, contour)
-        assert comp is not None, "composite chart failed to build"
-        return comp, contour
-
-    def test_roundtrip_on_contour(self):
-        comp, contour = self._composite()
-        uv = comp.inverse(contour)
-        out = comp.evaluate(uv)
-        err = np.linalg.norm(out - contour, axis=1)
-        assert err.max() < 1e-3, f"max round-trip error {err.max():.3f} m"
-
-    def test_roundtrip_on_interior_points(self):
-        comp, _ = self._composite()
-        xs = np.linspace(0.2, 3.8, 7)
-        pts = np.array([[x, y, 0.0] for x in xs for y in xs])
-        uv = comp.inverse(pts)
-        out = comp.evaluate(uv)
-        err = np.linalg.norm(out - pts, axis=1)
-        assert err.max() < 1e-3, f"max round-trip error {err.max():.3f} m"
-
-
 class TestNurbs:
     def test_flat_patch_roundtrip(self):
         param = make_param(flat_nurbs_surface(), LR, tol_m=0.01)

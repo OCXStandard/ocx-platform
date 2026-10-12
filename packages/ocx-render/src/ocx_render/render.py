@@ -15,12 +15,12 @@ from ocx_geometry.backend import (
 )
 from ocx_geometry.curves import sample_contour, sample_curve
 from ocx_geometry.holes import parametric_profile, place_hole
+from ocx_geometry.lscm import make_lscm
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.mesh import PartMesh
 from ocx_geometry.sections_2d import fallback_polygon, section_polygon
 from ocx_geometry.surfaces import (
     SurfaceParam,
-    make_composite,
     make_param,
 )
 from ocx_geometry.sweep import (
@@ -176,6 +176,10 @@ def _tessellate_plates(vessel: IrVessel,
                        params: dict[str, list[SurfaceParam]],
                        tess: ITessellator, length: LengthResolver,
                        options: TessellationOptions, result: RenderResult) -> None:
+    # Pass 1: sample contours; collect them per panel as hints that bound
+    # otherwise-unbounded chart members (planes, cylinders).
+    prepared = []
+    hints: dict[str, list[np.ndarray]] = {}
     for plate in vessel.plates.values():
         panel_id = (plate.parent_ref.id
                     if plate.parent_ref.kind == ParentKind.PANEL else None)
@@ -194,9 +198,18 @@ def _tessellate_plates(vessel: IrVessel,
         if contour is None:
             result.skipped[plate.id] = "contour unsampleable or open"
             continue
+        prepared.append((plate, panel_id, candidates, contour))
+        hints.setdefault(panel_id, []).append(contour)
+
+    # Pass 2: one LSCM chart per multi-member panel, shared by its plates.
+    lscm_cache: dict[str, SurfaceParam | None] = {}
+    for plate, panel_id, candidates, contour in prepared:
         if len(candidates) > 1:
-            param = (make_composite(candidates, contour)
-                     or _best_param(candidates, contour))
+            if panel_id not in lscm_cache:
+                lscm_cache[panel_id] = make_lscm(
+                    candidates, options.tolerance_m,
+                    np.vstack(hints[panel_id]))
+            param = lscm_cache[panel_id] or _best_param(candidates, contour)
         else:
             param = candidates[0]
         panel = vessel.panels.get(panel_id)
