@@ -7,4 +7,4 @@ three.js HTML viewer.
     ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
 
 Exit codes: 0 rendered (parts may be skipped), 1 nothing renderable,
-2 cannot parse/build the model.
+2 cannot parse/build the model, 3 cannot write output.

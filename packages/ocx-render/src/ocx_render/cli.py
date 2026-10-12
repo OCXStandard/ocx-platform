@@ -40,7 +40,7 @@ def render(
     """Tessellate MODEL into a GLB file plus a self-contained HTML viewer.
 
     Exit codes: 0 rendered (parts may be skipped), 1 nothing renderable,
-    2 cannot parse/build the model.
+    2 cannot parse/build the model, 3 cannot write output.
     """
     from ocx_render.gltf_writer import write_glb
     from ocx_render.html_viewer import write_html
@@ -60,12 +60,16 @@ def render(
         raise typer.Exit(code=1)
 
     glb = destination if destination is not None else model.with_suffix(".glb")
-    write_glb(result.meshes, glb)
-    typer.echo(f"GLB written to {glb} "
-               f"({result.rendered_count} parts, {result.skipped_count} skipped)")
-    if not no_html:
-        html = write_html(glb)
-        typer.echo(f"Viewer written to {html}")
+    try:
+        write_glb(result.meshes, glb)
+        typer.echo(f"GLB written to {glb} "
+                   f"({result.rendered_count} parts, {result.skipped_count} skipped)")
+        if not no_html:
+            html = write_html(glb)
+            typer.echo(f"Viewer written to {html}")
+    except OSError as exc:
+        logger.error("Cannot write output for {}: {}", model, exc)
+        raise typer.Exit(code=3) from exc
 
 
 def entrypoint() -> None:
