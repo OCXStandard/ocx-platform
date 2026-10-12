@@ -832,6 +832,7 @@ dependencies = [
     { name = "numpy" },
     { name = "ocx-model-core" },
     { name = "shapely" },
+    { name = "trimesh" },
 ]
 
 [package.metadata]
@@ -841,6 +842,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0" },
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
     { name = "shapely", specifier = ">=2.2.0" },
+    { name = "trimesh", specifier = ">=5.1.1" },
 ]
 
 [[package]]
