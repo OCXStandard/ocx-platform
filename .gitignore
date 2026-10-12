@@ -54,6 +54,10 @@ Stubs_Log.md
 .env
 .env.*
 
+# Renderer / report outputs
+*.glb
+*.html
+
 # pdoc output
 _site/
 
