@@ -13,6 +13,7 @@ dependencies = [
     "trimesh>=5.1.1",
     "loguru>=0.7",
     "scipy>=1.14",
+    "networkx>=3.7",
 ]
 
 [build-system]
