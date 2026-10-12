@@ -909,15 +909,9 @@ class OcxV3Builder(IOcxBuilder):
             if hid is None:
                 continue
             contour = getattr(h, "contour", None)
-            curve = None
-            if contour is not None:
-                for attr in self._CONTOUR_ATTRS:
-                    val = getattr(contour, attr, None)
-                    target = val[0] if isinstance(val, list) and val else val
-                    if target is not None:
-                        curve = self._build_curve(target)
-                        if curve is not None:
-                            break
+            # A hole contour may consist of several curve segments
+            # (lines + arcs); collect them all into one composite.
+            curve = self._build_contour(contour)
             parametric = self._parametric_hole(h)
             holes[hid] = IrHole2D(id=hid, name=getattr(h, "name", None),
                                   guidref=getattr(h, "guidref", None),

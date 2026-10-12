@@ -111,7 +111,13 @@ def parametric_profile(hole: IrParametricHole | None, length: LengthResolver,
 def place_hole(profile_2d: np.ndarray,
                transformation: IrTransformation | None,
                length: LengthResolver) -> np.ndarray | None:
-    """Map a local (N, 2) profile onto its 3D placement frame → (N, 3) metres."""
+    """Map a local (N, 2) or (N, 3) profile onto its 3D placement frame
+    → (N, 3) metres.
+
+    2D profiles map onto the primary/secondary axes; 3D profiles (contour
+    holes defined in an arbitrary plane of their definition space)
+    additionally map z along primary × secondary.
+    """
     if transformation is None or transformation.origin is None:
         return None
     p, s = transformation.primary_axis, transformation.secondary_axis
@@ -129,6 +135,9 @@ def place_hole(profile_2d: np.ndarray,
         return None
     sv /= s_len
     origin = length.point(transformation.origin)
-    return (origin[None, :]
-            + profile_2d[:, :1] * pv[None, :]
-            + profile_2d[:, 1:2] * sv[None, :])
+    placed = (origin[None, :]
+              + profile_2d[:, :1] * pv[None, :]
+              + profile_2d[:, 1:2] * sv[None, :])
+    if profile_2d.shape[1] >= 3:
+        placed = placed + profile_2d[:, 2:3] * np.cross(pv, sv)[None, :]
+    return placed

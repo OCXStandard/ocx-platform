@@ -154,9 +154,10 @@ def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
             failures[key] = "unresolvable HoleRef"
             continue
         if shape.contour is not None:
-            pts = sample_contour(shape.contour, length, options.tolerance_m,
-                                 options.snap_tolerance_m)
-            profile = pts[:, :2] if pts is not None else None
+            # Keep the full 3D definition-space points: contour holes may
+            # be authored in any plane; place_hole maps all three axes.
+            profile = sample_contour(shape.contour, length, options.tolerance_m,
+                                     options.snap_tolerance_m)
         else:
             profile = parametric_profile(shape.parametric, length,
                                          options.tolerance_m)

@@ -2,7 +2,7 @@
 from types import SimpleNamespace as NS
 
 from ocx_model_core.builders.v3_builder import OcxV3Builder
-from ocx_model_core.model.ir import IrVessel
+from ocx_model_core.model.ir import IrCompositeCurve3D, IrVessel
 
 
 def _b() -> OcxV3Builder:
@@ -20,6 +20,48 @@ def _hole2d(hid, **variants):
                 symmetrical_hole=None, parametric_circle=None)
     base.update(variants)
     return NS(**base)
+
+
+class Line3D(NS):
+    pass
+
+
+class CircumArc3D(NS):
+    pass
+
+
+def _pt3(x, y, z, unit="Um"):
+    return NS(coordinates=[x, y, z], unit=unit)
+
+
+class TestContourHoles:
+    def test_multi_segment_hole_contour_builds_composite(self):
+        """A hole Contour of several lines + arcs must keep every segment."""
+        contour = NS(
+            line3_d=[
+                Line3D(id="l1", curve_length=_qty(1.0),
+                       start_point=_pt3(0.0, 0.0, 0.0),
+                       end_point=_pt3(1.0, 0.0, 0.0)),
+                Line3D(id="l2", curve_length=_qty(1.0),
+                       start_point=_pt3(1.0, 0.0, 1.0),
+                       end_point=_pt3(0.0, 0.0, 1.0)),
+            ],
+            circum_arc3_d=[
+                CircumArc3D(id="a1", curve_length=_qty(1.6),
+                            start_point=_pt3(1.0, 0.0, 0.0),
+                            intermediate_point=_pt3(1.5, 0.0, 0.5),
+                            end_point=_pt3(1.0, 0.0, 1.0)),
+                CircumArc3D(id="a2", curve_length=_qty(1.6),
+                            start_point=_pt3(0.0, 0.0, 1.0),
+                            intermediate_point=_pt3(-0.5, 0.0, 0.5),
+                            end_point=_pt3(0.0, 0.0, 0.0)),
+            ])
+        cat = NS(id="HC", name=None, hole2_d=[_hole2d("H9", contour=contour)])
+        ir = IrVessel(id="v1")
+        _b()._build_hole_catalogue(cat, ir)
+        c = ir.hole_shape_catalogue.holes["H9"].contour
+        assert isinstance(c, IrCompositeCurve3D)
+        assert len(c.segments) == 4
 
 
 class TestParametricDimensions:

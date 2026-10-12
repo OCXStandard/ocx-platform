@@ -111,6 +111,16 @@ class TestPlaceHole:
         assert np.allclose(out[1], [2.0, 2.0, 3.0])   # +x along primary
         assert np.allclose(out[2], [2.0, 2.0, 4.0])   # +y along secondary
 
+    def test_3d_profile_maps_z_along_tertiary_axis(self):
+        """Contour holes keep their 3rd coordinate: z maps along primary x secondary."""
+        t = IrTransformation(origin=IrPoint3D(0.0, 9.75, 0.0, "Um"),
+                             primary_axis=IrVector3D(1, 0, 0),
+                             secondary_axis=IrVector3D(0, 1, 0))
+        pts = np.array([[7.6, 0.0, 7.0], [8.4, 0.0, 9.0]])
+        out = place_hole(pts, t, L)
+        assert np.allclose(out[0], [7.6, 9.75, 7.0])
+        assert np.allclose(out[1], [8.4, 9.75, 9.0])
+
     def test_secondary_axis_is_orthogonalized(self):
         t = IrTransformation(origin=IrPoint3D(0, 0, 0, "Um"),
                              primary_axis=IrVector3D(1, 0, 0),

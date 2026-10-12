@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 MODEL = Path(__file__).resolve().parents[1] / "models" / "TR04" / "tr04_tc13_nast.3docx"
+MODEL_AI3DX = MODEL.with_name("tr04_tc13_ai3dx.3docx")
 
 pytestmark = pytest.mark.integration
 
@@ -45,6 +46,39 @@ def test_tr04_tc13_renders_with_cutouts():
     area_holed = _plate_area(result.meshes)
 
     # Rendering with the holes stripped must give a measurably larger area.
+    for key, p in list(vessel.panels.items()):
+        vessel.panels[key] = dataclasses.replace(
+            p, cut_by_holes=[], cut_by_contours=[]
+        )
+    for key, pl in list(vessel.plates.items()):
+        vessel.plates[key] = dataclasses.replace(
+            pl, cut_by_holes=[], cut_by_contours=[]
+        )
+    area_full = _plate_area(render_model(vessel, TessellationOptions()).meshes)
+    assert area_holed < area_full * 0.995
+
+
+@pytest.mark.skipif(not MODEL_AI3DX.exists(), reason="reference model not present")
+def test_tr04_tc13_ai3dx_contour_holes_are_cut():
+    """ai3dx authors holes as multi-segment 3D contours (XZ plane)."""
+    from ocx_model_core.builders.factory import get_builder
+    from ocx_model_core.parsers.parser import OcxParser
+    from ocx_render.render import TessellationOptions, render_model
+
+    root = OcxParser().parse(str(MODEL_AI3DX))
+    vessel = get_builder(root.schema_version).build(root)
+
+    assert vessel.hole_shape_catalogue is not None
+    assert len(vessel.hole_shape_catalogue.holes) == 9
+    panel = next(iter(vessel.panels.values()))
+    assert len(panel.cut_by_holes) == 9
+
+    result = render_model(vessel, TessellationOptions())
+    assert any(m.kind == "plate" for m in result.meshes)
+    hole_failures = {k: v for k, v in result.skipped.items() if "/hole:" in k}
+    assert hole_failures == {}
+    area_holed = _plate_area(result.meshes)
+
     for key, p in list(vessel.panels.items()):
         vessel.panels[key] = dataclasses.replace(
             p, cut_by_holes=[], cut_by_contours=[]
