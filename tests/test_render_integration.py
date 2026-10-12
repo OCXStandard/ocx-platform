@@ -8,6 +8,7 @@ import pytest
 
 MODEL = Path(__file__).resolve().parents[1] / "models" / "TR04" / "tr04_tc13_nast.3docx"
 MODEL_AI3DX = MODEL.with_name("tr04_tc13_ai3dx.3docx")
+MODEL_SHELL = MODEL.with_name("tr04_tc14a_outer_shell.3docx")
 
 pytestmark = pytest.mark.integration
 
@@ -56,6 +57,44 @@ def test_tr04_tc13_renders_with_cutouts():
         )
     area_full = _plate_area(render_model(vessel, TessellationOptions()).meshes)
     assert area_holed < area_full * 0.995
+
+
+@pytest.mark.skipif(not MODEL_SHELL.exists(), reason="reference model not present")
+def test_tr04_tc14a_outer_shell_renders_all_plates():
+    """Outer-shell plates spanning a 2-D NURBS patch grid must all render,
+    and each plate's mesh boundary must track its sampled outer contour.
+
+    Regression for distorted/missing shell plates: composite charts over
+    patch-grid surface collections mis-routed points to patches from the
+    wrong spine band and lost contour points whose own patch had too few
+    contour samples to fit an affine chart.
+    """
+    from ocx_geometry.curves import sample_contour
+    from ocx_geometry.measure import LengthResolver
+    from ocx_model_core.builders.factory import get_builder
+    from ocx_model_core.parsers.parser import OcxParser
+    from ocx_render.render import TessellationOptions, render_model
+
+    root = OcxParser().parse(str(MODEL_SHELL))
+    vessel = get_builder(root.schema_version).build(root)
+    assert len(vessel.plates) == 24
+
+    options = TessellationOptions()
+    result = render_model(vessel, options)
+    assert result.skipped == {}, result.skipped
+    plate_meshes = {m.part_id: m for m in result.meshes if m.kind == "plate"}
+    assert len(plate_meshes) == 24
+
+    length = LengthResolver(vessel.unit_registry)
+    for plate in vessel.plates.values():
+        contour = sample_contour(plate.outer_contour, length,
+                                 options.tolerance_m, options.snap_tolerance_m)
+        verts = plate_meshes[plate.id].vertices
+        # every sampled contour point must be close to some mesh vertex
+        d = np.linalg.norm(contour[:, None, :] - verts[None, :, :], axis=2)
+        worst = float(d.min(axis=1).max())
+        assert worst < 0.1, (f"{plate.name}: contour point {worst:.3f} m "
+                             "away from the rendered mesh")
 
 
 @pytest.mark.skipif(not MODEL_AI3DX.exists(), reason="reference model not present")

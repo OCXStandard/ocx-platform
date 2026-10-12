@@ -11,7 +11,7 @@ import numpy as np
 import shapely
 import trimesh
 from loguru import logger
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import Polygon
 from shapely.geometry.polygon import orient
 
 from ocx_geometry.backend import ITessellator, TessellationOptions
@@ -21,40 +21,45 @@ from ocx_geometry.surfaces import SurfaceParam
 _MIN_TRI_AREA = 1e-14
 
 
-def _largest_polygon(geom) -> Polygon | None:
+def _polygon_parts(geom) -> list[Polygon]:
     if isinstance(geom, Polygon):
-        return geom
-    if isinstance(geom, MultiPolygon):
-        return max(geom.geoms, key=lambda g: g.area, default=None)
-    if hasattr(geom, "geoms"):                       # GeometryCollection
-        polys = [g for g in geom.geoms if isinstance(g, Polygon)]
-        return max(polys, key=lambda g: g.area, default=None)
-    return None
+        return [geom]
+    if hasattr(geom, "geoms"):                 # MultiPolygon/GeometryCollection
+        return [g for g in geom.geoms if isinstance(g, Polygon)]
+    return []
 
 
 def _clean_polygon(uv: np.ndarray, holes: list[np.ndarray]
-                   ) -> tuple[np.ndarray, list[np.ndarray]] | None:
-    """Validate/repair the UV polygon; return (exterior, holes) ring arrays."""
+                   ) -> list[tuple[np.ndarray, list[np.ndarray]]]:
+    """Validate/repair the UV polygon; return (exterior, holes) ring arrays
+    for every usable polygon part.
+
+    A locally folded development splits into several parts under
+    ``make_valid``; all parts belong to the plate and must be kept.
+    """
     try:
         poly = Polygon(uv, holes=[h for h in holes if len(h) >= 3])
     except (ValueError, TypeError):
-        return None
-    if not poly.is_valid:
+        return []
+    if poly.is_valid:
+        parts = [poly]
+    else:
         try:
-            poly = _largest_polygon(shapely.make_valid(poly))
+            parts = _polygon_parts(shapely.make_valid(poly))
         except shapely.errors.GEOSException as exc:
             logger.debug("GEOSException during make_valid: {}", exc)
-            return None
-        if poly is None:
-            return None
-    if poly.is_empty or poly.area <= 0.0:
-        return None
-    poly = orient(poly, sign=1.0)                    # CCW exterior, CW holes
-    ext = np.array(poly.exterior.coords)[:-1]
-    ints = [np.array(r.coords)[:-1] for r in poly.interiors]
-    if len(ext) < 3:
-        return None
-    return ext, ints
+            return []
+    largest = max((p.area for p in parts), default=0.0)
+    out = []
+    for p in parts:
+        if p.is_empty or p.area <= max(0.0, 1e-9 * largest):
+            continue
+        p = orient(p, sign=1.0)                  # CCW exterior, CW holes
+        ext = np.array(p.exterior.coords)[:-1]
+        ints = [np.array(r.coords)[:-1] for r in p.interiors]
+        if len(ext) >= 3:
+            out.append((ext, ints))
+    return out
 
 
 def _earcut(ext: np.ndarray, holes: list[np.ndarray]
@@ -141,23 +146,32 @@ class UvTessellator(ITessellator):
             logger.debug("Dropped {} holes for {} due to non-finite UVs",
                          len(uv_holes) - len(valid_holes), part_id)
 
-        cleaned = _clean_polygon(uv, valid_holes)
-        if cleaned is None:
+        parts = _clean_polygon(uv, valid_holes)
+        if not parts:
             logger.debug("Unrepairable UV polygon for {}", part_id)
             return None
-        ext, ints = cleaned
 
         # Log if make_valid dropped interior rings
-        if len(ints) < len(valid_holes):
+        n_ints = sum(len(ints) for _, ints in parts)
+        if n_ints < len(valid_holes):
             logger.debug("UV cleaning dropped {} interior ring(s) for {} "
                          "(holes outside the plate region are expected to be "
-                         "dropped)", len(valid_holes) - len(ints), part_id)
+                         "dropped)", len(valid_holes) - n_ints, part_id)
 
-        cut = _earcut(ext, ints)
-        if cut is None:
+        vert_blocks, tri_blocks, offset = [], [], 0
+        for ext, ints in parts:
+            cut = _earcut(ext, ints)
+            if cut is None:
+                continue
+            pv, pt = cut
+            vert_blocks.append(pv)
+            tri_blocks.append(pt + offset)
+            offset += len(pv)
+        if not vert_blocks:
             logger.debug("Earcut produced no triangles for {}", part_id)
             return None
-        verts_uv, tris = cut
+        verts_uv = np.vstack(vert_blocks)
+        tris = np.vstack(tri_blocks)
 
         # metric subdivision for curved surfaces
         max_edge = surface_param.max_edge_m(options.tolerance_m)

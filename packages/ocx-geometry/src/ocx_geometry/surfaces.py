@@ -473,21 +473,33 @@ class CompositeParam(SurfaceParam):
         _, _, vt = np.linalg.svd(nn, full_matrices=True)
         self.spine = vt[-1]
 
-        # cumulative signed transverse (girth) arc length along the contour
+        # cumulative signed transverse (girth) arc length along the contour.
+        # The sign must be intrinsic to the surface: project each step onto
+        # the transverse tangent t = spine x normal (normals made
+        # sign-continuous along the contour).  Comparing against the previous
+        # step direction folds the development when the transverse direction
+        # rotates past 90 degrees on curved hulls.
+        n = np.zeros((len(contour), 3))
+        for i in ok:
+            idx = np.nonzero(assign == i)[0]
+            if len(idx):
+                n[idx] = np.asarray(members[i].normals(fits[i][0][idx]),
+                                    dtype=float)
+        for j in range(1, len(contour)):
+            if n[j] @ n[j - 1] < 0.0:
+                n[j] = -n[j]
+        t = np.cross(self.spine, n)
+        t_norm = np.linalg.norm(t, axis=1)
+        for j in range(len(contour)):
+            if t_norm[j] > 1e-12:
+                t[j] /= t_norm[j]
+            elif j > 0:
+                t[j] = t[j - 1]
         g = np.zeros(len(contour))
-        w: np.ndarray | None = None
-        for i in range(1, len(contour)):
-            step = contour[i] - contour[i - 1]
+        for j in range(1, len(contour)):
+            step = contour[j] - contour[j - 1]
             tr = step - (step @ self.spine) * self.spine
-            ln = float(np.linalg.norm(tr))
-            if ln < 1e-12:
-                g[i] = g[i - 1]
-                continue
-            d = tr / ln
-            if w is None or d @ w >= 0.0:
-                g[i], w = g[i - 1] + ln, d
-            else:
-                g[i], w = g[i - 1] - ln, -d
+            g[j] = g[j - 1] + tr @ (0.5 * (t[j] + t[j - 1]))
         v = contour @ self.spine
 
         # per-member affine chart uv_k -> (g, v) and its inverse
@@ -495,6 +507,7 @@ class CompositeParam(SurfaceParam):
         self.affine: list[np.ndarray] = []       # 3x2: [u, v, 1] @ A = (g, v)
         self.inv_affine: list[np.ndarray] = []
         self.g_range: list[tuple[float, float]] = []
+        self.v_range: list[tuple[float, float]] = []
         for i in ok:
             idx = np.nonzero(shared[i])[0]
             if len(idx) < 3:
@@ -514,23 +527,36 @@ class CompositeParam(SurfaceParam):
             self.affine.append(a)
             self.inv_affine.append(np.linalg.inv(lin))
             self.g_range.append((float(g[idx].min()), float(g[idx].max())))
+            self.v_range.append((float(v[idx].min()), float(v[idx].max())))
         if len(self.members) < 2:
             raise ValueError("composite chart fit failed")
+        # Exact chart correspondence for the construction contour.  Points on
+        # patches with too few contour samples to fit an affine chart would
+        # otherwise be clamped onto the wrong member by inverse().
+        self._src_pts = contour
+        self._src_gv = np.column_stack([g, v])
 
-    def _member_for_g(self, gq: float) -> int:
+    def _member_for_gv(self, gq: float, vq: float) -> int:
+        """Member whose fitted (g, v) box best contains or is nearest (gq, vq).
+
+        Collection members can form a 2-D grid (girth x spine), so several
+        members may share a girth range; selection must use both axes.
+        """
         best, score = 0, np.inf
-        for k, (lo, hi) in enumerate(self.g_range):
-            if lo - self._SEAM_PAD <= gq <= hi + self._SEAM_PAD:
-                s = abs(gq - 0.5 * (lo + hi)) - 0.5 * (hi - lo)   # most interior
-            else:
-                s = min(abs(gq - lo), abs(gq - hi)) + 1e3          # outside: nearest
+        for k, ((glo, ghi), (vlo, vhi)) in enumerate(zip(self.g_range,
+                                                         self.v_range)):
+            sg = abs(gq - 0.5 * (glo + ghi)) - 0.5 * (ghi - glo)
+            sv = abs(vq - 0.5 * (vlo + vhi)) - 0.5 * (vhi - vlo)
+            s = max(sg, sv)                       # <=0 inside the box
+            if s > self._SEAM_PAD:                # outside: nearest box
+                s = max(sg, 0.0) + max(sv, 0.0) + 1e3
             if s < score:
                 best, score = k, s
         return best
 
     def _member_uv(self, uv: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         uv = np.atleast_2d(np.asarray(uv, dtype=float))
-        ks = np.array([self._member_for_g(q[0]) for q in uv])
+        ks = np.array([self._member_for_gv(q[0], q[1]) for q in uv])
         out = np.empty_like(uv)
         for k in np.unique(ks):
             sel = ks == k
@@ -539,11 +565,17 @@ class CompositeParam(SurfaceParam):
         return ks, out
 
     def evaluate(self, uv):
+        uv = np.atleast_2d(np.asarray(uv, dtype=float))
         ks, muv = self._member_uv(uv)
         out = np.empty((len(muv), 3))
         for k in np.unique(ks):
             sel = ks == k
             out[sel] = self.members[k].evaluate(muv[sel])
+        # construction contour points evaluate to their exact 3D positions
+        d = np.linalg.norm(uv[:, None, :] - self._src_gv[None], axis=2)
+        j = d.argmin(axis=1)
+        snap = d[np.arange(len(uv)), j] < 1e-7
+        out[snap] = self._src_pts[j[snap]]
         return out
 
     def inverse(self, pts):
@@ -559,6 +591,13 @@ class CompositeParam(SurfaceParam):
             sel = ks == k
             uv = fits[k][0][sel]
             out[sel] = np.column_stack([uv, np.ones(len(uv))]) @ self.affine[k]
+        # construction contour points map to their exact chart coordinates
+        # whenever that beats the member round-trip residual
+        d = np.linalg.norm(pts[:, None, :] - self._src_pts[None], axis=2)
+        j = d.argmin(axis=1)
+        dmin = d[np.arange(len(pts)), j]
+        snap = dmin <= np.maximum(res[ks, np.arange(len(pts))], 1e-9)
+        out[snap] = self._src_gv[j[snap]]
         return out
 
     def normals(self, uv):
