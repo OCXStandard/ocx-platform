@@ -1,6 +1,6 @@
 """Tests for the LSCM multi-patch chart (ocx_geometry.lscm)."""
 import numpy as np
-import pytest  # noqa: F401 — used by tests appended in later tasks
+import pytest
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.surfaces import make_param
 from ocx_model_core.model.ir.geometry import IrNurbsSurface, IrPoint3D
@@ -114,3 +114,62 @@ class TestBuildMesh:
         p1 = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
         p2 = PlaneParam(np.array([0.0, 2.0, 0.0]), np.array([0.0, 1.0, 0.0]))
         assert _build_mesh([p1, p2], tol_m=0.01, hint_pts=None) is None
+
+
+class TestLscmFlat:
+    def test_single_patch_chart_is_metric_and_exact(self):
+        from ocx_geometry.lscm import make_lscm
+        m = make_param(_grid_patch("p", 0.0, 0.0, 4.0), LR, tol_m=0.01)
+        chart = make_lscm([m], tol_m=0.01)
+        assert chart is not None
+        pts = np.array([[0.0, 0, 0], [4.0, 0, 0], [4.0, 4, 0],
+                        [0.0, 4, 0], [2.0, 2, 0]])
+        uv = chart.inverse(pts)
+        # metric chart: UV distances match 3-D distances
+        assert np.linalg.norm(uv[1] - uv[0]) == pytest.approx(4.0, rel=0.05)
+        np.testing.assert_allclose(chart.evaluate(uv), pts, atol=1e-6)
+
+    def test_normals_are_unit_and_perpendicular(self):
+        from ocx_geometry.lscm import make_lscm
+        chart = make_lscm(_grid_members(), tol_m=0.01)
+        assert chart is not None
+        uv = chart.inverse(np.array([[1.0, 1.0, 0.0], [3.0, 3.0, 0.0]]))
+        n = chart.normals(uv)
+        np.testing.assert_allclose(np.linalg.norm(n, axis=1), 1.0, atol=1e-9)
+        np.testing.assert_allclose(np.abs(n[:, 2]), 1.0, atol=1e-9)
+
+
+class TestLscm2DGrid:
+    """Chart over a 2-D patch grid — the TR04 hull patch-layout regression
+    (replaces TestComposite2DGrid)."""
+
+    def _chart(self):
+        from ocx_geometry.lscm import make_lscm
+        chart = make_lscm(_grid_members(), tol_m=0.01)
+        assert chart is not None, "LSCM chart failed to build"
+        return chart
+
+    def _contour(self):
+        t = np.arange(0.0, 4.0, 0.25)
+        z = np.zeros_like(t)
+        return np.concatenate([
+            np.column_stack([t, z, z]),
+            np.column_stack([np.full_like(t, 4.0), t, z]),
+            np.column_stack([4.0 - t, np.full_like(t, 4.0), z]),
+            np.column_stack([z, 4.0 - t, z]),
+        ])
+
+    def test_roundtrip_on_contour(self):
+        chart = self._chart()
+        contour = self._contour()
+        out = chart.evaluate(chart.inverse(contour))
+        err = np.linalg.norm(out - contour, axis=1)
+        assert err.max() < 1e-6, f"max round-trip error {err.max():.2e} m"
+
+    def test_roundtrip_on_interior_points(self):
+        chart = self._chart()
+        xs = np.linspace(0.2, 3.8, 7)            # includes the seam at 2.0
+        pts = np.array([[x, y, 0.0] for x in xs for y in xs])
+        out = chart.evaluate(chart.inverse(pts))
+        err = np.linalg.norm(out - pts, axis=1)
+        assert err.max() < 1e-6, f"max round-trip error {err.max():.2e} m"

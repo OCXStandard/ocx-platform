@@ -17,11 +17,14 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import shapely
 import trimesh
 from loguru import logger
-from scipy.sparse import coo_matrix
+from scipy.sparse import bmat, coo_matrix, diags
 from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import spsolve
 from scipy.spatial import cKDTree
+from shapely.strtree import STRtree
 
 from ocx_geometry.surfaces import SurfaceParam, _member_fit
 
@@ -259,3 +262,186 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
         if common:
             tri_member[i] = min(common)
     return _ChartMesh(V, F, src, tri_member)
+
+
+def _longest_boundary_loop(bnd: np.ndarray) -> list[int] | None:
+    """Longest closed loop among the directed boundary edges."""
+    nxt = {int(a): int(b) for a, b in bnd}
+    seen: set[int] = set()
+    best: list[int] | None = None
+    for start in list(nxt):
+        if start in seen:
+            continue
+        loop, v = [], start
+        while v in nxt and v not in seen:
+            seen.add(v)
+            loop.append(v)
+            v = nxt[v]
+        if v != start:
+            continue                     # open chain, not a loop
+        if best is None or len(loop) > len(best):
+            best = loop
+    return best
+
+
+def _lscm_uv(V: np.ndarray, F: np.ndarray) -> np.ndarray | None:
+    """Flatten the mesh with LSCM: minimize conformal energy
+    x' (L_flat - 2A) x with two pinned boundary vertices.
+    x = [u_0..u_{n-1}, v_0..v_{n-1}]."""
+    n = len(V)
+    i0, i1, i2 = F[:, 0], F[:, 1], F[:, 2]
+
+    def cot(a, b):
+        cr = np.linalg.norm(np.cross(a, b), axis=1)
+        return (a * b).sum(axis=1) / np.maximum(cr, 1e-15)
+
+    e0, e1, e2 = V[i2] - V[i1], V[i0] - V[i2], V[i1] - V[i0]
+    c0, c1, c2 = cot(e2, -e1), cot(e0, -e2), cot(e1, -e0)
+    rows = np.concatenate([i1, i2, i2, i0, i0, i1])
+    cols = np.concatenate([i2, i1, i0, i2, i1, i0])
+    vals = 0.5 * np.concatenate([c0, c0, c1, c1, c2, c2])
+    W = coo_matrix((vals, (rows, cols)), shape=(n, n)).tocsr()
+    L = diags(np.asarray(W.sum(axis=1)).ravel()) - W
+
+    bnd = _boundary_edges(F)
+    if len(bnd) < 2:
+        return None
+    ar, ac, av = [], [], []
+    for a, b in bnd:                     # x'Ax = sum 0.5 (u_a v_b - u_b v_a)
+        ar += [a, n + b, b, n + a]
+        ac += [n + b, a, n + a, b]
+        av += [0.25, 0.25, -0.25, -0.25]
+    A = coo_matrix((av, (ar, ac)), shape=(2 * n, 2 * n)).tocsr()
+    Q = (bmat([[L, None], [None, L]]) - 2.0 * A).tocsr()
+
+    loop = _longest_boundary_loop(bnd)
+    if loop is None or len(loop) < 2:
+        return None
+    p0, p1 = loop[0], loop[len(loop) // 2]
+    fixed = np.array([p0, p1, n + p0, n + p1])
+    xb = np.array([0.0, 1.0, 0.0, 0.0])
+    free = np.setdiff1d(np.arange(2 * n), fixed)
+    rhs = -Q[free][:, fixed] @ xb
+    xf = spsolve(Q[free][:, free].tocsc(), rhs)
+    x = np.empty(2 * n)
+    x[fixed], x[free] = xb, xf
+    if not np.isfinite(x).all():
+        return None
+    return np.column_stack([x[:n], x[n:]])
+
+
+class LscmParam(SurfaceParam):
+    """Metric LSCM chart over a welded multi-member facet mesh."""
+
+    def __init__(self, members: list[SurfaceParam], cm: _ChartMesh,
+                 uv: np.ndarray) -> None:
+        self.members = members
+        self._V, self._F = cm.V, cm.F
+        self._src, self._tri_member = cm.src, cm.tri_member
+        self._uv = uv
+        self._mesh = trimesh.Trimesh(self._V, self._F, process=False)
+        self._tree = STRtree([shapely.Polygon(t) for t in uv[self._F]])
+
+    def _locate_uv(self, uv):
+        uv = np.atleast_2d(np.asarray(uv, dtype=float))
+        tid = np.asarray(self._tree.nearest(
+            [shapely.Point(p) for p in uv]), dtype=int)
+        tri2 = self._uv[self._F[tid]]
+
+        def pad(a):
+            return np.concatenate(
+                [a, np.zeros(a.shape[:-1] + (1,))], axis=-1)
+
+        bary = trimesh.triangles.points_to_barycentric(pad(tri2), pad(uv))
+        bary = np.clip(bary, 0.0, None)   # outside points snap to the tri
+        bary /= np.maximum(bary.sum(axis=1, keepdims=True), 1e-300)
+        return tid, bary
+
+    def _source_eval(self, tid, bary, fn, fallback):
+        """fn(member, local_uv) per point grouped by source member;
+        rows stay on ``fallback`` where no source exists or fn fails."""
+        corners = self._F[tid]
+        ks = self._tri_member[tid]
+        out = np.array(fallback, dtype=float, copy=True)
+        for k in np.unique(ks[ks >= 0]):
+            sel = np.nonzero(ks == k)[0]
+            luv = np.array([[self._src[c][k] for c in corners[i]]
+                            for i in sel])
+            local = np.einsum("ij,ijk->ik", bary[sel], luv)
+            try:
+                val = np.asarray(fn(self.members[k], local), dtype=float)
+            except Exception:  # noqa: BLE001 — keep the mesh fallback
+                continue
+            good = np.isfinite(val).all(axis=1)
+            out[sel[good]] = val[good]
+        return out
+
+    def evaluate(self, uv):
+        tid, bary = self._locate_uv(uv)
+        fallback = np.einsum("ij,ijk->ik", bary, self._V[self._F[tid]])
+        return self._source_eval(tid, bary,
+                                 lambda m, luv: m.evaluate(luv), fallback)
+
+    def inverse(self, pts):
+        pts = np.atleast_2d(np.asarray(pts, dtype=float))
+        closest, _, tid = trimesh.proximity.closest_point(self._mesh, pts)
+        bary = trimesh.triangles.points_to_barycentric(
+            self._V[self._F[tid]], np.asarray(closest, dtype=float))
+        bary = np.clip(bary, 0.0, None)
+        bary /= np.maximum(bary.sum(axis=1, keepdims=True), 1e-300)
+        return np.einsum("ij,ijk->ik", bary, self._uv[self._F[tid]])
+
+    def normals(self, uv):
+        tid, bary = self._locate_uv(uv)
+        fallback = np.asarray(self._mesh.face_normals)[tid]
+        n = self._source_eval(tid, bary,
+                              lambda m, luv: m.normals(luv), fallback)
+        flip = (n * fallback).sum(axis=1) < 0.0   # orient with mesh winding
+        n[flip] *= -1.0
+        return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True),
+                              1e-15)
+
+    def max_edge_m(self, tol_m):
+        edges = [e for e in (m.max_edge_m(tol_m) for m in self.members)
+                 if e is not None]
+        return min(edges) if edges else None
+
+
+def make_lscm(members: list[SurfaceParam], tol_m: float,
+              hint_pts: np.ndarray | None = None) -> LscmParam | None:
+    """LSCM chart over collection members, or None if not buildable."""
+    try:
+        cm = _build_mesh(members, tol_m, hint_pts)
+        if cm is None:
+            return None
+        uv = _lscm_uv(cm.V, cm.F)
+        if uv is None:
+            logger.debug("LSCM: flattening failed")
+            return None
+        tri3 = cm.V[cm.F]
+        a3 = 0.5 * np.linalg.norm(
+            np.cross(tri3[:, 1] - tri3[:, 0], tri3[:, 2] - tri3[:, 0]),
+            axis=1)
+        t2 = uv[cm.F]
+        a2s = 0.5 * ((t2[:, 1, 0] - t2[:, 0, 0])
+                     * (t2[:, 2, 1] - t2[:, 0, 1])
+                     - (t2[:, 2, 0] - t2[:, 0, 0])
+                     * (t2[:, 1, 1] - t2[:, 0, 1]))
+        ok = (np.abs(a2s) > 1e-18) & (a3 > 1e-18)
+        if not ok.any():
+            logger.debug("LSCM: chart collapsed")
+            return None
+        maj = 1.0 if a2s[ok].sum() >= 0.0 else -1.0
+        flipped = float((np.sign(a2s[ok]) != maj).mean())
+        if flipped > _MAX_FLIPPED:
+            logger.debug("LSCM: {:.2%} flipped UV triangles", flipped)
+            return None
+        ratio = a3[ok] / np.abs(a2s[ok])
+        if float(ratio.max() / ratio.min()) > _MAX_SCALE_RATIO:
+            logger.debug("LSCM: per-triangle scale spread too large")
+            return None
+        uv = uv * math.sqrt(float(np.median(ratio)))
+        return LscmParam(members, cm, uv)
+    except Exception as exc:  # noqa: BLE001 — chart disqualifies itself
+        logger.debug("LSCM chart failed: {}", exc)
+        return None

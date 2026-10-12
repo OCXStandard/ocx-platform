@@ -14,6 +14,7 @@ dependencies = [
     "loguru>=0.7",
     "scipy>=1.14",
     "networkx>=3.7",
+    "rtree>=1.4.1",
 ]
 
 [build-system]
