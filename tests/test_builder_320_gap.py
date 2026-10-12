@@ -294,6 +294,51 @@ def test_extruded_surface_accepts_310_bare_curve_and_vector():
     assert (ir.sweep.x, ir.sweep.y, ir.sweep.z) == (0.0, 1.0, 0.0)
 
 
+def test_nurbs_surface_populates_degrees_knots_and_control_grid():
+    """NURBSSurface u/v properties, knot vectors and the u-major control grid."""
+    surface = NurbsSurface(
+        id="N2",
+        normal=_dir3(0.0, -1.0, 0.0),
+        point_on_surface=_pt3(5.0, 10.0, 10.6),
+        u_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        v_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        uknot_vector=NS(value=[0.0, 0.0, 2800.0, 2800.0]),
+        vknot_vector=NS(value=[0.0, 0.0, 10000.0, 10000.0]),
+        control_pt_list=[NS(control_point=[
+            _pt3(10.0, 10.0, 12.0), _pt3(0.0, 10.0, 12.0),
+            _pt3(10.0, 10.0, 9.2), _pt3(0.0, 10.0, 9.2),
+        ])],
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrNurbsSurface)
+    assert ir.u_degree == 1
+    assert ir.v_degree == 1
+    assert ir.u_knot_vector == [0.0, 0.0, 2800.0, 2800.0]
+    assert ir.v_knot_vector == [0.0, 0.0, 10000.0, 10000.0]
+    # Flat ControlPtList is u-major: rows are fixed-u, varying v.
+    assert len(ir.control_points) == 2
+    assert len(ir.control_points[0]) == 2
+    assert ir.control_points[0][1].x == 0.0
+    assert ir.control_points[1][0].z == 9.2
+
+
+def test_nurbs_surface_mismatched_grid_yields_empty_control_points():
+    """A control-point count that disagrees with numCtrlPts u*v degrades to []."""
+    surface = NurbsSurface(
+        id="N3",
+        normal=_dir3(0.0, -1.0, 0.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        u_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        v_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        uknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        vknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        control_pt_list=[NS(control_point=[_pt3(0.0, 0.0, 0.0)])],
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrNurbsSurface)
+    assert ir.control_points == []
+
+
 def test_ref_extracts_offset_and_direction():
     raw = NS(local_ref="X1", guidref="g-1",
              offset=_qty(50.0, "Umm"), offset_direction=_dir3(0.0, 1.0, 0.0))

@@ -613,7 +613,30 @@ class OcxV3Builder(IOcxBuilder):
                 face_boundary_curve=self._curve_or_contour(getattr(elem, "face_boundary_curve", None)),
                 normal=normal, point_on_surface=pos)
         if "nurbssurface" in name or "nurbs" in name:
-            return IrNurbsSurface(id=sid, normal=normal, point_on_surface=pos)
+            up = getattr(elem, "u_nurbsproperties", None)
+            vp = getattr(elem, "v_nurbsproperties", None)
+            uk = getattr(elem, "uknot_vector", None)
+            vk = getattr(elem, "vknot_vector", None)
+            raw_pts = []
+            for cpl in _children(getattr(elem, "control_pt_list", None)):
+                raw_pts.extend(_children(getattr(cpl, "control_point", None)))
+            # The flat ControlPtList is u-major: index = u * numV + v.
+            nu = getattr(up, "num_ctrl_pts", None) if up else None
+            nv = getattr(vp, "num_ctrl_pts", None) if vp else None
+            rows: list[list[IrPoint3D]] = []
+            if nu and nv and len(raw_pts) == int(nu) * int(nv):
+                built = [self._pt(p) for p in raw_pts]
+                if all(built):
+                    nv = int(nv)
+                    rows = [built[i * nv:(i + 1) * nv] for i in range(int(nu))]
+            return IrNurbsSurface(
+                id=sid,
+                u_degree=getattr(up, "degree", None) if up else None,
+                v_degree=getattr(vp, "degree", None) if vp else None,
+                u_knot_vector=[float(k) for k in (getattr(uk, "value", None) or [])] if uk else [],
+                v_knot_vector=[float(k) for k in (getattr(vk, "value", None) or [])] if vk else [],
+                control_points=rows,
+                normal=normal, point_on_surface=pos)
         logger.debug("Unknown surface type: {}", type(elem).__name__)
         return None
 
