@@ -149,8 +149,9 @@ class UvTessellator(ITessellator):
 
         # Log if make_valid dropped interior rings
         if len(ints) < len(valid_holes):
-            logger.warning("UV cleaning dropped {} interior rings for {}",
-                           len(valid_holes) - len(ints), part_id)
+            logger.debug("UV cleaning dropped {} interior ring(s) for {} "
+                         "(holes outside the plate region are expected to be "
+                         "dropped)", len(valid_holes) - len(ints), part_id)
 
         cut = _earcut(ext, ints)
         if cut is None:

@@ -118,7 +118,8 @@ def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
                     ) -> tuple[list[np.ndarray], dict[str, str]]:
     """All hole polylines for one plate: inline contours + resolved CutBy holes.
 
-    Returns (hole polylines in metres, failures keyed ``hole:<id>``).
+    Returns (hole polylines in metres, failures keyed
+    ``<plate_id>/hole:<id>``).
     Panel-level holes are offered to every plate of the panel; the UV
     polygon clean-up clips or drops holes outside the plate region.
     """
@@ -142,7 +143,8 @@ def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
 
     cat = vessel.hole_shape_catalogue
     for hc in entries:
-        key = f"hole:{hc.id or (hc.hole_ref.local_ref if hc.hole_ref else '?')}"
+        key = (f"{plate.id}/hole:"
+               f"{hc.id or (hc.hole_ref.local_ref if hc.hole_ref else '?')}")
         shape = None
         if cat is not None and hc.hole_ref is not None:
             shape = cat.holes.get(hc.hole_ref.local_ref)
@@ -277,8 +279,10 @@ def render_model(vessel: IrVessel,
     for pillar in vessel.pillars.values():
         _sweep_part(pillar, "pillar", vessel, length, options, result)
 
+    # Hole failures (keys containing "/hole:") are not skipped parts.
+    part_skips = sum(1 for k in result.skipped if "/hole:" not in k)
     logger.info("Render: {} parts tessellated, {} skipped",
-                result.rendered_count, result.skipped_count)
+                result.rendered_count, part_skips)
     if result.skipped:
         for part_id, reason in result.skipped.items():
             logger.debug("Skipped {}: {}", part_id, reason)
