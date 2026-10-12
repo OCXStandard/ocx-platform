@@ -88,6 +88,20 @@ class TestBuildMesh:
                 gap = np.linalg.norm(cm.V[a] + t * d - cm.V[w])
                 assert gap > 1e-4, f"T-junction left at vertex {w}"
 
+    def test_source_backpointers_evaluate_onto_their_vertices(self):
+        """Every stored (member, local uv) must evaluate back onto its
+        welded vertex — regression for mirrored stitch interpolation."""
+        from ocx_geometry.lscm import _build_mesh
+        members, hints = _bilge_members_and_hints()
+        cm = _build_mesh(members, tol_m=0.01, hint_pts=hints)
+        assert cm is not None
+        worst = 0.0
+        for i, d in enumerate(cm.src):
+            for k, luv in d.items():
+                p = np.asarray(members[k].evaluate(np.array([luv])))[0]
+                worst = max(worst, float(np.linalg.norm(p - cm.V[i])))
+        assert worst < 1e-6, f"src back-pointer off by {worst:.2e} m"
+
     def test_disconnected_members_return_none(self):
         from ocx_geometry.lscm import _build_mesh
         a = make_param(_grid_patch("a", 0.0, 0.0), LR, tol_m=0.01)

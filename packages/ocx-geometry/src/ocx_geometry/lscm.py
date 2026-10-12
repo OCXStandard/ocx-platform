@@ -159,7 +159,8 @@ def _stitch(V: np.ndarray, F: np.ndarray, src: list[dict],
                 if best is None or gap < best[0]:
                     best = (gap, w, t)
             if best is not None:
-                splits[key] = (best[1], best[2])
+                t = best[2] if (a, b) == key else 1.0 - best[2]
+                splits[key] = (best[1], t)
         if not splits:
             break
         out = []
@@ -218,6 +219,12 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
     F = np.vstack(faces_all)
     V, src, remap = _weld(V, src_all, weld_tol)
     F = remap[F]
+    # drop degenerate triangles produced by welding before stitching, so
+    # collapsed faces cannot mask genuine boundary edges from the stitcher
+    F = F[(F[:, 0] != F[:, 1]) & (F[:, 1] != F[:, 2]) & (F[:, 2] != F[:, 0])]
+    if len(F):
+        n = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])
+        F = F[np.linalg.norm(n, axis=1) > 1e-14]
     F = _stitch(V, F, src, max(weld_tol, 0.5 * tol_m))
     # drop degenerate triangles
     F = F[(F[:, 0] != F[:, 1]) & (F[:, 1] != F[:, 2]) & (F[:, 2] != F[:, 0])]
