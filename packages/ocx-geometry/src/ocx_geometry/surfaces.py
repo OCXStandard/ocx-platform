@@ -19,7 +19,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from geomdl.exceptions import GeomdlException
 from loguru import logger
-
 from ocx_model_core.model.ir.geometry import (
     IrCone3D,
     IrCylinder3D,
@@ -28,6 +27,7 @@ from ocx_model_core.model.ir.geometry import (
     IrPlane3D,
     IrSphere3D,
 )
+
 from ocx_geometry.curves import _any_perp, _unit, sample_curve
 from ocx_geometry.measure import LengthResolver
 

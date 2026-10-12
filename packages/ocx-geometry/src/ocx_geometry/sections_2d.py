@@ -8,7 +8,6 @@ missing; callers fall back to ``fallback_polygon()``.
 from __future__ import annotations
 
 import numpy as np
-
 from ocx_model_core.model.ir.sections import (
     IrAngleSection,
     IrBulbFlatSection,
@@ -25,6 +24,7 @@ from ocx_model_core.model.ir.sections import (
     IrUSection,
     IrZSection,
 )
+
 from ocx_geometry.measure import LengthResolver
 
 _CIRCLE_SEGS = 16

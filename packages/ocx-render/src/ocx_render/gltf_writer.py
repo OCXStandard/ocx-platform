@@ -11,9 +11,8 @@ from pathlib import Path
 import numpy as np
 import trimesh
 from loguru import logger
-from trimesh.visual.material import PBRMaterial
-
 from ocx_geometry.mesh import PartMesh
+from trimesh.visual.material import PBRMaterial
 
 
 def _material(color: tuple[int, int, int]) -> PBRMaterial:

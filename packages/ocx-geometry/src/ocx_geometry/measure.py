@@ -5,7 +5,6 @@ from collections.abc import Sequence
 
 import numpy as np
 from loguru import logger
-
 from ocx_model_core.model.ir.base import IrUnit, Quantity
 from ocx_model_core.model.ir.geometry import IrPoint3D
 

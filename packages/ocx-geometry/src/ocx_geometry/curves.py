@@ -11,7 +11,6 @@ import math
 
 import numpy as np
 from loguru import logger
-
 from ocx_model_core.model.ir.geometry import (
     IrCircle3D,
     IrCircumArc3D,
@@ -21,6 +20,7 @@ from ocx_model_core.model.ir.geometry import (
     IrNurbs3D,
     IrPolyLine3D,
 )
+
 from ocx_geometry.measure import LengthResolver
 
 _MIN_ARC_SEGS = 8

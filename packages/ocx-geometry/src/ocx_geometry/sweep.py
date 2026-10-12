@@ -11,8 +11,8 @@ from __future__ import annotations
 import mapbox_earcut
 import numpy as np
 from loguru import logger
-
 from ocx_model_core.model.ir.structural import IrInclination
+
 from ocx_geometry.curves import _any_perp
 
 

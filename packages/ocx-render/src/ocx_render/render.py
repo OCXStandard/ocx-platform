@@ -8,10 +8,6 @@ from __future__ import annotations
 
 import numpy as np
 from loguru import logger
-
-from ocx_model_core.model.ir.base import IrVector3D, ParentKind
-from ocx_model_core.model.ir.geometry import IrPlane3D, IrPoint3D, IrRefPlane
-from ocx_model_core.model.ir.structural import IrPanel, IrVessel
 from ocx_geometry.backend import (
     ITessellator,
     RenderResult,
@@ -33,6 +29,9 @@ from ocx_geometry.sweep import (
     sweep_profile,
 )
 from ocx_geometry.uv_tessellator import UvTessellator
+from ocx_model_core.model.ir.base import IrVector3D, ParentKind
+from ocx_model_core.model.ir.geometry import IrPlane3D, IrPoint3D, IrRefPlane
+from ocx_model_core.model.ir.structural import IrPanel, IrVessel
 
 __all__ = ["render_model", "RenderResult", "TessellationOptions", "PartMesh"]
 
