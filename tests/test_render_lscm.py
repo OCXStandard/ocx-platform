@@ -173,3 +173,41 @@ class TestLscm2DGrid:
         out = chart.evaluate(chart.inverse(pts))
         err = np.linalg.norm(out - pts, axis=1)
         assert err.max() < 1e-6, f"max round-trip error {err.max():.2e} m"
+
+
+class TestLscmCurved:
+    def test_evaluation_stays_exactly_on_member_surfaces(self):
+        """Bottom plane + bilge cylinder + side plane: every evaluated point
+        must lie exactly on one of the true member surfaces (not on the
+        chart facets), and round-trip near the original."""
+        from ocx_geometry.lscm import make_lscm
+        members, hints = _bilge_members_and_hints()
+        chart = make_lscm(members, tol_m=0.01, hint_pts=hints)
+        assert chart is not None
+        out = chart.evaluate(chart.inverse(hints))
+        d_bot = np.abs(out[:, 2])
+        d_side = np.abs(out[:, 1] - 2.0)
+        d_cyl = np.abs(
+            np.linalg.norm(out[:, 1:] - [1.0, 1.0], axis=1) - 1.0)
+        d = np.minimum(np.minimum(d_bot, d_side), d_cyl)
+        assert d.max() < 1e-9, f"off-surface by {d.max():.2e} m"
+        err = np.linalg.norm(out - hints, axis=1)
+        assert err.max() < 0.05, f"round-trip error {err.max():.3f} m"
+
+
+class TestLscmFailure:
+    def test_make_lscm_disconnected_returns_none(self):
+        from ocx_geometry.lscm import make_lscm
+        a = make_param(_grid_patch("a", 0.0, 0.0), LR, tol_m=0.01)
+        b = make_param(_grid_patch("b", 10.0, 0.0), LR, tol_m=0.01)
+        assert make_lscm([a, b], tol_m=0.01) is None
+
+    def test_make_lscm_never_raises(self):
+        from ocx_geometry.lscm import make_lscm
+        from ocx_geometry.surfaces import PlaneParam
+        p = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        # unbounded member, no hints -> None, no exception
+        assert make_lscm([p, p], tol_m=0.01, hint_pts=None) is None
+        # degenerate hints (collinear) -> None, no exception
+        hints = np.array([[x, 0.0, 0.0] for x in np.linspace(0, 1, 5)])
+        assert make_lscm([p, p], tol_m=0.01, hint_pts=hints) is None
