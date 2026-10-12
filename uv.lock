@@ -828,6 +828,7 @@ version = "0.1.0"
 source = { editable = "packages/ocx-geometry" }
 dependencies = [
     { name = "geomdl" },
+    { name = "loguru" },
     { name = "mapbox-earcut" },
     { name = "numpy" },
     { name = "ocx-model-core" },
@@ -838,6 +839,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "geomdl", specifier = ">=5.4.0" },
+    { name = "loguru", specifier = ">=0.7" },
     { name = "mapbox-earcut", specifier = ">=2.1.0" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
