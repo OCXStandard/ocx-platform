@@ -54,16 +54,18 @@ def render(
 
     result = render_model(
         vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))
+    # Hole failures ("<plate_id>/hole:<id>" keys) are not skipped parts.
+    part_skips = sum(1 for k in result.skipped if "/hole:" not in k)
     if not result.meshes:
         logger.error("No renderable geometry in {} ({} parts skipped)",
-                     model, result.skipped_count)
+                     model, part_skips)
         raise typer.Exit(code=1)
 
     glb = destination if destination is not None else model.with_suffix(".glb")
     try:
         write_glb(result.meshes, glb)
         typer.echo(f"GLB written to {glb} "
-                   f"({result.rendered_count} parts, {result.skipped_count} skipped)")
+                   f"({result.rendered_count} parts, {part_skips} skipped)")
         if not no_html:
             html = write_html(glb)
             typer.echo(f"Viewer written to {html}")
