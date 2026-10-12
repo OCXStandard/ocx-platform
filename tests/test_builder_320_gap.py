@@ -374,7 +374,7 @@ def test_hole2d_ellipse_parametric_variant():
     cat = NS(id="HC1", name=None, hole2_d=[hole])
     ir = IrVessel(id="v1")
     _b()._build_hole_catalogue(cat, ir)
-    assert ir.hole_shape_catalogue.holes["H1"].parametric == {"variant": "ellipse"}
+    assert ir.hole_shape_catalogue.holes["H1"].parametric.variant == "ellipse"
 
 
 def test_penetration_bracket_ref_field():

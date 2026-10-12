@@ -470,4 +470,4 @@ def test_build_hole_catalogue_parametric_variant():
                                rectangular_hole=_Stub(), super_elliptical=None,
                                symmetrical_hole=None, parametric_circle=None)])
     _b()._build_hole_catalogue(cat, v)
-    assert v.hole_shape_catalogue.holes["H2"].parametric == {"variant": "rectangular_hole"}
+    assert v.hole_shape_catalogue.holes["H2"].parametric.variant == "rectangular_hole"

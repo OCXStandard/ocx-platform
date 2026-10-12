@@ -117,7 +117,14 @@ def _openings_section(vessel: IrVessel) -> ReportSection:
         notes.append("Model has no hole shape catalogue")
     else:
         for h in sorted(cat.holes.values(), key=lambda h: h.name or h.id):
-            parametric = "; ".join(f"{k}={v}" for k, v in (h.parametric or {}).items())
+            p = h.parametric
+            if p is None:
+                parametric = None
+            else:
+                dims = [f"{f.name}={getattr(p, f.name).value} {getattr(p, f.name).unit}".rstrip()
+                        for f in dataclasses.fields(p)
+                        if f.name != "variant" and getattr(p, f.name) is not None]
+                parametric = "; ".join([p.variant, *dims])
             rows.append([h.id, h.name, parametric or None])
     return ReportSection(title="Openings",
                          tables=[ReportTable("Hole shapes",

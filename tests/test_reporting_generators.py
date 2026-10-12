@@ -2,7 +2,12 @@
 import pytest
 from ocx_model_core.model.ir.arrangement import IrCompartment
 from ocx_model_core.model.ir.base import IrCog, IrMassProperties, Quantity
-from ocx_model_core.model.ir.catalogues import IrHole2D, IrHoleShapeCatalogue, IrMaterial
+from ocx_model_core.model.ir.catalogues import (
+    IrHole2D,
+    IrHoleShapeCatalogue,
+    IrMaterial,
+    IrParametricHole,
+)
 from ocx_model_core.model.ir.geometry import IrCoordinateSystem, IrRefPlane
 from ocx_model_core.model.ir.sections import (
     IrBulbFlatSection,
@@ -191,7 +196,10 @@ def _vessel_with_catalogues() -> IrVessel:
     vessel.hole_shape_catalogue = IrHoleShapeCatalogue(
         id="H", name="Holes",
         holes={"H1": IrHole2D(id="H1", name="Manhole",
-                              parametric={"length": 600, "width": 400})},
+                              parametric=IrParametricHole(
+                                  variant="symmetrical_hole",
+                                  height=Quantity(600, "Umm"),
+                                  width=Quantity(400, "Umm")))},
     )
     return vessel
 
@@ -199,6 +207,13 @@ def _vessel_with_catalogues() -> IrVessel:
 def test_catalogues_report_all_sections():
     report = catalogues_gen.build(_vessel_with_catalogues(), source_file="m.3docx")
     assert [s.title for s in report.sections] == ["Materials", "Cross sections", "Openings"]
+
+
+def test_catalogues_openings_parametric_cell():
+    report = catalogues_gen.build(_vessel_with_catalogues(), which="opening")
+    table = report.sections[0].tables[0]
+    assert table.rows == [["H1", "Manhole",
+                           "symmetrical_hole; height=600 Umm; width=400 Umm"]]
 
 
 def test_catalogues_materials_table():

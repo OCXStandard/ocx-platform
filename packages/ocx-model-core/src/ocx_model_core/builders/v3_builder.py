@@ -42,6 +42,7 @@ from ocx_model_core.model.ir import (
     IrHexagonSection,
     IrHole2D,
     IrHoleShapeCatalogue,
+    IrParametricHole,
     IrInclination,
     IrISection,
     IrLimitedByRef,
@@ -232,7 +233,9 @@ class OcxV3Builder(IOcxBuilder):
         # --- hole-shape catalogue (root- or vessel-level) ---
         self._build_hole_catalogue(
             getattr(root, "hole_shape_catalogue", None)
-            or getattr(vessel_raw, "hole_shape_catalogue", None),
+            or getattr(vessel_raw, "hole_shape_catalogue", None)
+            or _first(getattr(_first(getattr(root, "class_catalogue", None)),
+                              "hole_shape_catalogue", None)),
             ir,
         )
 
@@ -801,6 +804,29 @@ class OcxV3Builder(IOcxBuilder):
             vessel_ref=self._ref(getattr(dv, "vessel_ref", None)),
             children=children), ir.duplicate_ids)
 
+    _PARAMETRIC_ATTRS = ("ellipse", "rectangular_mickey_mouse_ears",
+                         "rectangular_hole", "super_elliptical",
+                         "symmetrical_hole", "parametric_circle")
+
+    def _parametric_hole(self, h) -> IrParametricHole | None:
+        """First present parametric variant on a raw Hole2D, with dimensions."""
+        for attr in self._PARAMETRIC_ATTRS:
+            p = getattr(h, attr, None)
+            if p is None:
+                continue
+            return IrParametricHole(
+                variant=attr,
+                height=self._qty(getattr(p, "height", None)),
+                width=self._qty(getattr(p, "width", None)),
+                radius=self._qty(getattr(p, "radius", None)),
+                fillet_radius=self._qty(getattr(p, "fillet_radius", None)),
+                diameter=self._qty(getattr(p, "diameter", None)),
+                major_diameter=self._qty(getattr(p, "major_diameter", None)),
+                minor_diameter=self._qty(getattr(p, "minor_diameter", None)),
+                displacement=self._qty(getattr(p, "displacement", None)),
+                exponent=self._qty(getattr(p, "exponent", None)))
+        return None
+
     def _build_hole_catalogue(self, cat, ir: IrVessel) -> None:
         if cat is None:
             return
@@ -819,13 +845,7 @@ class OcxV3Builder(IOcxBuilder):
                         curve = self._build_curve(target)
                         if curve is not None:
                             break
-            parametric = None
-            for attr in ("ellipse", "rectangular_mickey_mouse_ears",
-                         "rectangular_hole", "super_elliptical",
-                         "symmetrical_hole", "parametric_circle"):
-                if getattr(h, attr, None) is not None:
-                    parametric = {"variant": attr}
-                    break
+            parametric = self._parametric_hole(h)
             holes[hid] = IrHole2D(id=hid, name=getattr(h, "name", None),
                                   guidref=getattr(h, "guidref", None),
                                   contour=curve, parametric=parametric)
