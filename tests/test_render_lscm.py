@@ -195,6 +195,106 @@ class TestLscmCurved:
         assert err.max() < 0.05, f"round-trip error {err.max():.3f} m"
 
 
+class TestChartMeshHygiene:
+    def test_consistent_winding_across_members(self):
+        """Fan triangulation of trimmed shapely pieces must normalize ring
+        orientation: GEOS does not guarantee CCW exterior rings, and mixed
+        winding breaks the boundary-loop walk in LSCM and Tutte."""
+        from ocx_geometry.lscm import _build_mesh
+        members, hints = _bilge_members_and_hints()
+        cm = _build_mesh(members, tol_m=0.01, hint_pts=hints)
+        assert cm is not None
+        e = np.vstack([cm.F[:, [0, 1]], cm.F[:, [1, 2]], cm.F[:, [2, 0]]])
+        key = np.sort(e, axis=1)
+        _, inv, cnt = np.unique(key, axis=0, return_inverse=True,
+                                return_counts=True)
+        bad = 0
+        for ei in np.nonzero(cnt == 2)[0]:
+            occ = e[inv == ei]
+            if (occ[0] == occ[1]).all():
+                bad += 1
+        assert bad == 0, f"{bad} interior edges with same-direction faces"
+
+    def test_split_pinch_vertices(self):
+        """A bowtie (two fans sharing only a vertex) breaks disk topology
+        and wraps the flattening; the shared vertex must be duplicated."""
+        from ocx_geometry.lscm import _split_pinch_vertices
+        V = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0],
+                      [2.0, 0, 0], [2.0, 1, 0]])
+        F = np.array([[0, 1, 2], [1, 3, 4]])      # share only vertex 1
+        src = [{0: (0.0, 0.0)} for _ in range(5)]
+        V2, F2, src2 = _split_pinch_vertices(V, F, src)
+        assert len(V2) == 6
+        assert len(src2) == 6
+        # the two faces no longer share a vertex index
+        assert not set(map(int, F2[0])) & set(map(int, F2[1]))
+        # geometry unchanged: the duplicate sits exactly on the original
+        np.testing.assert_allclose(
+            np.sort(V2[F2[1]], axis=0), np.sort(V[F[1]], axis=0))
+
+    def test_split_pinch_keeps_regular_mesh_untouched(self):
+        from ocx_geometry.lscm import _split_pinch_vertices
+        V = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [1.0, 1, 0]])
+        F = np.array([[0, 1, 2], [1, 3, 2]])
+        src = [{0: (0.0, 0.0)} for _ in range(4)]
+        V2, F2, src2 = _split_pinch_vertices(V, F, src)
+        assert len(V2) == 4
+        np.testing.assert_array_equal(F2, F)
+
+
+class TestContourRadius:
+    def test_long_thin_contour_radius_capped_by_width(self):
+        """Index-ring distance degrades on non-uniformly sampled contours
+        (straight edges carry few samples): the PCA second-principal cap
+        must keep the region radius near the plate width, not its length."""
+        from ocx_geometry.lscm import make_lscm_chart
+        m = make_param(_grid_patch("p", 0.0, 0.0, 12.0), LR, tol_m=0.05)
+        chart = make_lscm_chart([m], tol_m=0.05)
+        assert chart is not None
+        # 11 x 2 m plate: dense samples on the short ends, sparse on the
+        # long edges — mimics curvature-adaptive contour sampling
+        ys = np.linspace(0.0, 2.0, 24)
+        xs = np.linspace(0.5, 11.5, 4)
+        contour = np.concatenate([
+            np.column_stack([np.full_like(ys, 0.5), ys]),
+            np.column_stack([xs[1:-1], np.full(2, 2.0)]),
+            np.column_stack([np.full_like(ys, 11.5), ys[::-1]]),
+            np.column_stack([xs[1:-1][::-1], np.zeros(2)]),
+        ])
+        contour = np.column_stack([contour, np.zeros(len(contour))])
+        radius = chart._contour_radius(contour)
+        assert radius < 3.0, f"radius {radius:.2f} m ~ plate length"
+
+
+class TestParamForSeams:
+    def test_plate_spanning_tangent_seam_roundtrips(self):
+        """A plate across the bottom-plane/bilge-cylinder seam, sampled at
+        differing densities per member, must get a validated chart (zip +
+        stitch + reorientation + pinch handling), not the fallback."""
+        from ocx_geometry.lscm import make_lscm_chart
+        members, hints = _bilge_members_and_hints()
+        chart = make_lscm_chart(members, tol_m=0.01, hint_pts=hints)
+        assert chart is not None
+
+        def girth_pt(th, x):
+            return [x, 1.0 + np.sin(th), 1.0 - np.cos(th)]
+
+        # plate spanning bottom plane (y < 1) and the lower bilge arc
+        ths = np.linspace(0.0, np.pi / 4, 8)
+        contour = np.array(
+            [[0.5, y, 0.0] for y in np.linspace(0.2, 1.0, 5)]
+            + [girth_pt(th, 0.5) for th in ths[1:]]
+            + [girth_pt(np.pi / 4, x) for x in np.linspace(0.5, 3.5, 5)[1:]]
+            + [girth_pt(th, 3.5) for th in ths[::-1][1:]]
+            + [[3.5, y, 0.0] for y in np.linspace(1.0, 0.2, 5)[1:]]
+            + [[x, 0.2, 0.0] for x in np.linspace(3.5, 0.5, 7)[1:-1]])
+        param = chart.param_for(contour)
+        assert param is not None, "param_for fell back on a seam plate"
+        uv = param.inverse(contour)
+        err = np.linalg.norm(param.evaluate(uv) - contour, axis=1)
+        assert err.max() < 0.02, f"roundtrip {err.max():.4f} m"
+
+
 class TestLscmFailure:
     def test_make_lscm_disconnected_returns_none(self):
         from ocx_geometry.lscm import make_lscm

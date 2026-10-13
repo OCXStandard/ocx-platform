@@ -149,6 +149,14 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float):
                 if not isinstance(g, shapely.Polygon):
                     continue
                 ring = np.asarray(g.exterior.coords)[:-1]
+                # GEOS does not normalize intersection-output ring
+                # orientation: fanning rings as-is yields mixed triangle
+                # winding, which breaks the conformal flattening
+                area2 = float(
+                    (ring[:, 0] * np.roll(ring[:, 1], -1)
+                     - np.roll(ring[:, 0], -1) * ring[:, 1]).sum())
+                if area2 < 0.0:
+                    ring = ring[::-1]
                 ids = [vid(p) for p in ring]
                 for t in range(1, len(ids) - 1):   # convex piece: fan
                     faces.append((ids[0], ids[t], ids[t + 1]))
@@ -180,6 +188,67 @@ def _weld(V: np.ndarray, src: list[dict], weld_tol: float):
     for i, r in enumerate(remap):
         out_src[r].update(src[i])
     return V[uniq], out_src, remap
+
+
+def _split_pinch_vertices(
+        V: np.ndarray, F: np.ndarray,
+        src: list[dict]) -> tuple[np.ndarray, np.ndarray, list[dict]]:
+    """Duplicate vertices whose incident faces form more than one
+    edge-connected fan (bowtie/pinch).  A pinch breaks disk topology:
+    the boundary walk passes through the vertex twice, so the pinned
+    Tutte boundary is non-convex there and both Tutte and LSCM can
+    produce fold-free yet non-injective (wrapped) charts.  Splitting
+    the vertex per fan restores disk topology without moving geometry;
+    face order is preserved so per-face bookkeeping stays aligned."""
+    F = F.copy()
+    newV = [V]
+    newsrc = list(src)
+    nv = len(V)
+    incident: dict[int, list[int]] = {}
+    for fi, tri in enumerate(F):
+        for v in tri:
+            incident.setdefault(int(v), []).append(fi)
+    for v, fis in incident.items():
+        if len(fis) < 2:
+            continue
+        # two incident faces belong to the same fan iff they share an
+        # edge through v, i.e. they share another vertex u with (v,u)
+        # an edge of both
+        parent = {fi: fi for fi in fis}
+
+        def find(x: int) -> int:
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        by_other: dict[int, int] = {}
+        for fi in fis:
+            for u in F[fi]:
+                u = int(u)
+                if u == v:
+                    continue
+                if u in by_other:
+                    ra, rb = find(by_other[u]), find(fi)
+                    if ra != rb:
+                        parent[ra] = rb
+                else:
+                    by_other[u] = fi
+        groups: dict[int, list[int]] = {}
+        for fi in fis:
+            groups.setdefault(find(fi), []).append(fi)
+        if len(groups) < 2:
+            continue
+        fans = sorted(groups.values(), key=len, reverse=True)
+        for fan in fans[1:]:            # largest fan keeps the original
+            for fi in fan:
+                F[fi][F[fi] == v] = nv
+            newV.append(V[v:v + 1])
+            newsrc.append(dict(src[v]))
+            nv += 1
+    if nv == len(V):
+        return V, F, src
+    return np.vstack(newV), F, newsrc
 
 
 def _boundary_edges(F: np.ndarray) -> np.ndarray:
@@ -440,13 +509,17 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
     mesh = trimesh.Trimesh(V, F, process=False)
     trimesh.repair.fix_normals(mesh)
     F = np.asarray(mesh.faces, dtype=int)
-    # per-triangle source member: one present at all three corners
+    return _ChartMesh(V, F, src, _tri_members(F, src))
+
+
+def _tri_members(F: np.ndarray, src: list[dict]) -> np.ndarray:
+    """Per-triangle source member: one present at all three corners."""
     tri_member = np.full(len(F), -1, dtype=int)
     for i, f in enumerate(F):
         common = set(src[f[0]]) & set(src[f[1]]) & set(src[f[2]])
         if common:
             tri_member[i] = min(common)
-    return _ChartMesh(V, F, src, tri_member)
+    return tri_member
 
 
 def _longest_boundary_loop(bnd: np.ndarray) -> list[int] | None:
@@ -831,7 +904,13 @@ class LscmChart:
     def _contour_radius(self, contour: np.ndarray) -> float:
         """Local region radius: the plate's across-width estimated as the
         max over contour samples of the distance to the far side of the
-        contour ring (points at least an eighth of the ring away)."""
+        contour ring (points at least an eighth of the ring away), capped
+        by the contour's second principal extent.  The ring estimate
+        degrades on non-uniformly sampled contours (straight edges carry
+        few samples, so index distance is not arc distance) and can
+        return the plate length instead of its width; an oversized ball
+        drags half the hull side into the submesh, whose flattening then
+        collapses the plate's own region below resolution."""
         n = len(contour)
         step = max(1, n // 64)
         si = np.arange(0, n, step)
@@ -843,6 +922,10 @@ class LscmChart:
         width = d.min(axis=1)
         width = width[np.isfinite(width)]
         w = float(width.max()) if len(width) else 0.0
+        c = contour - contour.mean(axis=0)
+        ext = 4.0 * np.sqrt(np.linalg.eigvalsh(c.T @ c / len(c)))
+        if ext[-2] > 0.0:               # second principal extent
+            w = min(w, float(ext[-2]))
         return max(10.0 * self._tol, 0.75 * w)
 
     def param_for(self, contour: np.ndarray) -> LscmParam | None:
@@ -881,11 +964,42 @@ class LscmChart:
                 # around the contour — widen it to fill the interior
                 radius *= 1.3
             # overlapping-sheet fins make the submesh non-manifold,
-            # which folds the conformal flattening; shave them
+            # which folds the conformal flattening; shave them before
+            # bridging — the mask can cut the very face that connects
+            # two sheets, so connectivity repair must come after it
             keep = _manifold_mask(self._cm.V, sub_f)
             sub_f, sel = sub_f[keep], sel[keep]
             if len(sub_f) == 0:
                 return None
+            comp = _face_components(sub_f)
+            labels, counts = np.unique(comp, return_counts=True)
+            if len(labels) > 1:
+                # the ball or the fin shave can slice the chart between
+                # sheets that are edge-connected only through a distant
+                # or non-manifold seam (tangent contact sampled
+                # sparsely): bridge each island to the dominant
+                # component along the full-mesh shortest face path
+                # instead of widening the ball further
+                main = labels[int(np.argmax(counts))]
+                dist2, pred, _srcs = dijkstra(
+                    self._adj, directed=False, indices=sel[comp == main],
+                    min_only=True, return_predecessors=True)
+                bridge: set[int] = set()
+                for lbl in labels:
+                    if lbl == main:
+                        continue
+                    isl = sel[comp == lbl]
+                    fin = isl[np.isfinite(dist2[isl])]
+                    if len(fin) == 0:
+                        continue
+                    f = int(fin[np.argmin(dist2[fin])])
+                    while f >= 0 and f not in bridge:
+                        bridge.add(f)
+                        f = int(pred[f])
+                if bridge:
+                    sel = np.unique(np.concatenate(
+                        [sel, np.fromiter(bridge, dtype=int)]))
+                    sub_f = self._cm.F[sel]
             used = np.unique(sub_f)
             remap = -np.ones(len(self._cm.V), dtype=int)
             remap[used] = np.arange(len(used))
@@ -899,18 +1013,65 @@ class LscmChart:
                 # zip sheets across open seams, then keep the dominant
                 # component: LSCM is singular on face-disconnected or
                 # pinch-connected meshes (independent similarity per
-                # sheet), so face connectivity is required
-                subF, sub_tm = _zip_boundaries(subV, subF, sub_src,
-                                               sub_tm, 4.0 * self._tol)
-                if len(subF) == 0:
-                    return None
+                # sheet), so face connectivity is required.  Zipping
+                # merges facing boundary vertices, which alone yields
+                # only vertex (pinch) connectivity where the seam chains
+                # are sampled at different densities; T-junction
+                # stitching then splits edges through the merged
+                # vertices, turning them into shared edges.
+                for _ in range(4):
+                    subF, sub_tm = _zip_boundaries(subV, subF, sub_src,
+                                                   sub_tm, 4.0 * self._tol)
+                    if len(subF) == 0:
+                        return None
+                    if len(np.unique(_face_components(subF))) == 1:
+                        break
+                    subF = _stitch(subV, subF, sub_src, 4.0 * self._tol)
+                    # stitching rebuilds the face list: realign members
+                    sub_tm = _tri_members(subF, sub_src)
+                    if len(np.unique(_face_components(subF))) == 1:
+                        break
                 comp = _face_components(subF)
                 labels, counts = np.unique(comp, return_counts=True)
                 if len(labels) > 1:
                     keep = comp == labels[int(np.argmax(counts))]
                     subF, sub_tm = subF[keep], sub_tm[keep]
+                # zip merges shift vertices by up to its snap tolerance:
+                # collinear (zero-area) triangles and duplicate faces
+                # appear along the closed seam. Their cotangents blow up
+                # and make the conformal system exactly singular.
+                if len(subF):
+                    n = np.cross(subV[subF[:, 1]] - subV[subF[:, 0]],
+                                 subV[subF[:, 2]] - subV[subF[:, 0]])
+                    good = np.linalg.norm(n, axis=1) > 1e-14
+                    subF, sub_tm = subF[good], sub_tm[good]
+                if len(subF):
+                    _, idx = np.unique(np.sort(subF, axis=1), axis=0,
+                                       return_index=True)
+                    idx = np.sort(idx)
+                    subF, sub_tm = subF[idx], sub_tm[idx]
+                    comp = _face_components(subF)
+                    labels, counts = np.unique(comp, return_counts=True)
+                    if len(labels) > 1:
+                        keep = comp == labels[int(np.argmax(counts))]
+                        subF, sub_tm = subF[keep], sub_tm[keep]
+                if len(subF):
+                    # the sheets were oriented independently (fix_normals
+                    # runs per connected component before zipping): the
+                    # merged mesh may mix windings across the new seam,
+                    # which breaks the directed boundary-loop walk that
+                    # both LSCM pinning and Tutte rely on. Reorient the
+                    # now-connected submesh; flips keep sorted-face
+                    # identity, so sub_tm and sub_src stay valid.
+                    tm = trimesh.Trimesh(subV, subF, process=False)
+                    trimesh.repair.fix_normals(tm)
+                    subF = np.asarray(tm.faces, dtype=subF.dtype)
             if len(subF) == 0:
                 return None
+            # pinch (bowtie) vertices break disk topology and wrap the
+            # flattening even when every face has consistent winding
+            subV, subF, sub_src = _split_pinch_vertices(subV, subF,
+                                                        sub_src)
             # drop vertices orphaned by zipping / component keeps:
             # zero Laplacian rows make LSCM and Tutte exactly singular
             used2 = np.unique(subF)
