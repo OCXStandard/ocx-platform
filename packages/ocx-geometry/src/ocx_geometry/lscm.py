@@ -968,6 +968,7 @@ class LscmChart:
             # bridging — the mask can cut the very face that connects
             # two sheets, so connectivity repair must come after it
             keep = _manifold_mask(self._cm.V, sub_f)
+            banned = sel[~keep]
             sub_f, sel = sub_f[keep], sel[keep]
             if len(sub_f) == 0:
                 return None
@@ -981,21 +982,46 @@ class LscmChart:
                 # component along the full-mesh shortest face path
                 # instead of widening the ball further
                 main = labels[int(np.argmax(counts))]
+                # route bridges around the shaved fin faces: the
+                # unrestricted shortest path happily runs through the
+                # very face the manifold shave removed, restoring a
+                # non-manifold edge in a submesh that is now single-
+                # component — so the zip-stage cleanup never runs and
+                # the flattening loses injectivity exactly there
+                adj = self._adj
+                if len(banned):
+                    mask = np.ones(adj.shape[0])
+                    mask[banned] = 0.0
+                    d = diags(mask)
+                    adj = (d @ adj @ d).tocsr()
+                    adj.eliminate_zeros()
                 dist2, pred, _srcs = dijkstra(
-                    self._adj, directed=False, indices=sel[comp == main],
+                    adj, directed=False, indices=sel[comp == main],
                     min_only=True, return_predecessors=True)
+                full = None         # lazy fallback over the full graph
                 bridge: set[int] = set()
                 for lbl in labels:
                     if lbl == main:
                         continue
                     isl = sel[comp == lbl]
-                    fin = isl[np.isfinite(dist2[isl])]
+                    d2, pr = dist2, pred
+                    fin = isl[np.isfinite(d2[isl])]
+                    if len(fin) == 0 and adj is not self._adj:
+                        # island reachable only through a fin: a
+                        # non-manifold bridge beats losing coverage
+                        if full is None:
+                            full = dijkstra(
+                                self._adj, directed=False,
+                                indices=sel[comp == main], min_only=True,
+                                return_predecessors=True)
+                        d2, pr = full[0], full[1]
+                        fin = isl[np.isfinite(d2[isl])]
                     if len(fin) == 0:
                         continue
-                    f = int(fin[np.argmin(dist2[fin])])
+                    f = int(fin[np.argmin(d2[fin])])
                     while f >= 0 and f not in bridge:
                         bridge.add(f)
-                        f = int(pred[f])
+                        f = int(pr[f])
                 if bridge:
                     sel = np.unique(np.concatenate(
                         [sel, np.fromiter(bridge, dtype=int)]))

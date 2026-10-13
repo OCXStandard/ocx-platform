@@ -1,4 +1,6 @@
 """Tests for the LSCM multi-patch chart (ocx_geometry.lscm)."""
+from pathlib import Path
+
 import numpy as np
 import pytest
 from ocx_geometry.measure import LengthResolver
@@ -311,3 +313,45 @@ class TestLscmFailure:
         # degenerate hints (collinear) -> None, no exception
         hints = np.array([[x, 0.0, 0.0] for x in np.linspace(0, 1, 5)])
         assert make_lscm([p, p], tol_m=0.01, hint_pts=hints) is None
+
+
+class TestHullModelChart:
+    """Integration: every plate of the stripped tr05 hull model must get
+    a validated LSCM chart (regression for the P12 bridge-through-fin
+    failure: the island bridge re-added the exact non-manifold face the
+    manifold mask had shaved, leaving a non-injective chart corner)."""
+
+    MODEL = (Path(__file__).parent.parent / "models" / "TR05"
+             / "tr05_tc09_nast_hull.3docx")
+
+    @pytest.mark.skipif(not MODEL.exists(),
+                        reason="tr05 hull test model not present")
+    def test_all_hull_plates_chart(self):
+        from ocx_geometry.curves import sample_contour
+        from ocx_geometry.lscm import make_lscm_chart
+        from ocx_model_core.builders.factory import get_builder
+        from ocx_model_core.parsers.parser import OcxParser
+        from ocx_render.render import TessellationOptions, _resolve_panel_surfaces
+
+        root = OcxParser().parse(str(self.MODEL))
+        vessel = get_builder(root.schema_version).build(root)
+        options = TessellationOptions()
+        tol = options.tolerance_m
+        lr = LengthResolver(vessel.unit_registry)
+        panel = next(iter(vessel.panels.values()))
+        members = [p for p in
+                   (make_param(s, lr, tol)
+                    for s in _resolve_panel_surfaces(panel, vessel)) if p]
+        contours = {}
+        for p in vessel.plates.values():
+            c = sample_contour(p.outer_contour, lr, tol,
+                               options.snap_tolerance_m)
+            if c is not None:
+                contours[p.name] = c
+        assert len(contours) == 25
+        chart = make_lscm_chart(members, tol,
+                                np.vstack(list(contours.values())))
+        assert chart is not None
+        failed = [n for n, c in sorted(contours.items())
+                  if chart.param_for(c) is None]
+        assert failed == [], f"plates without a validated chart: {failed}"
