@@ -15,7 +15,7 @@ from ocx_geometry.backend import (
 )
 from ocx_geometry.curves import sample_contour, sample_curve
 from ocx_geometry.holes import parametric_profile, place_hole
-from ocx_geometry.lscm import make_lscm
+from ocx_geometry.lscm import make_lscm_chart
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.mesh import PartMesh
 from ocx_geometry.sections_2d import fallback_polygon, section_polygon
@@ -201,15 +201,20 @@ def _tessellate_plates(vessel: IrVessel,
         prepared.append((plate, panel_id, candidates, contour))
         hints.setdefault(panel_id, []).append(contour)
 
-    # Pass 2: one LSCM chart per multi-member panel, shared by its plates.
-    lscm_cache: dict[str, SurfaceParam | None] = {}
+    # Pass 2: one LSCM chart mesh per multi-member panel, shared by its
+    # plates; each plate flattens only its local submesh (a whole-panel
+    # conformal flattening degenerates on doubly-curved panels).
+    chart_cache: dict[str, object] = {}
     for plate, panel_id, candidates, contour in prepared:
+        local = None
         if len(candidates) > 1:
-            if panel_id not in lscm_cache:
-                lscm_cache[panel_id] = make_lscm(
+            if panel_id not in chart_cache:
+                chart_cache[panel_id] = make_lscm_chart(
                     candidates, options.tolerance_m,
                     np.vstack(hints[panel_id]))
-            param = lscm_cache[panel_id] or _best_param(candidates, contour)
+            chart = chart_cache[panel_id]
+            local = chart.param_for(contour) if chart is not None else None
+            param = local or _best_param(candidates, contour)
         else:
             param = candidates[0]
         panel = vessel.panels.get(panel_id)
@@ -222,6 +227,12 @@ def _tessellate_plates(vessel: IrVessel,
         pm = tess.tessellate_trimmed_surface(
             plate.id, plate.name or plate.id, "plate", contour, holes,
             param, options)
+        if pm is None and local is not None:
+            # chart built but this contour would not triangulate on it:
+            # retry once on the best single member before giving up
+            pm = tess.tessellate_trimmed_surface(
+                plate.id, plate.name or plate.id, "plate", contour, holes,
+                _best_param(candidates, contour), options)
         if pm is None:
             result.skipped[plate.id] = "triangulation failed"
             continue

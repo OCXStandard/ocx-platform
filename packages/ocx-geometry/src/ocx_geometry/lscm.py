@@ -21,17 +21,17 @@ import shapely
 import trimesh
 from loguru import logger
 from scipy.sparse import bmat, coo_matrix, diags
-from scipy.sparse.csgraph import connected_components
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.csgraph import connected_components, dijkstra
+from scipy.sparse.linalg import factorized, spsolve
 from scipy.spatial import cKDTree
 from shapely.strtree import STRtree
 
 from ocx_geometry.surfaces import SurfaceParam, _member_fit
 
-_MAX_GRID = 48            # max facet cells per axis per member
+_MAX_GRID = 96            # max facet cells per axis per member
 _MAX_SCALE_RATIO = 100.0  # reject charts with larger per-triangle scale spread
 _MAX_FLIPPED = 0.005      # tolerated fraction of flipped UV triangles
-_STITCH_PASSES = 8
+_STITCH_PASSES = 32
 
 
 class _ChartMesh:
@@ -46,21 +46,12 @@ class _ChartMesh:
         self.tri_member = tri_member    # (m,) member per triangle, -1 = none
 
 
-def _member_domain(member: SurfaceParam, fit, on: np.ndarray | None):
-    """Member UV sampling domain: intrinsic knot domain when available,
-    else the bbox of the member's assigned on-surface hint points in
-    member-local UV."""
+def _member_domain(member: SurfaceParam):
+    """Intrinsic UV sampling domain (NURBS knot range), or None."""
     du, dv = getattr(member, "du", None), getattr(member, "dv", None)
     if du is not None and dv is not None:
         return (float(du[0]), float(du[1])), (float(dv[0]), float(dv[1]))
-    if fit is None or on is None or int(on.sum()) < 3:
-        return None
-    uv = fit[0]
-    u0, u1 = float(uv[on, 0].min()), float(uv[on, 0].max())
-    v0, v1 = float(uv[on, 1].min()), float(uv[on, 1].max())
-    if u1 - u0 < 1e-9 or v1 - v0 < 1e-9:
-        return None                     # degenerate: no 2-D extent
-    return (u0, u1), (v0, v1)
+    return None
 
 
 def _facet_member(member: SurfaceParam, dom, tol_m: float):
@@ -87,6 +78,84 @@ def _facet_member(member: SurfaceParam, dom, tol_m: float):
             b = (i + 1) * (nv + 1) + j
             faces.append((a, b, b + 1))
             faces.append((a, b + 1, a + 1))
+    return pts, uvs, np.asarray(faces, dtype=int)
+
+
+def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float):
+    """Facet an unbounded member (plane, cylinder) clipped to the convex
+    hull of its assigned on-surface hint points in member-local UV.  The
+    bbox of those points badly overshoots non-rectangular regions (e.g. a
+    tapering flat bottom), creating flaps that overlap neighbouring
+    members in 3-D and fold the chart."""
+    hull_uv = np.asarray(hull_uv, dtype=float)
+    if getattr(member, "periodic_u", False):
+        # inverse() unwraps u per polyline, so points from different hint
+        # runs can land on different 2*pi branches; the hull then becomes
+        # a slanted band wrapping the surface. Fold everything onto one
+        # branch centred on the circular mean.
+        two_pi = 2.0 * np.pi
+        ang = hull_uv[:, 0] % two_pi
+        centre = math.atan2(np.sin(ang).mean(), np.cos(ang).mean())
+        hull_uv = hull_uv.copy()
+        hull_uv[:, 0] = centre + (ang - centre + np.pi) % two_pi - np.pi
+    mp = shapely.MultiPoint(hull_uv)
+    # the member's true region is usually concave (e.g. a flat bottom
+    # bounded by the curved bilge chine): a convex hull overshoots onto
+    # neighbouring curved members, creating overlapping flaps that can
+    # neither be stitched nor welded. Hint contours sample the region
+    # boundary densely, so a concave hull follows it closely.
+    try:
+        hull = shapely.concave_hull(mp, ratio=0.3)
+    except Exception:  # noqa: BLE001 — shapely < 2.0 or qhull failure
+        hull = mp.convex_hull
+    if getattr(hull, "area", 0.0) < 1e-12:
+        hull = mp.convex_hull
+    if getattr(hull, "area", 0.0) < 1e-12:
+        return None                     # degenerate: no 2-D extent
+    u0, v0, u1, v1 = hull.bounds
+    su, sv = member.uv_scale()
+    edge = member.max_edge_m(tol_m)
+
+    def n_cells(span_m: float) -> int:
+        if edge is None or edge <= 0.0:
+            # flat direction: still use a grid so the hull outline is
+            # resolved and duplicate-face removal stays local
+            return int(np.clip(math.ceil(span_m / max(20.0 * tol_m, 0.5)),
+                               8, _MAX_GRID))
+        return int(np.clip(math.ceil(span_m / edge), 1, _MAX_GRID))
+
+    nu, nv = n_cells((u1 - u0) * su), n_cells((v1 - v0) * sv)
+    us = np.linspace(u0, u1, nu + 1)
+    vs = np.linspace(v0, v1, nv + 1)
+    pts2: list[tuple[float, float]] = []
+    faces: list[tuple[int, int, int]] = []
+    index: dict[tuple[float, float], int] = {}
+
+    def vid(p) -> int:
+        key = (round(float(p[0]), 12), round(float(p[1]), 12))
+        if key not in index:
+            index[key] = len(pts2)
+            pts2.append((float(p[0]), float(p[1])))
+        return index[key]
+
+    for i in range(nu):
+        for j in range(nv):
+            cell = shapely.box(us[i], vs[j], us[i + 1], vs[j + 1])
+            piece = cell.intersection(hull)
+            if piece.is_empty or piece.area < 1e-12:
+                continue
+            geoms = getattr(piece, "geoms", [piece])
+            for g in geoms:
+                if not isinstance(g, shapely.Polygon):
+                    continue
+                ring = np.asarray(g.exterior.coords)[:-1]
+                ids = [vid(p) for p in ring]
+                for t in range(1, len(ids) - 1):   # convex piece: fan
+                    faces.append((ids[0], ids[t], ids[t + 1]))
+    if not faces:
+        return None
+    uvs = np.asarray(pts2, dtype=float)
+    pts = np.asarray(member.evaluate(uvs), dtype=float)
     return pts, uvs, np.asarray(faces, dtype=int)
 
 
@@ -189,14 +258,70 @@ def _stitch(V: np.ndarray, F: np.ndarray, src: list[dict],
     return F
 
 
+def _zip_boundaries(V: np.ndarray, F: np.ndarray, src: list[dict],
+                    tm: np.ndarray, snap_tol: float):
+    """Weld boundary vertices across DISCONNECTED components.  Where two
+    member sheets sample a shared seam at different densities the sides
+    are offset parallel edge chains: no vertex crosses an opposing edge,
+    so T-junction stitching cannot close them and the sheets stay
+    separate components.  Merging facing boundary vertices of different
+    components zips the seam; positions shift by at most ``snap_tol``.
+    Merges never happen inside one component, so good sheets keep their
+    slits and are not pinched.  Returns ``(F, tri_member)``."""
+    for _ in range(4):
+        rows = np.concatenate([F[:, 0], F[:, 1], F[:, 2]])
+        cols = np.concatenate([F[:, 1], F[:, 2], F[:, 0]])
+        adj = coo_matrix((np.ones(len(rows)), (rows, cols)),
+                         shape=(len(V), len(V)))
+        _, labels = connected_components(adj, directed=False)
+        bnd = _boundary_edges(F)
+        if len(bnd) == 0:
+            return F, tm
+        bv = np.unique(bnd)
+        pairs = cKDTree(V[bv]).query_pairs(snap_tol, output_type="ndarray")
+        if len(pairs) == 0:
+            return F, tm
+        a = bv[pairs[:, 0]]
+        b = bv[pairs[:, 1]]
+        cross = labels[a] != labels[b]
+        if not cross.any():
+            return F, tm
+        a, b = a[cross], b[cross]
+        parent = np.arange(len(V))
+
+        def find(i: int) -> int:
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+
+        d = np.linalg.norm(V[a] - V[b], axis=1)
+        for pi in np.argsort(d):
+            ra, rb = find(int(a[pi])), find(int(b[pi]))
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+        root = np.array([find(i) for i in range(len(V))])
+        for i, r in enumerate(root):
+            if r != i:
+                src[r].update(src[i])
+        F = root[F]
+        keep = ((F[:, 0] != F[:, 1]) & (F[:, 1] != F[:, 2])
+                & (F[:, 2] != F[:, 0]))
+        F, tm = F[keep], tm[keep]
+        if len(F) == 0:
+            return F, tm
+    return F, tm
+
+
 def _build_mesh(members: list[SurfaceParam], tol_m: float,
-                hint_pts: np.ndarray | None) -> _ChartMesh | None:
+                hint_pts: np.ndarray | None,
+                require_connected: bool = True) -> _ChartMesh | None:
     weld_tol = max(1e-6, 0.1 * tol_m)
     on_tol = max(10.0 * weld_tol, tol_m)
     # Assign each hint point to its best-fitting member (ties shared):
     # at tangent seams (e.g. bottom plane / bilge cylinder) near-seam arc
     # points lie within on_tol of the plane too and would otherwise
-    # inflate its bbox into an overhanging flap.
+    # inflate its trim region into an overhanging flap.
     fits: list | None = None
     res = min_res = None
     if hint_pts is not None and len(hint_pts) >= 3:
@@ -207,28 +332,69 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
             if f is not None:
                 res[i] = f[2]
         min_res = res.min(axis=0)
-    pts_all, src_all, faces_all = [], [], []
-    offset = 0
+    # Facet intrinsically-bounded members (NURBS) first: they are the
+    # authoritative geometry that trimmed unbounded members defer to.
+    pieces: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
     for k, member in enumerate(members):
-        on = None
-        if res is not None:
-            on = (res[k] <= on_tol) & (res[k] <= min_res + 1e-9)
-        dom = _member_domain(member, fits[k] if fits else None, on)
+        dom = _member_domain(member)
         if dom is None:
             continue
         try:
             pts, uvs, faces = _facet_member(member, dom, tol_m)
         except Exception:  # noqa: BLE001 — member disqualifies itself
             continue
+        if np.isfinite(pts).all():
+            pieces[k] = (pts, uvs, faces)
+    ref = None
+    if pieces:
+        off, rv, rf = 0, [], []
+        for pts, _, faces in pieces.values():
+            rv.append(pts)
+            rf.append(faces + off)
+            off += len(pts)
+        ref = trimesh.Trimesh(np.vstack(rv), np.vstack(rf), process=False)
+    # Unbounded members (planes, cylinders): facet the convex hull of
+    # their assigned hint points, then drop faces that duplicate
+    # intrinsic geometry — coincident double sheets fold the chart.
+    dup_tol = max(2.0 * weld_tol, 0.5 * tol_m)
+    for k, member in enumerate(members):
+        if k in pieces or _member_domain(member) is not None:
+            continue
+        if fits is None or fits[k] is None:
+            continue
+        on = (res[k] <= on_tol) & ((res[k] <= min_res + 1e-9)
+                                   | (res[k] <= weld_tol))
+        if int(on.sum()) < 3:
+            continue
+        try:
+            out = _facet_trimmed(member, fits[k][0][on], tol_m)
+        except Exception:  # noqa: BLE001 — member disqualifies itself
+            continue
+        if out is None:
+            continue
+        pts, uvs, faces = out
         if not np.isfinite(pts).all():
             continue
+        if ref is not None and len(faces):
+            dv = trimesh.proximity.closest_point(ref, pts)[1]
+            cent = pts[faces].mean(axis=1)
+            dc = trimesh.proximity.closest_point(ref, cent)[1]
+            drop = (dv[faces] < dup_tol).all(axis=1) & (dc < dup_tol)
+            faces = faces[~drop]
+            if len(faces) == 0:
+                continue
+        pieces[k] = (pts, uvs, faces)
+    if not pieces:
+        logger.debug("LSCM: no facetable members")
+        return None
+    pts_all, src_all, faces_all = [], [], []
+    offset = 0
+    for k in sorted(pieces):
+        pts, uvs, faces = pieces[k]
         pts_all.append(pts)
         src_all.extend({k: (float(u), float(v))} for u, v in uvs)
         faces_all.append(faces + offset)
         offset += len(pts)
-    if not pts_all:
-        logger.debug("LSCM: no facetable members")
-        return None
     V = np.vstack(pts_all)
     F = np.vstack(faces_all)
     V, src, remap = _weld(V, src_all, weld_tol)
@@ -239,25 +405,33 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
     if len(F):
         n = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])
         F = F[np.linalg.norm(n, axis=1) > 1e-14]
+    # snap: half the tolerance band — seam edges sampled at different
+    # densities deviate by the chord sag of the coarser side
     F = _stitch(V, F, src, max(weld_tol, 0.5 * tol_m))
     # drop degenerate triangles
     F = F[(F[:, 0] != F[:, 1]) & (F[:, 1] != F[:, 2]) & (F[:, 2] != F[:, 0])]
     if len(F):
         n = np.cross(V[F[:, 1]] - V[F[:, 0]], V[F[:, 2]] - V[F[:, 0]])
         F = F[np.linalg.norm(n, axis=1) > 1e-14]
+    if len(F):
+        # welding + stitching can leave exact duplicate faces, which make
+        # their edges non-manifold and break the boundary walk
+        _, idx = np.unique(np.sort(F, axis=1), axis=0, return_index=True)
+        F = F[np.sort(idx)]
     if len(F) == 0:
         logger.debug("LSCM: empty mesh")
         return None
-    # the chart must be a single connected component
     used = np.unique(F)
-    rows = np.concatenate([F[:, 0], F[:, 1], F[:, 2]])
-    cols = np.concatenate([F[:, 1], F[:, 2], F[:, 0]])
-    adj = coo_matrix((np.ones(len(rows)), (rows, cols)),
-                     shape=(len(V), len(V)))
-    _, labels = connected_components(adj, directed=False)
-    if len(np.unique(labels[used])) > 1:
-        logger.debug("LSCM: members do not form a connected mesh")
-        return None
+    if require_connected:
+        # the chart must be a single connected component
+        rows = np.concatenate([F[:, 0], F[:, 1], F[:, 2]])
+        cols = np.concatenate([F[:, 1], F[:, 2], F[:, 0]])
+        adj = coo_matrix((np.ones(len(rows)), (rows, cols)),
+                         shape=(len(V), len(V)))
+        _, labels = connected_components(adj, directed=False)
+        if len(np.unique(labels[used])) > 1:
+            logger.debug("LSCM: members do not form a connected mesh")
+            return None
     # drop unused vertices and make the winding consistent
     remap2 = -np.ones(len(V), dtype=int)
     remap2[used] = np.arange(len(used))
@@ -276,22 +450,34 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
 
 
 def _longest_boundary_loop(bnd: np.ndarray) -> list[int] | None:
-    """Longest closed loop among the directed boundary edges."""
-    nxt = {int(a): int(b) for a, b in bnd}
-    seen: set[int] = set()
+    """Longest closed loop among the directed boundary edges.
+
+    Walks edges (not a vertex successor map): at pinch vertices — boundary
+    vertices with several outgoing boundary edges — a successor map
+    overwrites forks and fragments the outer boundary into tiny loops."""
+    out: dict[int, list[int]] = {}
+    for i, (a, b) in enumerate(bnd):
+        out.setdefault(int(a), []).append(i)
+    used = np.zeros(len(bnd), dtype=bool)
     best: list[int] | None = None
-    for start in list(nxt):
-        if start in seen:
+    for i0 in range(len(bnd)):
+        if used[i0]:
             continue
-        loop, v = [], start
-        while v in nxt and v not in seen:
-            seen.add(v)
-            loop.append(v)
-            v = nxt[v]
-        if v != start:
-            continue                     # open chain, not a loop
-        if best is None or len(loop) > len(best):
-            best = loop
+        loop: list[int] = []
+        i = i0
+        start = int(bnd[i0][0])
+        while True:
+            used[i] = True
+            loop.append(int(bnd[i][0]))
+            v = int(bnd[i][1])
+            if v == start:
+                if best is None or len(loop) > len(best):
+                    best = loop
+                break
+            nxt = next((j for j in out.get(v, []) if not used[j]), None)
+            if nxt is None:
+                break                    # open chain, not a loop
+            i = nxt
     return best
 
 
@@ -328,7 +514,13 @@ def _lscm_uv(V: np.ndarray, F: np.ndarray) -> np.ndarray | None:
     loop = _longest_boundary_loop(bnd)
     if loop is None or len(loop) < 2:
         return None
-    p0, p1 = loop[0], loop[len(loop) // 2]
+    # pin the two most mutually distant loop vertices: badly separated
+    # pins let the conformal solution wrap around a boundary point
+    # (non-injective yet fold-free)
+    pts = V[loop]
+    a = int(np.argmax(np.linalg.norm(pts - pts[0], axis=1)))
+    b = int(np.argmax(np.linalg.norm(pts - pts[a], axis=1)))
+    p0, p1 = loop[a], loop[b]
     fixed = np.array([p0, p1, n + p0, n + p1])
     xb = np.array([0.0, 1.0, 0.0, 0.0])
     free = np.setdiff1d(np.arange(2 * n), fixed)
@@ -364,7 +556,8 @@ class LscmParam(SurfaceParam):
                 [a, np.zeros(a.shape[:-1] + (1,))], axis=-1)
 
         bary = trimesh.triangles.points_to_barycentric(pad(tri2), pad(uv))
-        bary = np.clip(bary, 0.0, None)   # outside points snap to the tri
+        bary = np.clip(np.nan_to_num(bary, nan=1.0 / 3.0,
+                                     posinf=1.0, neginf=0.0), 0.0, None)
         bary /= np.maximum(bary.sum(axis=1, keepdims=True), 1e-300)
         return tid, bary
 
@@ -398,7 +591,8 @@ class LscmParam(SurfaceParam):
         closest, _, tid = trimesh.proximity.closest_point(self._mesh, pts)
         bary = trimesh.triangles.points_to_barycentric(
             self._V[self._F[tid]], np.asarray(closest, dtype=float))
-        bary = np.clip(bary, 0.0, None)
+        bary = np.clip(np.nan_to_num(bary, nan=1.0 / 3.0,
+                                     posinf=1.0, neginf=0.0), 0.0, None)
         bary /= np.maximum(bary.sum(axis=1, keepdims=True), 1e-300)
         return np.einsum("ij,ijk->ik", bary, self._uv[self._F[tid]])
 
@@ -418,6 +612,379 @@ class LscmParam(SurfaceParam):
         return min(edges) if edges else None
 
 
+def _apply_gates(cm: _ChartMesh, uv: np.ndarray,
+                 scale_gate: bool = True,
+                 reject: bool = True) -> np.ndarray | None:
+    """Quality gates and metric rescale for a flattened chart mesh.
+    Mutates ``cm`` to drop UV-collapsed triangles.  Returns metric UV
+    coordinates or None when the flattening is unusable.  With
+    ``reject=False`` bad triangles are only dropped, never fatal — for
+    fallback paths whose output is validated functionally anyway."""
+    tri3 = cm.V[cm.F]
+    a3 = 0.5 * np.linalg.norm(
+        np.cross(tri3[:, 1] - tri3[:, 0], tri3[:, 2] - tri3[:, 0]),
+        axis=1)
+    t2 = uv[cm.F]
+    a2s = 0.5 * ((t2[:, 1, 0] - t2[:, 0, 0])
+                 * (t2[:, 2, 1] - t2[:, 0, 1])
+                 - (t2[:, 2, 0] - t2[:, 0, 0])
+                 * (t2[:, 1, 1] - t2[:, 0, 1]))
+    ok = (np.abs(a2s) > 1e-18) & (a3 > 1e-18)
+    if not ok.any():
+        logger.debug("LSCM: chart collapsed")
+        return None
+    if not ok.all():
+        # drop UV-collapsed triangles: they would bypass the quality
+        # gates yet yield NaN barycentrics on queries
+        cm.F, cm.tri_member = cm.F[ok], cm.tri_member[ok]
+        a3, a2s = a3[ok], a2s[ok]
+        ok = np.ones(len(cm.F), dtype=bool)
+    maj = 1.0 if a2s.sum() >= 0.0 else -1.0
+    flipped = np.sign(a2s) != maj
+    if flipped.any():
+        # Tiny flipped slivers appear where nearly-coincident member
+        # sheets weld; they carry negligible 3-D area and do not affect
+        # injectivity.  Reject only genuine folds (noticeable flipped
+        # area), otherwise drop the slivers from the chart.
+        frac = float(a3[flipped].sum()) / max(float(a3.sum()), 1e-300)
+        if reject and frac > _MAX_FLIPPED:
+            logger.debug("LSCM: {:.2%} flipped UV area", frac)
+            return None
+        keepf = ~flipped
+        if not keepf.any():
+            logger.debug("LSCM: chart collapsed")
+            return None
+        cm.F, cm.tri_member = cm.F[keepf], cm.tri_member[keepf]
+        a3, a2s = a3[keepf], a2s[keepf]
+    ratio = a3 / np.abs(a2s)
+    if scale_gate:
+        med = float(np.median(ratio))
+        spread = math.sqrt(_MAX_SCALE_RATIO)
+        outlier = (ratio > med * spread) | (ratio < med / spread)
+        if outlier.any():
+            # Same policy as flips: needle UV slivers at weld seams give
+            # extreme per-triangle scale; tolerate them when their 3-D
+            # area is negligible, reject genuine broad distortion.
+            frac = float(a3[outlier].sum()) / max(float(a3.sum()), 1e-300)
+            if reject and frac > _MAX_FLIPPED:
+                logger.debug(
+                    "LSCM: per-triangle scale spread too large "
+                    "({:.2%} of area)", frac)
+                return None
+            keepf = ~outlier
+            if not keepf.any():
+                logger.debug("LSCM: chart collapsed")
+                return None
+            cm.F, cm.tri_member = cm.F[keepf], cm.tri_member[keepf]
+            a3, a2s, ratio = a3[keepf], a2s[keepf], ratio[keepf]
+    return uv * math.sqrt(float(np.median(ratio)))
+
+
+def _flatten_gates(cm: _ChartMesh) -> np.ndarray | None:
+    """LSCM-flatten a chart mesh, apply quality gates and metric rescale.
+    Mutates ``cm`` to drop UV-collapsed triangles.  Returns metric UV
+    coordinates or None when the flattening is unusable."""
+    uv = _lscm_uv(cm.V, cm.F)
+    if uv is None:
+        logger.debug("LSCM: flattening failed")
+        return None
+    return _apply_gates(cm, uv, scale_gate=True)
+
+
+def _tutte_uv(V: np.ndarray, F: np.ndarray) -> np.ndarray | None:
+    """Uniform-weight Tutte embedding: the outer boundary loop is pinned
+    to a circle (arc length proportional to 3-D edge length) and interior
+    vertices solve a positive-weight Laplace system. Convex boundary +
+    positive weights give an injective map on disk topology (Floater) at
+    the cost of metric distortion — a robust fallback where conformal
+    flattening folds or wraps."""
+    bnd = _boundary_edges(F)
+    if len(bnd) < 3:
+        return None
+    loop = _longest_boundary_loop(bnd)
+    if loop is None or len(loop) < 3:
+        return None
+    n = len(V)
+    P = V[loop]
+    seg = np.linalg.norm(np.roll(P, -1, axis=0) - P, axis=1)
+    total = float(seg.sum())
+    if total <= 0.0:
+        return None
+    theta = 2.0 * np.pi * np.concatenate(
+        [[0.0], np.cumsum(seg)[:-1]]) / total
+    r = total / (2.0 * np.pi)
+    buv = np.column_stack([r * np.cos(theta), r * np.sin(theta)])
+    e = np.vstack([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+    e = np.unique(np.sort(e, axis=1), axis=0)
+    W = coo_matrix(
+        (np.ones(2 * len(e)),
+         (np.concatenate([e[:, 0], e[:, 1]]),
+          np.concatenate([e[:, 1], e[:, 0]]))), shape=(n, n)).tocsr()
+    L = diags(np.asarray(W.sum(axis=1)).ravel()) - W
+    fixed = np.asarray(loop, dtype=int)
+    free = np.setdiff1d(np.arange(n), fixed)
+    uv = np.empty((n, 2))
+    uv[fixed] = buv
+    if len(free):
+        rhs = -L[free][:, fixed] @ buv
+        try:
+            solve = factorized(L[free][:, free].tocsc())
+            uv[free, 0] = solve(np.ascontiguousarray(rhs[:, 0]))
+            uv[free, 1] = solve(np.ascontiguousarray(rhs[:, 1]))
+        except RuntimeError:            # singular: loop misses a component
+            return None
+    if not np.isfinite(uv).all():
+        return None
+    return uv
+
+
+def _manifold_mask(V: np.ndarray, F: np.ndarray) -> np.ndarray:
+    """Keep at most the two largest-area faces per edge.  Overlapping
+    member sheets weld into non-manifold fins; a single fin triangle
+    breaks the boundary-loop walk and couples distant sheets in the
+    conformal system, folding the whole chart."""
+    e = np.vstack([F[:, [0, 1]], F[:, [1, 2]], F[:, [2, 0]]])
+    e.sort(axis=1)
+    _, inv, cnt = np.unique(e, axis=0, return_inverse=True,
+                            return_counts=True)
+    keep = np.ones(len(F), dtype=bool)
+    bad = np.nonzero(cnt > 2)[0]
+    if len(bad) == 0:
+        return keep
+    tri3 = V[F]
+    area = 0.5 * np.linalg.norm(
+        np.cross(tri3[:, 1] - tri3[:, 0], tri3[:, 2] - tri3[:, 0]),
+        axis=1)
+    face_of = np.tile(np.arange(len(F)), 3)
+    for ei in bad:
+        faces = np.unique(face_of[inv == ei])
+        order = faces[np.argsort(area[faces])[::-1]]
+        keep[order[2:]] = False
+    return keep
+
+
+def _face_components(F: np.ndarray) -> np.ndarray:
+    """Connected-component label per face (faces sharing an edge)."""
+    parent = np.arange(len(F))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    owner: dict[tuple[int, int], int] = {}
+    for fi, f in enumerate(F):
+        a, b, c = int(f[0]), int(f[1]), int(f[2])
+        for e in ((a, b), (b, c), (c, a)):
+            key = (min(e), max(e))
+            o = owner.get(key)
+            if o is None:
+                owner[key] = fi
+            else:
+                ra, rb = find(fi), find(o)
+                if ra != rb:
+                    parent[max(ra, rb)] = min(ra, rb)
+    return np.array([find(i) for i in range(len(F))])
+
+
+class LscmChart:
+    """Per-panel chart mesh that flattens plate-local submeshes on demand.
+
+    A single conformal flattening of a whole panel (e.g. one hull side)
+    carries exponential scale variation wherever the surface has Gaussian
+    curvature — distant regions collapse below floating-point resolution
+    and the quality gates rightly reject the chart.  Flattening only the
+    mesh neighbourhood of one plate contour keeps every chart small and
+    near-developable, so it stays injective and metric."""
+
+    def __init__(self, members: list[SurfaceParam], cm: _ChartMesh,
+                 tol_m: float) -> None:
+        self.members = members
+        self._cm = cm
+        self._tol = tol_m
+        self._cent = cm.V[cm.F].mean(axis=1)
+        self._ctree = cKDTree(self._cent)
+        self._adj = self._face_adjacency()
+
+    def _face_adjacency(self):
+        """Sparse face-adjacency graph weighted by centroid distance."""
+        F = self._cm.F
+        owner: dict[tuple[int, int], int] = {}
+        rows, cols, vals = [], [], []
+        for fi, f in enumerate(F):
+            a, b, c = int(f[0]), int(f[1]), int(f[2])
+            for e in ((a, b), (b, c), (c, a)):
+                key = (min(e), max(e))
+                o = owner.get(key)
+                if o is None:
+                    owner[key] = fi
+                elif o != fi:
+                    w = float(np.linalg.norm(self._cent[fi]
+                                             - self._cent[o]))
+                    rows.append(fi)
+                    cols.append(o)
+                    vals.append(max(w, 1e-12))
+        n = len(F)
+        return coo_matrix((vals, (rows, cols)), shape=(n, n)).tocsr()
+
+    def _contour_radius(self, contour: np.ndarray) -> float:
+        """Local region radius: the plate's across-width estimated as the
+        max over contour samples of the distance to the far side of the
+        contour ring (points at least an eighth of the ring away)."""
+        n = len(contour)
+        step = max(1, n // 64)
+        si = np.arange(0, n, step)
+        d = np.linalg.norm(contour[si][:, None, :] - contour[None, :, :],
+                           axis=2)
+        ring = np.abs(np.arange(n)[None, :] - si[:, None])
+        ring = np.minimum(ring, n - ring)
+        d[ring < max(1, n // 8)] = np.inf
+        width = d.min(axis=1)
+        width = width[np.isfinite(width)]
+        w = float(width.max()) if len(width) else 0.0
+        return max(10.0 * self._tol, 0.75 * w)
+
+    def param_for(self, contour: np.ndarray) -> LscmParam | None:
+        """Metric chart over the submesh around one plate contour."""
+        try:
+            contour = np.asarray(contour, dtype=float)
+            if contour.ndim != 2 or len(contour) < 3:
+                return None
+            radius = self._contour_radius(contour)
+            # geodesic ball: grow along face adjacency from the faces
+            # nearest the contour. A Euclidean ball catches geodesically
+            # far faces (e.g. the opposite side of the bow) as separate
+            # components; LSCM pins live in one component and unpinned
+            # components collapse in UV, silently losing coverage.
+            step = contour[:: max(1, len(contour) // 128)]
+            _, seeds = self._ctree.query(step)
+            seeds = np.unique(seeds)
+            sub_f = sel = None
+            for _ in range(4):
+                dist = dijkstra(self._adj, directed=False, indices=seeds,
+                                limit=radius, min_only=True)
+                sel = np.nonzero(np.isfinite(dist))[0]
+                if len(sel) == 0:
+                    return None
+                sub_f = self._cm.F[sel]
+                comp = _face_components(sub_f)
+                # keep every component that holds a seed face: a plate
+                # can span sheets that only meet across an open member
+                # seam — they are zipped together below
+                pos = np.searchsorted(sel, seeds)
+                keep = np.isin(comp, np.unique(comp[pos]))
+                sub_f, sel = sub_f[keep], sel[keep]
+                if len(np.unique(comp[keep])) == 1:
+                    break
+                # several islands: the ball may only cover an annulus
+                # around the contour — widen it to fill the interior
+                radius *= 1.3
+            # overlapping-sheet fins make the submesh non-manifold,
+            # which folds the conformal flattening; shave them
+            keep = _manifold_mask(self._cm.V, sub_f)
+            sub_f, sel = sub_f[keep], sel[keep]
+            if len(sub_f) == 0:
+                return None
+            used = np.unique(sub_f)
+            remap = -np.ones(len(self._cm.V), dtype=int)
+            remap[used] = np.arange(len(used))
+            subV = self._cm.V[used]
+            subF = remap[sub_f]
+            # deep-copy: zipping merges src dicts and must not pollute
+            # the shared panel chart across plates
+            sub_src = [dict(self._cm.src[i]) for i in used]
+            sub_tm = self._cm.tri_member[sel]
+            if len(np.unique(_face_components(subF))) > 1:
+                # zip sheets across open seams, then keep the dominant
+                # component: LSCM is singular on face-disconnected or
+                # pinch-connected meshes (independent similarity per
+                # sheet), so face connectivity is required
+                subF, sub_tm = _zip_boundaries(subV, subF, sub_src,
+                                               sub_tm, 4.0 * self._tol)
+                if len(subF) == 0:
+                    return None
+                comp = _face_components(subF)
+                labels, counts = np.unique(comp, return_counts=True)
+                if len(labels) > 1:
+                    keep = comp == labels[int(np.argmax(counts))]
+                    subF, sub_tm = subF[keep], sub_tm[keep]
+            if len(subF) == 0:
+                return None
+            # drop vertices orphaned by zipping / component keeps:
+            # zero Laplacian rows make LSCM and Tutte exactly singular
+            used2 = np.unique(subF)
+            if len(used2) < len(subV):
+                remap2 = -np.ones(len(subV), dtype=int)
+                remap2[used2] = np.arange(len(used2))
+                subV = subV[used2]
+                subF = remap2[subF]
+                sub_src = [sub_src[i] for i in used2]
+
+            def fresh() -> _ChartMesh:
+                # the gates mutate the mesh they are given; every
+                # flattening attempt must start from the pristine submesh
+                return _ChartMesh(subV, subF.copy(), sub_src,
+                                  sub_tm.copy())
+
+            def validated(cm: _ChartMesh,
+                          uv: np.ndarray | None) -> LscmParam | None:
+                # functional acceptance: the chart must roundtrip this
+                # plate's own contour (inverse -> evaluate). Geometric
+                # proxies (flip counts, scale spread) miss fold-free
+                # non-injective wraps and falsely reject harmless pinches.
+                if uv is None:
+                    return None
+                param = LscmParam(self.members, cm, uv)
+                uvc = param.inverse(contour)
+                err = np.linalg.norm(param.evaluate(uvc) - contour, axis=1)
+                if float(err.max()) > 2.0 * self._tol:
+                    logger.debug("LSCM: contour roundtrip {:.3f} m",
+                                 float(err.max()))
+                    return None
+                return param
+
+            sub = fresh()
+            param = validated(sub, _flatten_gates(sub))
+            if param is None:
+                # conformal flattening folded or wrapped: retry without
+                # rejection gates — flips between welded coincident
+                # sheets are harmless and the roundtrip check decides
+                sub = fresh()
+                uv = _lscm_uv(sub.V, sub.F)
+                if uv is not None:
+                    uv = _apply_gates(sub, uv, scale_gate=False,
+                                      reject=False)
+                param = validated(sub, uv)
+            if param is None:
+                # last resort: Tutte embedding — injective on disk
+                # topology, so the chart still tracks, less isometric
+                sub = fresh()
+                uv = _tutte_uv(sub.V, sub.F)
+                if uv is not None:
+                    uv = _apply_gates(sub, uv, scale_gate=False,
+                                      reject=False)
+                param = validated(sub, uv)
+            return param
+        except Exception as exc:  # noqa: BLE001 — chart disqualifies itself
+            logger.debug("LSCM plate chart failed: {}", exc)
+            return None
+
+
+def make_lscm_chart(members: list[SurfaceParam], tol_m: float,
+                    hint_pts: np.ndarray | None = None) -> LscmChart | None:
+    """Chart mesh over collection members for per-plate flattening, or
+    None if no usable mesh can be built."""
+    try:
+        cm = _build_mesh(members, tol_m, hint_pts, require_connected=False)
+        if cm is None:
+            return None
+        return LscmChart(members, cm, tol_m)
+    except Exception as exc:  # noqa: BLE001 — chart disqualifies itself
+        logger.debug("LSCM chart mesh failed: {}", exc)
+        return None
+
+
 def make_lscm(members: list[SurfaceParam], tol_m: float,
               hint_pts: np.ndarray | None = None) -> LscmParam | None:
     """LSCM chart over collection members, or None if not buildable."""
@@ -425,39 +992,9 @@ def make_lscm(members: list[SurfaceParam], tol_m: float,
         cm = _build_mesh(members, tol_m, hint_pts)
         if cm is None:
             return None
-        uv = _lscm_uv(cm.V, cm.F)
+        uv = _flatten_gates(cm)
         if uv is None:
-            logger.debug("LSCM: flattening failed")
             return None
-        tri3 = cm.V[cm.F]
-        a3 = 0.5 * np.linalg.norm(
-            np.cross(tri3[:, 1] - tri3[:, 0], tri3[:, 2] - tri3[:, 0]),
-            axis=1)
-        t2 = uv[cm.F]
-        a2s = 0.5 * ((t2[:, 1, 0] - t2[:, 0, 0])
-                     * (t2[:, 2, 1] - t2[:, 0, 1])
-                     - (t2[:, 2, 0] - t2[:, 0, 0])
-                     * (t2[:, 1, 1] - t2[:, 0, 1]))
-        ok = (np.abs(a2s) > 1e-18) & (a3 > 1e-18)
-        if not ok.any():
-            logger.debug("LSCM: chart collapsed")
-            return None
-        if not ok.all():
-            # drop UV-collapsed triangles: they would bypass the quality
-            # gates yet yield NaN barycentrics on queries
-            cm.F, cm.tri_member = cm.F[ok], cm.tri_member[ok]
-            tri3, a3, a2s = tri3[ok], a3[ok], a2s[ok]
-            ok = np.ones(len(cm.F), dtype=bool)
-        maj = 1.0 if a2s[ok].sum() >= 0.0 else -1.0
-        flipped = float((np.sign(a2s[ok]) != maj).mean())
-        if flipped > _MAX_FLIPPED:
-            logger.debug("LSCM: {:.2%} flipped UV triangles", flipped)
-            return None
-        ratio = a3[ok] / np.abs(a2s[ok])
-        if float(ratio.max() / ratio.min()) > _MAX_SCALE_RATIO:
-            logger.debug("LSCM: per-triangle scale spread too large")
-            return None
-        uv = uv * math.sqrt(float(np.median(ratio)))
         return LscmParam(members, cm, uv)
     except Exception as exc:  # noqa: BLE001 — chart disqualifies itself
         logger.debug("LSCM chart failed: {}", exc)
