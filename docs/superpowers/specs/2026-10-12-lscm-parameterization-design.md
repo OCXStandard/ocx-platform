@@ -62,7 +62,9 @@ Changes elsewhere:
   the panel's concatenated sampled plate contours as *hint points*: members
   without an intrinsic UV domain (planes, cylinders — only
   `NurbsSurfaceParam` carries knot-domain bounds) are bounded by the bbox of
-  their on-surface hint points in member-local UV. `_tessellate_plates` runs
+  their on-surface hint points in member-local UV (each hint point is
+  assigned to its best-fitting member only, ties within 1e-9 shared, so
+  tangent seams do not inflate a neighbour's domain). `_tessellate_plates` runs
   two passes — contour sampling first, then chart build + tessellation — so
   the per-panel chart and cache remain sound.
 - `ocx-geometry/pyproject.toml`: add `scipy>=1.14`.
