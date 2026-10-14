@@ -3,8 +3,13 @@
 Pipeline per part: inverse-map boundary (and holes) to UV → repair the UV
 polygon with shapely → earcut-triangulate → metric subdivision for curved
 surfaces → evaluate surface at final UV vertices → PartMesh.
+
+Multi-patch charts are clipped to source faces before triangulation and
+refined in each source member's UV, never across chart seams or holes.
 """
 from __future__ import annotations
+
+from collections.abc import Iterable
 
 import mapbox_earcut
 import numpy as np
@@ -15,6 +20,7 @@ from shapely.geometry import Polygon
 from shapely.geometry.polygon import orient
 
 from ocx_geometry.backend import ITessellator, TessellationOptions
+from ocx_geometry.lscm import LscmParam
 from ocx_geometry.mesh import PartMesh
 from ocx_geometry.surfaces import SurfaceParam
 
@@ -158,48 +164,61 @@ class UvTessellator(ITessellator):
                          "(holes outside the plate region are expected to be "
                          "dropped)", len(valid_holes) - n_ints, part_id)
 
-        vert_blocks, tri_blocks, offset = [], [], 0
-        for ext, ints in parts:
+        regions: Iterable[tuple[SurfaceParam, np.ndarray, list[np.ndarray], np.ndarray | None]]
+        if isinstance(surface_param, LscmParam):
+            polygon = shapely.union_all([Polygon(ext, ints) for ext, ints in parts])
+            try:
+                regions = list(surface_param.trimmed_regions(polygon))
+            except (ValueError, shapely.errors.GEOSException) as exc:
+                logger.warning("Chart trim failed for {}: {}", part_id, exc)
+                return None
+        else:
+            regions = ((surface_param, ext, ints, None) for ext, ints in parts)
+
+        vert_blocks, tri_blocks, normal_blocks, offset = [], [], [], 0
+        for param, ext, ints, reference_normal in regions:
             cut = _earcut(ext, ints)
             if cut is None:
                 continue
-            pv, pt = cut
-            vert_blocks.append(pv)
-            tri_blocks.append(pt + offset)
-            offset += len(pv)
+            verts_uv, tris = cut
+            # Refine in source-member metric UV, not distorted chart UV.
+            max_edge = param.max_edge_m(options.tolerance_m)
+            if max_edge is not None:
+                su, sv = param.uv_scale()
+                scaled = np.column_stack([verts_uv[:, 0] * su, verts_uv[:, 1] * sv,
+                                          np.zeros(len(verts_uv))])
+                try:
+                    scaled, tris = trimesh.remesh.subdivide_to_size(
+                        scaled, tris, max_edge=max_edge, max_iter=8)
+                except ValueError as exc:
+                    if "max_iter exceeded" in str(exc):
+                        logger.warning("Subdivision max_iter exceeded for {}: "
+                                       "falling back to unsubdivided mesh", part_id)
+                    else:
+                        raise
+                verts_uv = np.column_stack([scaled[:, 0] / su, scaled[:, 1] / sv])
+                tris = np.asarray(tris, dtype=np.int64)
+            verts3 = param.evaluate(verts_uv)
+            if not np.all(np.isfinite(verts3)):
+                logger.debug("Non-finite vertices for {}", part_id)
+                return None
+            tris = _drop_degenerate(verts3, tris)
+            if len(tris) == 0:
+                continue
+            normals = param.normals(verts_uv)
+            if reference_normal is not None:
+                normals[normals @ reference_normal < 0] *= -1.0
+                cross = np.cross(verts3[tris[:, 1]] - verts3[tris[:, 0]],
+                                 verts3[tris[:, 2]] - verts3[tris[:, 0]])
+                flip = cross @ reference_normal < 0
+                tris[flip] = tris[flip, ::-1]
+            vert_blocks.append(verts3)
+            tri_blocks.append(tris + offset)
+            normal_blocks.append(normals)
+            offset += len(verts3)
         if not vert_blocks:
-            logger.debug("Earcut produced no triangles for {}", part_id)
+            logger.debug("No non-degenerate triangles for {}", part_id)
             return None
-        verts_uv = np.vstack(vert_blocks)
-        tris = np.vstack(tri_blocks)
-
-        # metric subdivision for curved surfaces
-        max_edge = surface_param.max_edge_m(options.tolerance_m)
-        if max_edge is not None:
-            su, sv = surface_param.uv_scale()
-            scaled = np.column_stack([verts_uv[:, 0] * su, verts_uv[:, 1] * sv,
-                                      np.zeros(len(verts_uv))])
-            # ISSUE 2: Handle trimesh subdivision max_iter failure gracefully
-            try:
-                scaled, tris = trimesh.remesh.subdivide_to_size(
-                    scaled, tris, max_edge=max_edge, max_iter=8)
-            except ValueError as exc:
-                if "max_iter exceeded" in str(exc):
-                    logger.warning("Subdivision max_iter exceeded for {}: "
-                                   "falling back to unsubdivided mesh", part_id)
-                    # Fall back to unsubdivided mesh (don't return None)
-                else:
-                    raise
-            verts_uv = np.column_stack([scaled[:, 0] / su, scaled[:, 1] / sv])
-            tris = np.asarray(tris, dtype=np.int64)
-
-        verts3 = surface_param.evaluate(verts_uv)
-        if not np.all(np.isfinite(verts3)):
-            logger.debug("Non-finite vertices for {}", part_id)
-            return None
-        tris = _drop_degenerate(verts3, tris)
-        if len(tris) == 0:
-            return None
-        normals = surface_param.normals(verts_uv)
         return PartMesh(part_id=part_id, name=name, kind=kind,
-                        vertices=verts3, triangles=tris, normals=normals)
+                        vertices=np.vstack(vert_blocks), triangles=np.vstack(tri_blocks),
+                        normals=np.vstack(normal_blocks))

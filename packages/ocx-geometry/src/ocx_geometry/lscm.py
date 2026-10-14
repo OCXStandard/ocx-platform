@@ -15,7 +15,9 @@ Reference: GeniE ``LSCMParameterizedSurface.cpp`` (DNV, libigl-based).
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator
 
+import mapbox_earcut
 import numpy as np
 import shapely
 import trimesh
@@ -26,7 +28,7 @@ from scipy.sparse.linalg import factorized, spsolve
 from scipy.spatial import cKDTree
 from shapely.strtree import STRtree
 
-from ocx_geometry.surfaces import SurfaceParam, _member_fit
+from ocx_geometry.surfaces import PlaneParam, SurfaceParam, _member_fit
 
 _MAX_GRID = 96            # max facet cells per axis per member
 _MAX_SCALE_RATIO = 100.0  # reject charts with larger per-triangle scale spread
@@ -81,12 +83,10 @@ def _facet_member(member: SurfaceParam, dom, tol_m: float):
     return pts, uvs, np.asarray(faces, dtype=int)
 
 
-def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float):
-    """Facet an unbounded member (plane, cylinder) clipped to the convex
-    hull of its assigned on-surface hint points in member-local UV.  The
-    bbox of those points badly overshoots non-rectangular regions (e.g. a
-    tapering flat bottom), creating flaps that overlap neighbouring
-    members in 3-D and fold the chart."""
+def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float,
+                   excluded: shapely.Geometry | None = None):
+    """Facet an unbounded member inside its hint envelope, excluding
+    authoritative bounded-patch footprints where available."""
     hull_uv = np.asarray(hull_uv, dtype=float)
     if getattr(member, "periodic_u", False):
         # inverse() unwraps u per polyline, so points from different hint
@@ -99,17 +99,18 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float):
         hull_uv = hull_uv.copy()
         hull_uv[:, 0] = centre + (ang - centre + np.pi) % two_pi - np.pi
     mp = shapely.MultiPoint(hull_uv)
-    # the member's true region is usually concave (e.g. a flat bottom
-    # bounded by the curved bilge chine): a convex hull overshoots onto
-    # neighbouring curved members, creating overlapping flaps that can
-    # neither be stitched nor welded. Hint contours sample the region
-    # boundary densely, so a concave hull follows it closely.
-    try:
-        hull = shapely.concave_hull(mp, ratio=0.3)
-    except Exception:  # noqa: BLE001 — shapely < 2.0 or qhull failure
-        hull = mp.convex_hull
-    if getattr(hull, "area", 0.0) < 1e-12:
-        hull = mp.convex_hull
+    if excluded is not None:
+        # Sparse contour points cannot identify a tangent seam: the
+        # concave hull cuts into real plate interiors. Bounded patches
+        # supply the seam silhouette, rather than inferred indentations.
+        hull = mp.convex_hull.difference(excluded)
+    else:
+        try:
+            hull = shapely.concave_hull(mp, ratio=0.3)
+        except Exception:  # noqa: BLE001 — shapely < 2.0 or qhull failure
+            hull = mp.convex_hull
+        if getattr(hull, "area", 0.0) < 1e-12:
+            hull = mp.convex_hull
     if getattr(hull, "area", 0.0) < 1e-12:
         return None                     # degenerate: no 2-D extent
     u0, v0, u1, v1 = hull.bounds
@@ -150,21 +151,49 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float):
                     continue
                 ring = np.asarray(g.exterior.coords)[:-1]
                 # GEOS does not normalize intersection-output ring
-                # orientation: fanning rings as-is yields mixed triangle
+                # orientation: triangulating rings as-is yields mixed triangle
                 # winding, which breaks the conformal flattening
                 area2 = float(
                     (ring[:, 0] * np.roll(ring[:, 1], -1)
                      - np.roll(ring[:, 0], -1) * ring[:, 1]).sum())
                 if area2 < 0.0:
                     ring = ring[::-1]
-                ids = [vid(p) for p in ring]
-                for t in range(1, len(ids) - 1):   # convex piece: fan
-                    faces.append((ids[0], ids[t], ids[t + 1]))
+                # A convex grid cell intersected with a concave hull
+                # need not be convex; a fan can cross the trim boundary.
+                rings = [ring] + [np.asarray(r.coords)[:-1] for r in g.interiors]
+                vertices = np.vstack(rings).astype(np.float64)
+                ends = np.cumsum([len(r) for r in rings]).astype(np.uint32)
+                triangles = mapbox_earcut.triangulate_float64(vertices, ends)
+                ids = np.array([vid(p) for p in vertices], dtype=int)
+                faces.extend(map(tuple, ids[triangles.reshape(-1, 3)]))
     if not faces:
         return None
     uvs = np.asarray(pts2, dtype=float)
     pts = np.asarray(member.evaluate(uvs), dtype=float)
     return pts, uvs, np.asarray(faces, dtype=int)
+
+
+def _plane_exclusion(member: PlaneParam, members: list[SurfaceParam],
+                     pieces: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]],
+                     tol_m: float) -> tuple[shapely.Geometry, np.ndarray] | None:
+    """Projected footprints of bounded patches sharing a tangent boundary."""
+    footprints, seams = [], []
+    for k, (pts, uv, faces) in pieces.items():
+        if _member_domain(members[k]) is None:
+            continue
+        boundary = np.unique(_boundary_edges(faces))
+        local = member.inverse(pts[boundary])
+        gap = np.linalg.norm(member.evaluate(local) - pts[boundary], axis=1)
+        alignment = np.abs(np.einsum(
+            "ij,ij->i", member.normals(local), members[k].normals(uv[boundary])))
+        touching = (gap <= tol_m) & (alignment > 0.9)
+        if np.count_nonzero(touching) < 2:
+            continue
+        seams.append(local[touching])
+        projected = member.inverse(pts)
+        footprints.extend(p for p in shapely.polygons(projected[faces])
+                          if p.area > 1e-18)
+    return (shapely.union_all(footprints), np.vstack(seams)) if footprints else None
 
 
 def _weld(V: np.ndarray, src: list[dict], weld_tol: float):
@@ -422,9 +451,8 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
             rf.append(faces + off)
             off += len(pts)
         ref = trimesh.Trimesh(np.vstack(rv), np.vstack(rf), process=False)
-    # Unbounded members (planes, cylinders): facet the convex hull of
-    # their assigned hint points, then drop faces that duplicate
-    # intrinsic geometry — coincident double sheets fold the chart.
+    # Clip tangent planes to exact bounded-patch silhouettes. Other
+    # unbounded members retain the proximity-based duplicate policy.
     dup_tol = max(2.0 * weld_tol, 0.5 * tol_m)
     for k, member in enumerate(members):
         if k in pieces or _member_domain(member) is not None:
@@ -436,7 +464,16 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
         if int(on.sum()) < 3:
             continue
         try:
-            out = _facet_trimmed(member, fits[k][0][on], tol_m)
+            contact = (_plane_exclusion(member, members, pieces, tol_m)
+                       if isinstance(member, PlaneParam) else None)
+            hints = fits[k][0][on]
+            excluded = None
+            if contact is not None:
+                excluded, seam_uv = contact
+                # The plate hints alone can stop at a chord of a curved
+                # seam, leaving a slit between the two member trims.
+                hints = np.vstack([hints, seam_uv])
+            out = _facet_trimmed(member, hints, tol_m, excluded)
         except Exception:  # noqa: BLE001 — member disqualifies itself
             continue
         if out is None:
@@ -444,7 +481,7 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
         pts, uvs, faces = out
         if not np.isfinite(pts).all():
             continue
-        if ref is not None and len(faces):
+        if excluded is None and ref is not None and len(faces):
             dv = trimesh.proximity.closest_point(ref, pts)[1]
             cent = pts[faces].mean(axis=1)
             dc = trimesh.proximity.closest_point(ref, cent)[1]
@@ -617,6 +654,43 @@ class LscmParam(SurfaceParam):
         self._uv = uv
         self._mesh = trimesh.Trimesh(self._V, self._F, process=False)
         self._tree = STRtree([shapely.Polygon(t) for t in uv[self._F]])
+
+    def trimmed_regions(self, polygon: shapely.Geometry) -> Iterator[
+        tuple[SurfaceParam, np.ndarray, list[np.ndarray], np.ndarray]
+    ]:
+        """Clip to chart faces and map each region into its source UV.
+
+        A chart is piecewise, not a smooth globally metric surface:
+        triangles must not span member seams.
+        """
+        selected = sorted(self._tree.query(polygon, predicate="intersects"))
+        for tid in selected:
+            clipped = self._tree.geometries[tid].intersection(polygon)
+            if clipped.is_empty or clipped.area <= 1e-18:
+                continue
+            corners = self._F[tid]
+            tri_uv, tri3 = self._uv[corners], self._V[corners]
+            normal = np.cross(tri3[1] - tri3[0], tri3[2] - tri3[0])
+            k = self._tri_member[tid]
+            if k >= 0:
+                source = self.members[k]
+                local_tri = np.asarray([self._src[v][k] for v in corners])
+            else:
+                source = PlaneParam(tri3[0], normal)
+                local_tri = source.inverse(tri3)
+            transform = (tri_uv[1:] - tri_uv[0]).T
+            for part in getattr(clipped, "geoms", [clipped]):
+                if not isinstance(part, shapely.Polygon) or part.area <= 1e-18:
+                    continue
+                local_rings = []
+                for ring in [part.exterior, *part.interiors]:
+                    pts = np.asarray(ring.coords)[:-1]
+                    weights = np.linalg.solve(transform, (pts - tri_uv[0]).T).T
+                    bary = np.column_stack([1.0 - weights.sum(axis=1), weights])
+                    bary = np.clip(bary, 0.0, 1.0)
+                    bary /= bary.sum(axis=1, keepdims=True)
+                    local_rings.append(bary @ local_tri)
+                yield source, local_rings[0], local_rings[1:], normal
 
     def _locate_uv(self, uv):
         uv = np.atleast_2d(np.asarray(uv, dtype=float))
@@ -940,7 +1014,17 @@ class LscmChart:
             # far faces (e.g. the opposite side of the bow) as separate
             # components; LSCM pins live in one component and unpinned
             # components collapse in UV, silently losing coverage.
-            step = contour[:: max(1, len(contour) // 128)]
+            # Straight contour edges may have only two endpoints.
+            # Seed by arc length so their interiors are not left as holes.
+            segments = np.roll(contour, -1, axis=0) - contour
+            lengths = np.linalg.norm(segments, axis=1)
+            arc = np.concatenate([[0.0], np.cumsum(lengths)])
+            count = max(3, int(math.ceil(arc[-1] / (0.5 * radius))))
+            samples = np.linspace(0.0, arc[-1], count, endpoint=False)
+            indices = np.clip(
+                np.searchsorted(arc, samples, side="right") - 1, 0, len(contour) - 1)
+            weights = (samples - arc[indices]) / np.maximum(lengths[indices], 1e-15)
+            step = contour[indices] + weights[:, None] * segments[indices]
             _, seeds = self._ctree.query(step)
             seeds = np.unique(seeds)
             sub_f = sel = None
@@ -1081,19 +1165,14 @@ class LscmChart:
                     if len(labels) > 1:
                         keep = comp == labels[int(np.argmax(counts))]
                         subF, sub_tm = subF[keep], sub_tm[keep]
-                if len(subF):
-                    # the sheets were oriented independently (fix_normals
-                    # runs per connected component before zipping): the
-                    # merged mesh may mix windings across the new seam,
-                    # which breaks the directed boundary-loop walk that
-                    # both LSCM pinning and Tutte rely on. Reorient the
-                    # now-connected submesh; flips keep sorted-face
-                    # identity, so sub_tm and sub_src stay valid.
-                    tm = trimesh.Trimesh(subV, subF, process=False)
-                    trimesh.repair.fix_normals(tm)
-                    subF = np.asarray(tm.faces, dtype=subF.dtype)
             if len(subF) == 0:
                 return None
+            # Shaving fins and bridging can expose inconsistent winding
+            # even without zipping. Orient the repaired submesh before
+            # either solver walks its directed boundary.
+            tm = trimesh.Trimesh(subV, subF, process=False)
+            trimesh.repair.fix_normals(tm)
+            subF = np.asarray(tm.faces, dtype=subF.dtype)
             # pinch (bowtie) vertices break disk topology and wrap the
             # flattening even when every face has consistent winding
             subV, subF, sub_src = _split_pinch_vertices(subV, subF,

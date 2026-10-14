@@ -57,6 +57,20 @@ def _bilge_members_and_hints():
 
 
 class TestBuildMesh:
+    def test_plane_is_clipped_to_exact_bounded_patch_footprint(self):
+        import shapely
+        from ocx_geometry.lscm import _build_mesh
+        from ocx_geometry.surfaces import PlaneParam
+
+        plane = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        patch = make_param(_grid_patch("inner", 2.2, 2.2), LR, tol_m=0.05)
+        hints = np.array([[0, 0, 0], [8, 0, 0], [8, 8, 0], [0, 8, 0]])
+        cm = _build_mesh([plane, patch], 0.05, hints, require_connected=False)
+        assert cm is not None
+        triangles = shapely.polygons(cm.V[cm.F][:, :, :2])
+        assert shapely.union_all(triangles).area == pytest.approx(64.0)
+        assert sum(t.area for t in triangles) == pytest.approx(64.0)
+
     def test_grid_members_weld_into_one_connected_mesh(self):
         from ocx_geometry.lscm import _build_mesh
         cm = _build_mesh(_grid_members(), tol_m=0.01, hint_pts=None)
@@ -178,6 +192,49 @@ class TestLscm2DGrid:
 
 
 class TestLscmCurved:
+    @pytest.fixture
+    def folded_chart(self):
+        from ocx_geometry.lscm import LscmParam, _ChartMesh
+        from ocx_geometry.surfaces import PlaneParam
+
+        members = [
+            PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0])),
+            PlaneParam(np.array([1.0, 0.0, 0.0]), np.array([-1.0, 0.0, 0.0])),
+        ]
+        vertices = np.array([
+            [0, 0, 0], [1, 0, 0], [0, 1, 0],
+            [1, 1, 0], [1, 0, 1], [1, 1, 1],
+        ], dtype=float)
+        faces = np.array([[0, 1, 3], [0, 3, 2], [1, 4, 5], [1, 5, 3]])
+        src = []
+        for i, v in enumerate(vertices):
+            keys = [0, 1] if i in (1, 3) else [0] if i in (0, 2) else [1]
+            src.append({k: tuple(members[k].inverse(v[None, :])[0]) for k in keys})
+        uv = np.array([[0, 0], [1, 0], [0, 1], [1, 1], [2, 0], [2, 1]])
+        return LscmParam(members, _ChartMesh(vertices, faces, src, np.array([0, 0, 1, 1])), uv)
+
+    @pytest.mark.parametrize("with_hole", [False, True])
+    def test_tessellation_conforms_to_source_faces(self, folded_chart, with_hole):
+        from ocx_geometry.backend import TessellationOptions
+        from ocx_geometry.uv_tessellator import UvTessellator
+
+        contour_uv = np.array([[0, 0], [2, 0], [2, 1], [0, 1]])
+        holes = [folded_chart.evaluate(np.array([
+            [0.75, 0.25], [1.25, 0.25], [1.25, 0.75], [0.75, 0.75],
+        ]))] if with_hole else []
+        mesh = UvTessellator().tessellate_trimmed_surface(
+            "fold", "fold", "plate", folded_chart.evaluate(contour_uv),
+            holes, folded_chart, TessellationOptions())
+        assert mesh is not None
+        triangles = mesh.vertices[mesh.triangles]
+        on_bottom = np.isclose(triangles[:, :, 2], 0).all(axis=1)
+        on_side = np.isclose(triangles[:, :, 0], 1).all(axis=1)
+        assert (on_bottom | on_side).all(), "a triangle bridges the patch seam"
+        cross = np.cross(triangles[:, 1] - triangles[:, 0],
+                         triangles[:, 2] - triangles[:, 0])
+        area = 0.5 * np.linalg.norm(cross, axis=1).sum()
+        assert area == pytest.approx(1.75 if with_hole else 2.0)
+
     def test_evaluation_stays_exactly_on_member_surfaces(self):
         """Bottom plane + bilge cylinder + side plane: every evaluated point
         must lie exactly on one of the true member surfaces (not on the
@@ -198,6 +255,25 @@ class TestLscmCurved:
 
 
 class TestChartMeshHygiene:
+    def test_concave_trim_cells_do_not_overlap_or_cross_boundary(self, monkeypatch):
+        import shapely
+        from ocx_geometry.lscm import _facet_trimmed
+        from ocx_geometry.surfaces import PlaneParam
+
+        hull = shapely.Polygon([
+            (0, 0), (8, 0), (8, 8), (0, 8),
+            (0, 0.8), (0.2, 0.8), (0.2, 0.2), (0, 0.2),
+        ])
+        monkeypatch.setattr(shapely, "concave_hull", lambda *args, **kwargs: hull)
+        member = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        _, uv, faces = _facet_trimmed(
+            member, np.asarray(hull.exterior.coords)[:-1], tol_m=0.05)
+        triangles = shapely.polygons(uv[faces])
+        domain = shapely.union_all(triangles)
+        assert domain.difference(hull).area < 1e-10
+        assert hull.difference(domain).area < 1e-10
+        assert sum(t.area for t in triangles) == pytest.approx(hull.area)
+
     def test_consistent_winding_across_members(self):
         """Fan triangulation of trimmed shapely pieces must normalize ring
         orientation: GEOS does not guarantee CCW exterior rings, and mixed
@@ -269,6 +345,31 @@ class TestContourRadius:
 
 
 class TestParamForSeams:
+    def test_sparse_straight_contour_covers_plate_interior(self):
+        import shapely
+        from ocx_geometry.lscm import LscmChart, _ChartMesh
+        from ocx_geometry.surfaces import PlaneParam
+
+        member = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        vertices = np.array([[x, y, 0.0] for x in range(13) for y in range(5)])
+        faces = []
+        for x in range(12):
+            for y in range(4):
+                a = 5 * x + y
+                faces.extend([(a, a + 5, a + 6), (a, a + 6, a + 1)])
+        faces = np.asarray(faces)
+        src = [{0: tuple(uv)} for uv in member.inverse(vertices)]
+        chart = LscmChart(
+            [member], _ChartMesh(vertices, faces, src, np.zeros(len(faces), dtype=int)),
+            tol_m=0.05)
+        contour = np.array([
+            [0.5, 0.5, 0], [11.5, 0.5, 0], [11.5, 2.5, 0], [0.5, 2.5, 0],
+        ])
+        param = chart.param_for(contour)
+        assert param is not None
+        domain = shapely.union_all(shapely.polygons(param._V[param._F][:, :, :2]))
+        assert shapely.box(0.5, 0.5, 11.5, 2.5).difference(domain).area < 1e-10
+
     def test_plate_spanning_tangent_seam_roundtrips(self):
         """A plate across the bottom-plane/bilge-cylinder seam, sampled at
         differing densities per member, must get a validated chart (zip +
@@ -324,9 +425,8 @@ class TestHullModelChart:
     MODEL = (Path(__file__).parent.parent / "models" / "TR05"
              / "tr05_tc09_nast_hull.3docx")
 
-    @pytest.mark.skipif(not MODEL.exists(),
-                        reason="tr05 hull test model not present")
-    def test_all_hull_plates_chart(self):
+    @pytest.fixture(scope="class")
+    def hull_data(self):
         from ocx_geometry.curves import sample_contour
         from ocx_geometry.lscm import make_lscm_chart
         from ocx_model_core.builders.factory import get_builder
@@ -352,6 +452,68 @@ class TestHullModelChart:
         chart = make_lscm_chart(members, tol,
                                 np.vstack(list(contours.values())))
         assert chart is not None
+        return vessel, options, contours, chart
+
+    @pytest.mark.skipif(not MODEL.exists(),
+                        reason="tr05 hull test model not present")
+    def test_all_hull_plates_chart(self, hull_data):
+        _, _, contours, chart = hull_data
         failed = [n for n, c in sorted(contours.items())
                   if chart.param_for(c) is None]
         assert failed == [], f"plates without a validated chart: {failed}"
+
+    @pytest.mark.skipif(not MODEL.exists(),
+                        reason="tr05 hull test model not present")
+    def test_hull_charts_have_no_artificial_seam_holes(self, hull_data):
+        import shapely
+
+        _, _, contours, chart = hull_data
+        holes = {}
+        for name, contour in contours.items():
+            param = chart.param_for(contour)
+            assert param is not None
+            domain = shapely.union_all(param._tree.geometries)
+            count = sum(len(p.interiors) for p in getattr(domain, "geoms", [domain]))
+            if count:
+                holes[name] = count
+        assert not holes, f"artificial seam holes in chart support: {holes}"
+
+    @pytest.mark.skipif(not MODEL.exists(),
+                        reason="tr05 hull test model not present")
+    def test_rendered_triangle_interiors_follow_hull(self, hull_data):
+        import shapely
+        import trimesh
+        from ocx_render.render import render_model
+
+        vessel, options, contours, chart = hull_data
+        result = render_model(vessel, options)
+        assert result.rendered_count == 25
+        assert not result.skipped
+        for mesh in result.meshes:
+            contour = contours[mesh.name]
+            param = chart.param_for(contour)
+            assert param is not None
+            triangles = mesh.vertices[mesh.triangles]
+            probes3 = np.vstack([
+                triangles.mean(axis=1),
+                (triangles[:, 0] + triangles[:, 1]) * 0.5,
+                (triangles[:, 1] + triangles[:, 2]) * 0.5,
+                (triangles[:, 2] + triangles[:, 0]) * 0.5,
+            ])
+            distance = trimesh.proximity.closest_point(param._mesh, probes3)[1]
+            assert distance.max() < options.tolerance_m, (
+                f"{mesh.name}: triangle interiors stray {distance.max():.3f} m")
+
+            centre = contour.mean(axis=0)
+            _, axes = np.linalg.eigh((contour - centre).T @ (contour - centre))
+            contour2 = (contour - centre) @ axes[:, -2:]
+            polygon = shapely.make_valid(shapely.Polygon(contour2))
+            vertices2 = (mesh.vertices - centre) @ axes[:, -2:]
+            coverage = shapely.union_all(shapely.polygons(vertices2[mesh.triangles]))
+            x0, y0, x1, y1 = polygon.bounds
+            x, y = np.meshgrid(np.linspace(x0, x1, 100), np.linspace(y0, y1, 30))
+            probes2 = shapely.points(np.column_stack([x.ravel(), y.ravel()]))
+            inside = shapely.covers(polygon, probes2)
+            gaps = shapely.distance(coverage, probes2[inside])
+            assert gaps.max() < 2 * options.tolerance_m, (
+                f"{mesh.name}: uncovered plate region {gaps.max():.3f} m wide")
