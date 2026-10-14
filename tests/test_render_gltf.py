@@ -1,5 +1,6 @@
 """Tests for GLB export — written file must reload with named parts."""
 import numpy as np
+import pytest
 import trimesh
 from ocx_geometry.mesh import PartMesh
 from ocx_render.gltf_writer import write_glb
@@ -21,6 +22,35 @@ def square_mesh(part_id, kind, panel_id=None):
 
 
 class TestWriteGlb:
+    @pytest.mark.parametrize("panel_id", [None, "pan1"])
+    @pytest.mark.parametrize("with_normals", [False, True])
+    def test_export_converts_z_up_to_y_up_without_mirroring(
+            self, tmp_path, panel_id, with_normals):
+        mesh = square_mesh("pl1", "plate", panel_id=panel_id)
+        if not with_normals:
+            mesh.normals = None
+        mesh.vertices[:] += [1, 2, 3]
+        vertices = mesh.vertices.copy()
+        normals = mesh.normals.copy() if mesh.normals is not None else None
+        out = tmp_path / "axes.glb"
+        write_glb([mesh], out)
+        scene = trimesh.load(str(out), process=False)
+        geometry = scene.geometry[mesh.name]
+
+        np.testing.assert_allclose(geometry.vertices, [
+            [1, 3, -2], [2, 3, -2], [2, 3, -3], [1, 3, -3],
+        ])
+        np.testing.assert_allclose(geometry.vertex_normals, [[0, 1, 0]] * 4)
+        np.testing.assert_array_equal(geometry.faces, mesh.triangles)
+        assert np.all(geometry.face_normals[:, 1] > 0)
+        np.testing.assert_array_equal(mesh.vertices, vertices)
+        if normals is not None:
+            np.testing.assert_array_equal(mesh.normals, normals)
+        else:
+            assert mesh.normals is None
+        transform, _ = scene.graph[f"plate_{mesh.part_id}"]
+        np.testing.assert_allclose(transform, np.eye(4))
+
     def test_roundtrip(self, tmp_path):
         meshes = [
             square_mesh("pl1", "plate", panel_id="pan1"),
