@@ -18,6 +18,7 @@ structural differences remain:
 from __future__ import annotations
 
 import dataclasses
+import types
 import typing
 
 from loguru import logger
@@ -45,6 +46,8 @@ class Ocx286Builder(OcxV3Builder):
 
     #: lazily-built cache: 2.8.6 class name → field names to unwrap
     _unwrap_map: typing.ClassVar[dict[str, set[str]] | None] = None
+    #: cached 3.1.0 bindings module (DynamicLoader re-executes on every call)
+    _ref_module: typing.ClassVar[types.ModuleType | None] = None
 
     def supported_versions(self) -> list[tuple[int, int]]:
         return [(2, 8)]
@@ -60,8 +63,12 @@ class Ocx286Builder(OcxV3Builder):
 
     @classmethod
     def _reference_module(cls):
-        """The 3.1.0 bindings module, used as the shape reference."""
-        return DynamicLoader.import_module(DeclarationOfOcxImport("ocx", "3.1.0"))
+        """The 3.1.0 bindings module, used as the shape reference (cached)."""
+        if cls._ref_module is None:
+            cls._ref_module = DynamicLoader.import_module(
+                DeclarationOfOcxImport("ocx", "3.1.0")
+            )
+        return cls._ref_module
 
     @classmethod
     def _fields_to_unwrap(cls, node) -> set[str]:
