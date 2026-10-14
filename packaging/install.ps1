@@ -62,7 +62,7 @@ if (-not (Test-Path $exe)) {
 
 # Add the install dir to the user's PATH (idempotent).
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-$entries = ($userPath -split ";") | Where-Object { $_ -ne "" }
+$entries = @(($userPath -split ";") | Where-Object { $_ -ne "" })
 if ($entries -notcontains $InstallDir) {
     [Environment]::SetEnvironmentVariable("Path", (($entries + $InstallDir) -join ";"), "User")
     Write-Host "Added $InstallDir to the user PATH."
