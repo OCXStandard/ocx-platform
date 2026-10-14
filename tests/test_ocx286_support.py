@@ -1,10 +1,6 @@
 """Tests for OCX 2.8.6 schema support (validation, parsing, IR building)."""
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
 OCX286_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
 <ocx:ocxXML xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" ocx:license="x" schemaVersion="2.8.6">
   <ocx:Header time_stamp="2020-01-01T00:00:00" name="test" author="t" organization="t" originating_system="t"/>
