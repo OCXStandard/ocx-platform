@@ -22,6 +22,16 @@ class TestBuilderFactory:
         b = get_builder("3.2.0")
         assert isinstance(b, OcxV3Builder)
 
+    def test_get_builder_286_returns_v286(self):
+        from ocx_model_core.builders.v286_builder import Ocx286Builder
+
+        assert isinstance(get_builder("2.8.6"), Ocx286Builder)
+
+    def test_get_builder_unknown_28x_minor_falls_back_to_v286(self):
+        from ocx_model_core.builders.v286_builder import Ocx286Builder
+
+        assert isinstance(get_builder("2.9.1"), Ocx286Builder)
+
     def test_get_builder_unknown_major_raises(self):
         with pytest.raises(UnsupportedSchemaVersionError):
             get_builder("9.0.0")
