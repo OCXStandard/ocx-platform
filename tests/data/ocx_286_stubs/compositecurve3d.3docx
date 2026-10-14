@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:CompositeCurve3D xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid2717" ocx:GUIDRef="7216cb62-d39a-46ab-bd7a-724f456738ec" is2D="false">
+    <ocx:Line3D id="nplcid2718" ocx:GUIDRef="dad50216-e5bd-4e2f-9875-22903b84732a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="80.9" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.484" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid2719" ocx:GUIDRef="bf681e57-44fc-423b-bcfb-2350fb5d928a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.484" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="92.501" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid2720" ocx:GUIDRef="8362c8ef-f382-47c8-9e18-52f083cca918" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="92.501" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="108.425" unit="Um"/>
+            <ocx:Y numericvalue="2.6" unit="Um"/>
+            <ocx:Z numericvalue="0.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+</ocx:CompositeCurve3D>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Position xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:X numericvalue="94.6625" unit="Um"/>
+    <ocx:Y numericvalue="9.0" unit="Um"/>
+    <ocx:Z numericvalue="21.6" unit="Um"/>
+</ocx:Position>

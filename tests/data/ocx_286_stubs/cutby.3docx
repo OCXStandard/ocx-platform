@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:CutBy xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Hole2DContour id="nplcid3424" name="O:321PLIZVJ7/BGR_1_P" ocx:GUIDRef="8ae34b8d-0373-40ac-a7bd-e253c4614c13">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="101.2125" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3425" name="O:3PF1974G62/BGR_1_P" ocx:GUIDRef="a923d784-7b8d-47cf-95ec-4ae2eea57802">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="83.8875" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3426" name="O:6IALM2H64L/BGR_1_P" ocx:GUIDRef="c7c3a289-2276-45e4-902d-3b59460e6e8d">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="81.4125" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3427" name="O:9AS476E7H7/BGR_1_P" ocx:GUIDRef="d26a5d49-65df-4bae-8714-523f27d74496">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="96.2625" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3428" name="O:AJ2J2V3GNA/BGR_1_P" ocx:GUIDRef="64185707-2520-4259-bd11-4eff30da6d6d">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="86.3625" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3429" name="O:I9HKMU1AP8/BGR_1_P" ocx:GUIDRef="238f3970-fb94-49af-aa67-fe40756d37a3">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="91.3125" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3430" name="O:JO5XTBBS6H/BGR_1_P" ocx:GUIDRef="9ca8e77d-1447-4df9-8c5a-51a776bfe773">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="98.7375" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3431" name="O:N7KHUCXQKJ/BGR_1_P" ocx:GUIDRef="77ad4277-271b-4afe-b195-3949f3c838a5">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="88.8375" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3432" name="O:W67TKHQNMQ/BGR_1_P" ocx:GUIDRef="aad4a571-25e6-4cf3-99e1-b92af26ec03d">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="103.6875" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3433" name="O:YFHZ7XP1T0/BGR_1_P" ocx:GUIDRef="a29f4c96-3d51-41c8-a850-da4bfca0d0f2">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="93.7875" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+    <ocx:Hole2DContour id="nplcid3437" name="O:P43SYJJTF6/BGR_1_P" ocx:GUIDRef="4d1075d2-5a40-42a4-8b4a-9a6768b1ce20">
+        <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+        <ocx:Transformation>
+            <ocx:Origin>
+                <ocx:X numericvalue="106.1625" unit="Um"/>
+                <ocx:Y numericvalue="1.8" unit="Um"/>
+                <ocx:Z numericvalue="1.0" unit="Um"/>
+            </ocx:Origin>
+            <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+            <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+        </ocx:Transformation>
+    </ocx:Hole2DContour>
+</ocx:CutBy>

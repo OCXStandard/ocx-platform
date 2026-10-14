@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:VesselGrid xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:XGrid id="nplcid27" isReversed="false" isMainSystem="true">
+        <ocx:DistanceToAP numericvalue="0.0" unit="Um"/>
+        <ocx:XSpacingGroup id="nplcid28" firstGridNumber="0" count="42">
+            <ocx:GridPosition numericvalue="0.0" unit="Um"/>
+            <ocx:Spacing numericvalue="0.75" unit="Um"/>
+        </ocx:XSpacingGroup>
+        <ocx:XSpacingGroup id="nplcid29" firstGridNumber="42" count="210">
+            <ocx:GridPosition numericvalue="31.5" unit="Um"/>
+            <ocx:Spacing numericvalue="0.825" unit="Um"/>
+        </ocx:XSpacingGroup>
+        <ocx:XSpacingGroup id="nplcid30" firstGridNumber="252" count="16">
+            <ocx:GridPosition numericvalue="204.75" unit="Um"/>
+            <ocx:Spacing numericvalue="0.75" unit="Um"/>
+        </ocx:XSpacingGroup>
+    </ocx:XGrid>
+    <ocx:YGrid id="nplcid31">
+        <ocx:YSpacingGroup id="nplcid32" firstGridNumber="-1001" count="1">
+            <ocx:GridPosition numericvalue="-801.2" unit="Um"/>
+            <ocx:Spacing numericvalue="1.0" unit="Um"/>
+        </ocx:YSpacingGroup>
+        <ocx:YSpacingGroup id="nplcid33" firstGridNumber="-1000" count="998">
+            <ocx:GridPosition numericvalue="-800.2" unit="Um"/>
+            <ocx:Spacing numericvalue="0.8" unit="Um"/>
+        </ocx:YSpacingGroup>
+        <ocx:YSpacingGroup id="nplcid34" firstGridNumber="-2" count="4">
+            <ocx:GridPosition numericvalue="-1.8" unit="Um"/>
+            <ocx:Spacing numericvalue="0.9" unit="Um"/>
+        </ocx:YSpacingGroup>
+        <ocx:YSpacingGroup id="nplcid35" firstGridNumber="2" count="44">
+            <ocx:GridPosition numericvalue="1.8" unit="Um"/>
+            <ocx:Spacing numericvalue="0.8" unit="Um"/>
+        </ocx:YSpacingGroup>
+    </ocx:YGrid>
+    <ocx:ZGrid id="nplcid36">
+        <ocx:ZSpacingGroup id="nplcid37" firstGridNumber="0" count="41">
+            <ocx:GridPosition numericvalue="0.0" unit="Um"/>
+            <ocx:Spacing numericvalue="0.9" unit="Um"/>
+        </ocx:ZSpacingGroup>
+    </ocx:ZGrid>
+</ocx:VesselGrid>

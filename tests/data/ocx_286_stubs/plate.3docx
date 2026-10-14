@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Plate xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid41" name="P:1/DECK" ocx:GUIDRef="938293e3-e7b8-44d8-b159-aaee18661a19">
+    <ocx:PhysicalProperties>
+        <ocx:DryWeight numericvalue="12787.7808" unit="UKg"/>
+        <ocx:CenterOfGravity>
+            <ocx:X numericvalue="93.2425" unit="Um"/>
+            <ocx:Y numericvalue="16.5035" unit="Um"/>
+            <ocx:Z numericvalue="21.0997" unit="Um"/>
+        </ocx:CenterOfGravity>
+    </ocx:PhysicalProperties>
+    <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\P-1.stp" ocx:geometryFormat=".stp"/>
+    <ocx:PlateMaterial localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material">
+        <ocx:Thickness numericvalue="0.022" unit="Um"/>
+    </ocx:PlateMaterial>
+    <ocx:OuterContour>
+        <ocx:NURBS3D id="nplcid2459" ocx:GUIDRef="23e5804f-1d6b-49e9-92bb-2740bf5cf31e" is2D="false">
+            <ocx:NURBSproperties degree="3" numCtrlPts="19" numKnots="23" form="Unknown" isRational="false"/>
+            <ocx:KnotVector value="0.0 0.0 0.0 0.0 1.0 1.0 1.0 2.0 2.0 2.0 3.0 3.0 3.0 4.0 4.0 4.0 5.0 5.0 5.0 6.0 6.0 6.0 6.0"/>
+            <ocx:ControlPtList>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="80.9" unit="Um"/>
+                        <ocx:Y numericvalue="15.007" unit="Um"/>
+                        <ocx:Z numericvalue="21.1995" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="89.1283" unit="Um"/>
+                        <ocx:Y numericvalue="15.007" unit="Um"/>
+                        <ocx:Z numericvalue="21.1995" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="97.3567" unit="Um"/>
+                        <ocx:Y numericvalue="15.007" unit="Um"/>
+                        <ocx:Z numericvalue="21.1995" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="105.585" unit="Um"/>
+                        <ocx:Y numericvalue="15.007" unit="Um"/>
+                        <ocx:Z numericvalue="21.1995" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="105.585" unit="Um"/>
+                        <ocx:Y numericvalue="16.0047" unit="Um"/>
+                        <ocx:Z numericvalue="21.133" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="105.585" unit="Um"/>
+                        <ocx:Y numericvalue="17.0023" unit="Um"/>
+                        <ocx:Z numericvalue="21.0665" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="105.585" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="101.2237" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="96.8623" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="92.501" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="88.8287" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="85.1563" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="81.484" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="81.2893" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="81.0947" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="80.9" unit="Um"/>
+                        <ocx:Y numericvalue="18.0" unit="Um"/>
+                        <ocx:Z numericvalue="21.0" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="80.9" unit="Um"/>
+                        <ocx:Y numericvalue="17.0023" unit="Um"/>
+                        <ocx:Z numericvalue="21.0665" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="80.9" unit="Um"/>
+                        <ocx:Y numericvalue="16.0047" unit="Um"/>
+                        <ocx:Z numericvalue="21.133" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+                <ocx:ControlPoint weight="1.0">
+                    <ocx:Point3D>
+                        <ocx:X numericvalue="80.9" unit="Um"/>
+                        <ocx:Y numericvalue="15.007" unit="Um"/>
+                        <ocx:Z numericvalue="21.1995" unit="Um"/>
+                    </ocx:Point3D>
+                </ocx:ControlPoint>
+            </ocx:ControlPtList>
+        </ocx:NURBS3D>
+    </ocx:OuterContour>
+    <ocx:LimitedBy>
+        <ocx:OcxItemPtr localRef="nplcid2460" ocx:GUIDRef="28f9812a-f3bb-4081-8c60-da07ce0e765b" ocx:refType="ocx:Seam"/>
+        <ocx:OcxItemPtr localRef="nplcid2462" ocx:GUIDRef="3e4db42a-ea1e-4869-8c0f-c0cfe150cc46" ocx:refType="ocx:Seam"/>
+        <ocx:OcxItemPtr localRef="nplcid134" ocx:GUIDRef="47d8d4eb-b589-4c4f-b555-9a16452de12d" ocx:refType="ocx:Panel"/>
+        <ocx:OcxItemPtr localRef="nplcid2464" ocx:GUIDRef="bafe320c-f7a8-4a45-972e-a00d5baf4c0d" ocx:refType="ocx:FreeEdgeCurve3D"/>
+    </ocx:LimitedBy>
+</ocx:Plate>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:RefPlane xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid662" name="X81" ocx:GUIDRef="83e79f23-dd77-4717-9a19-6991f16880d8">
+    <ocx:ReferenceLocation numericvalue="81.0" unit="Um"/>
+</ocx:RefPlane>

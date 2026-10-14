@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Stiffener xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid47" name="S:8FBVGAA8A5/DECK" ocx:GUIDRef="a1bcba2a-9227-46d0-b343-6f8111141745">
+    <ocx:PhysicalProperties>
+        <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+        <ocx:CenterOfGravity>
+            <ocx:X numericvalue="94.6625" unit="Um"/>
+            <ocx:Y numericvalue="8.9715" unit="Um"/>
+            <ocx:Z numericvalue="21.3905" unit="Um"/>
+        </ocx:CenterOfGravity>
+    </ocx:PhysicalProperties>
+    <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-8FBVGAA8A5.stp" ocx:geometryFormat=".stp"/>
+    <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+    <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+    <ocx:TraceLine>
+        <ocx:Line3D id="nplcid2485" ocx:GUIDRef="cf0679aa-245b-4c71-b98b-38e380d633e0" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="80.9" unit="Um"/>
+                <ocx:Y numericvalue="9.0" unit="Um"/>
+                <ocx:Z numericvalue="21.6" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="108.425" unit="Um"/>
+                <ocx:Y numericvalue="9.0" unit="Um"/>
+                <ocx:Z numericvalue="21.6" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+    </ocx:TraceLine>
+    <ocx:Inclination>
+        <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+        <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+        <ocx:Position>
+            <ocx:X numericvalue="94.6625" unit="Um"/>
+            <ocx:Y numericvalue="9.0" unit="Um"/>
+            <ocx:Z numericvalue="21.6" unit="Um"/>
+        </ocx:Position>
+    </ocx:Inclination>
+</ocx:Stiffener>

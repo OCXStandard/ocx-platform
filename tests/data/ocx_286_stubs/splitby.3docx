@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:SplitBy xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Seam id="nplcid2460" name="V:G11ODWV5P7/DECK" ocx:GUIDRef="28f9812a-f3bb-4081-8c60-da07ce0e765b">
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2461" ocx:GUIDRef="730df5b5-7693-45ee-9700-1f2eb11567f4" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="15.007" unit="Um"/>
+                    <ocx:Z numericvalue="21.1995" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="15.007" unit="Um"/>
+                    <ocx:Z numericvalue="21.1995" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+    </ocx:Seam>
+    <ocx:Seam id="nplcid2462" name="V:PLSWLC221L/DECK" ocx:GUIDRef="3e4db42a-ea1e-4869-8c0f-c0cfe150cc46">
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2463" ocx:GUIDRef="ed48c9c4-fff3-4c47-99ff-8a3c76bbf397" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="105.585" unit="Um"/>
+                    <ocx:Y numericvalue="8.4" unit="Um"/>
+                    <ocx:Z numericvalue="21.64" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="105.585" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+    </ocx:Seam>
+    <ocx:Seam id="nplcid2466" name="V:7ECXC1BK8I/DECK" ocx:GUIDRef="570e000e-f361-4f5c-a232-c1f153de1dcf">
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2467" ocx:GUIDRef="bd19fa90-0621-4d87-abae-eb275ace48ac" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="11.714" unit="Um"/>
+                    <ocx:Z numericvalue="21.419" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="11.714" unit="Um"/>
+                    <ocx:Z numericvalue="21.419" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+    </ocx:Seam>
+</ocx:SplitBy>

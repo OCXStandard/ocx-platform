@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Point3DList xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Point3D>
+        <ocx:X numericvalue="80.9" unit="Um"/>
+        <ocx:Y numericvalue="17.9972" unit="Um"/>
+        <ocx:Z numericvalue="2.0012" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="81.2823" unit="Um"/>
+        <ocx:Y numericvalue="17.9993" unit="Um"/>
+        <ocx:Z numericvalue="2.0003" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="81.484" unit="Um"/>
+        <ocx:Y numericvalue="17.9998" unit="Um"/>
+        <ocx:Z numericvalue="2.0003" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="81.6733" unit="Um"/>
+        <ocx:Y numericvalue="18.0" unit="Um"/>
+        <ocx:Z numericvalue="2.0002" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="83.475" unit="Um"/>
+        <ocx:Y numericvalue="18.0" unit="Um"/>
+        <ocx:Z numericvalue="2.0" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="92.501" unit="Um"/>
+        <ocx:Y numericvalue="18.0" unit="Um"/>
+        <ocx:Z numericvalue="2.0" unit="Um"/>
+    </ocx:Point3D>
+    <ocx:Point3D>
+        <ocx:X numericvalue="108.425" unit="Um"/>
+        <ocx:Y numericvalue="18.0" unit="Um"/>
+        <ocx:Z numericvalue="2.0" unit="Um"/>
+    </ocx:Point3D>
+</ocx:Point3DList>

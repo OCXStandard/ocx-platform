@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Sweep xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Vector3D x="0.0" y="0.0" z="1.0"/>
+    <ocx:Length numericvalue="27.0" unit="Um"/>
+</ocx:Sweep>

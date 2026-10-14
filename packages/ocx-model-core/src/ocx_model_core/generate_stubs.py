@@ -62,10 +62,11 @@ from ocx_model_core.parsers.serializer import Serializer
 # Configuration
 # ---------------------------------------------------------------------------
 
-TESTS_DATA_DIR = Path(__file__).parent.parent / "tests" / "data"
-MODELS_DIR = Path(__file__).parent.parent / "models"
+# Paths resolve against the workspace root; run this script from the repo root.
+TESTS_DATA_DIR = Path.cwd() / "tests" / "data"
+MODELS_DIR = Path.cwd() / "models"
 UNITSML_STUBS_DIR = TESTS_DATA_DIR / "unitsml_stubs"
-STUBS_LOG_FILE = Path(__file__).parent.parent / "Stubs_Log.md"
+STUBS_LOG_FILE = Path.cwd() / "Stubs_Log.md"
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:CircumArc3D xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid3869" ocx:GUIDRef="3ec64f41-57d4-4b11-ad2b-eff5e5069896" is2D="false">
+    <ocx:StartPoint>
+        <ocx:X numericvalue="82.3099" unit="Um"/>
+        <ocx:Y numericvalue="2.5549" unit="Um"/>
+        <ocx:Z numericvalue="0.0" unit="Um"/>
+    </ocx:StartPoint>
+    <ocx:IntermediatePoint>
+        <ocx:X numericvalue="82.4821" unit="Um"/>
+        <ocx:Y numericvalue="2.6837" unit="Um"/>
+        <ocx:Z numericvalue="0.0" unit="Um"/>
+    </ocx:IntermediatePoint>
+    <ocx:EndPoint>
+        <ocx:X numericvalue="82.4905" unit="Um"/>
+        <ocx:Y numericvalue="2.8986" unit="Um"/>
+        <ocx:Z numericvalue="0.0" unit="Um"/>
+    </ocx:EndPoint>
+</ocx:CircumArc3D>

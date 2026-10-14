@@ -1,0 +1,1408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:StiffenedBy xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Stiffener id="nplcid47" name="S:8FBVGAA8A5/DECK" ocx:GUIDRef="a1bcba2a-9227-46d0-b343-6f8111141745">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="8.9715" unit="Um"/>
+                <ocx:Z numericvalue="21.3905" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-8FBVGAA8A5.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2485" ocx:GUIDRef="cf0679aa-245b-4c71-b98b-38e380d633e0" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="9.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.6" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="9.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.6" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="9.0" unit="Um"/>
+                <ocx:Z numericvalue="21.6" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid48" name="S:LKJZ9S3V0E/DECK" ocx:GUIDRef="d62cd634-de3b-4ec2-bf87-81ccc3b1d62f">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="9.7714" unit="Um"/>
+                <ocx:Z numericvalue="21.3371" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-LKJZ9S3V0E.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2486" ocx:GUIDRef="5f9cf098-5dcd-46dd-94f9-746701bbedde" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="9.8" unit="Um"/>
+                    <ocx:Z numericvalue="21.5467" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="9.8" unit="Um"/>
+                    <ocx:Z numericvalue="21.5467" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="9.8" unit="Um"/>
+                <ocx:Z numericvalue="21.5467" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid49" name="S:U2ZY7H6447/DECK" ocx:GUIDRef="46f7c1f8-ba25-4c18-9f18-0d3978bd12a9">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="10.5714" unit="Um"/>
+                <ocx:Z numericvalue="21.2838" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-U2ZY7H6447.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2487" ocx:GUIDRef="1c235bfb-cc6c-46ed-9116-26f0af8ccdc0" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="10.6" unit="Um"/>
+                    <ocx:Z numericvalue="21.4933" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="10.6" unit="Um"/>
+                    <ocx:Z numericvalue="21.4933" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="10.6" unit="Um"/>
+                <ocx:Z numericvalue="21.4933" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid50" name="S:GPI50G15GI/DECK" ocx:GUIDRef="f6d7897d-98d6-4f70-9cca-46feb4f72b7f">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="11.3714" unit="Um"/>
+                <ocx:Z numericvalue="21.2305" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-GPI50G15GI.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2488" ocx:GUIDRef="328365be-9ad8-498f-884a-e5a100e50f5b" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="11.4" unit="Um"/>
+                    <ocx:Z numericvalue="21.44" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="11.4" unit="Um"/>
+                    <ocx:Z numericvalue="21.44" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="11.4" unit="Um"/>
+                <ocx:Z numericvalue="21.44" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid51" name="S:V802M76LZV/DECK" ocx:GUIDRef="e136b76b-9c43-4252-a900-c43c3b642b86">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="12.1714" unit="Um"/>
+                <ocx:Z numericvalue="21.1771" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-V802M76LZV.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2489" ocx:GUIDRef="cf617119-5fdb-4f6e-9ede-607f87704edf" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="12.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.3866" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="12.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.3866" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="12.2" unit="Um"/>
+                <ocx:Z numericvalue="21.3866" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid52" name="S:PBYWZN6SW4/DECK" ocx:GUIDRef="a532ad74-7a0b-4054-98ea-7ee6052f6299">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="12.9715" unit="Um"/>
+                <ocx:Z numericvalue="21.1238" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-PBYWZN6SW4.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2490" ocx:GUIDRef="da758236-3d93-43c5-bfa6-1c3eddd5b4e5" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="13.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.3333" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="13.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.3333" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="13.0" unit="Um"/>
+                <ocx:Z numericvalue="21.3333" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid53" name="S:JQGUPQ3EPL/DECK" ocx:GUIDRef="19853b47-0184-4310-b19e-fbcc3f3208fa">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="13.7714" unit="Um"/>
+                <ocx:Z numericvalue="21.0704" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-JQGUPQ3EPL.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2491" ocx:GUIDRef="ff3d3c67-92b8-40db-a6e5-8bd6bd5f72b6" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="13.8" unit="Um"/>
+                    <ocx:Z numericvalue="21.28" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="13.8" unit="Um"/>
+                    <ocx:Z numericvalue="21.28" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="13.8" unit="Um"/>
+                <ocx:Z numericvalue="21.28" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid54" name="S:AOY4TQH1EP/DECK" ocx:GUIDRef="b36f27ce-6435-44b0-b203-3e9e3d53758c">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="14.5714" unit="Um"/>
+                <ocx:Z numericvalue="21.0171" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-AOY4TQH1EP.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2492" ocx:GUIDRef="46ecc5ee-b26c-4e94-ae27-5cb3795d68a9" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="14.6" unit="Um"/>
+                    <ocx:Z numericvalue="21.2266" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="14.6" unit="Um"/>
+                    <ocx:Z numericvalue="21.2266" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="14.6" unit="Um"/>
+                <ocx:Z numericvalue="21.2266" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid55" name="S:U2DK4LZUQR/DECK" ocx:GUIDRef="1c860fed-b753-466b-90cb-20afc5f0426e">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="15.3714" unit="Um"/>
+                <ocx:Z numericvalue="20.9638" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-U2DK4LZUQR.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2493" ocx:GUIDRef="949c6067-9b5b-407f-8b85-b2b70cbc1baf" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="15.4" unit="Um"/>
+                    <ocx:Z numericvalue="21.1733" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="15.4" unit="Um"/>
+                    <ocx:Z numericvalue="21.1733" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="15.4" unit="Um"/>
+                <ocx:Z numericvalue="21.1733" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid56" name="S:JBA956PQRN/DECK" ocx:GUIDRef="c89d295a-e828-4a7a-b5b1-357c989de38a">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1416.739" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="16.1714" unit="Um"/>
+                <ocx:Z numericvalue="20.9104" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-JBA956PQRN.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2494" ocx:GUIDRef="99634cae-8fc1-4e62-88fb-5b45eeadd8ca" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="80.9" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.6625" unit="Um"/>
+                <ocx:Y numericvalue="16.2" unit="Um"/>
+                <ocx:Z numericvalue="21.12" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid57" name="S:9CWMJT4QCL/DECK" ocx:GUIDRef="ce234734-2b15-4fc2-8d58-081b17b6bd3a">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="81.8396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-9CWMJT4QCL.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2495" ocx:GUIDRef="1de56072-2ad0-4ade-9ec5-e12f22fa3f89" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="81.825" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="81.825" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="81.825" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid58" name="S:2CSUMOTTF8/DECK" ocx:GUIDRef="47e71a8f-1dbb-4405-bf7d-7096e8178f72">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="82.6646" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-2CSUMOTTF8.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2496" ocx:GUIDRef="91814590-6377-41e1-a486-a405b6a6ee2b" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="82.65" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="82.65" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="82.65" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid59" name="S:L2XKY0AZ5M/DECK" ocx:GUIDRef="c65b0627-44d5-497f-9ef5-78344019e080">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="83.4895" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-L2XKY0AZ5M.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2497" ocx:GUIDRef="08d9cafc-5cf0-481c-83e4-9995c702e932" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="83.475" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="83.475" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="83.475" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid60" name="S:12FC7ZSOAW/DECK" ocx:GUIDRef="2e1ecb56-b45c-4095-b439-3fdac34ef466">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="84.3146" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-12FC7ZSOAW.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2498" ocx:GUIDRef="cff95926-2757-46dc-b594-e4c1b86e6796" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="84.3" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="84.3" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="84.3" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid61" name="S:66NVX4WIBK/DECK" ocx:GUIDRef="d66e896f-dc38-4ad2-9d2f-6df8c72a4a54">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="85.1396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-66NVX4WIBK.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2499" ocx:GUIDRef="8994c01d-3e2d-4cf9-a806-8e7eff2ad0ff" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="85.125" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="85.125" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="85.125" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid62" name="S:XVSHRARYUW/DECK" ocx:GUIDRef="e69ae161-077c-4137-92ac-b3f0593802e7">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="86.7896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-XVSHRARYUW.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2500" ocx:GUIDRef="cf74b3a8-80eb-4f6c-9360-56eb5df640c6" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="86.775" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="86.775" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="86.775" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid63" name="S:4ZS72JNT9P/DECK" ocx:GUIDRef="28389d26-13fc-4e31-bb29-ea891ee22273">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="87.6145" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-4ZS72JNT9P.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2501" ocx:GUIDRef="0fd5d953-e875-4f49-8fd2-8e6fba6a9d34" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="87.6" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="87.6" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="87.6" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid64" name="S:4JHPCN56X5/DECK" ocx:GUIDRef="bda8d45c-cc88-4cbe-856d-644c89743f3c">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="88.4396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-4JHPCN56X5.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2502" ocx:GUIDRef="c0b7eca4-1888-46a5-92a1-ff86a97b4107" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="88.425" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="88.425" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="88.425" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid65" name="S:QNADYD8O77/DECK" ocx:GUIDRef="5063e2a4-d8b8-4b3e-830a-87db93fcf4cb">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="89.2646" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-QNADYD8O77.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2503" ocx:GUIDRef="e6e950d3-08dd-4d9e-91f1-0c19f2fb1db6" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="89.25" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="89.25" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="89.25" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid66" name="S:J1WVMVVHBJ/DECK" ocx:GUIDRef="d8a72e4e-bcf5-4ef2-9587-8855bb429644">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="90.0896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-J1WVMVVHBJ.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2504" ocx:GUIDRef="a529494d-6d8b-4f87-9f58-753ee5786e2d" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="90.075" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="90.075" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="90.075" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid67" name="S:W2VL9UZU45/DECK" ocx:GUIDRef="f0965534-6277-4f8e-9b1b-b3850342713d">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="91.7395" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-W2VL9UZU45.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2505" ocx:GUIDRef="a8111dcf-7678-4865-85d4-b590ae75a223" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="91.725" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="91.725" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="91.725" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid68" name="S:UL0LRKDF6X/DECK" ocx:GUIDRef="586b1359-a269-48f9-bf0a-c9940233e7d4">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="92.5646" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-UL0LRKDF6X.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2506" ocx:GUIDRef="5cfb0270-6f51-42b6-ad84-3557f5940b69" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="92.55" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="92.55" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="92.55" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid69" name="S:51K3FWRJXH/DECK" ocx:GUIDRef="e7bcc938-ce5b-44b1-aced-c9c15bbcbb1c">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="93.3896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-51K3FWRJXH.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2507" ocx:GUIDRef="378365a4-21c4-4305-9a5d-5f00abeddd3d" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="93.375" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="93.375" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="93.375" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid70" name="S:6SN18HPN3O/DECK" ocx:GUIDRef="8631ac60-fc2a-4a74-b7e7-d72f8037068a">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.2146" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-6SN18HPN3O.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2508" ocx:GUIDRef="638679d2-a0d4-4c98-a1dc-7a76e77588ea" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="94.2" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="94.2" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.2" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid71" name="S:YL2G5XL27K/DECK" ocx:GUIDRef="b7bbc215-4c33-4793-a3a1-9785f76df828">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="95.0396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-YL2G5XL27K.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2509" ocx:GUIDRef="0657d1c1-4f11-4e94-9308-b95b1ef74dd9" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="95.025" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="95.025" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="95.025" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid72" name="S:BECLETBTGH/DECK" ocx:GUIDRef="0eec08d2-af1a-471c-b7d8-8e16d9d677ff">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="96.6896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-BECLETBTGH.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2510" ocx:GUIDRef="82a3b76a-f796-4610-b4e0-e3533d28f359" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="96.675" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="96.675" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="96.675" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid73" name="S:HWS89LXSME/DECK" ocx:GUIDRef="c8b2f606-e2d2-4a28-95b0-ccdff3eb0feb">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="97.5146" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-HWS89LXSME.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2511" ocx:GUIDRef="15701b17-955c-49d7-9db4-80383d4dea5f" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="97.5" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="97.5" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="97.5" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid74" name="S:POLRKITA9E/DECK" ocx:GUIDRef="73da4e3d-3159-4842-aa73-6eecf4ba2fbe">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="98.3396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-POLRKITA9E.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2512" ocx:GUIDRef="5bc2260b-8173-4f69-9a4d-0613ae7fbc8d" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="98.325" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="98.325" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="98.325" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid75" name="S:H13H9286LW/DECK" ocx:GUIDRef="8d3f608c-adc4-4e68-beb1-9c5be4aede0f">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="99.1646" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-H13H9286LW.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2513" ocx:GUIDRef="e0da8f16-23e2-4ca9-b58f-fb484843b676" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="99.15" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="99.15" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="99.15" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid76" name="S:5X3BZ301G9/DECK" ocx:GUIDRef="e773f891-9f0b-4399-8107-692e3eec4ce3">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="99.9895" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-5X3BZ301G9.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2514" ocx:GUIDRef="c714749d-391e-4548-8877-092d90aaf2cc" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="99.975" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="99.975" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="99.975" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid77" name="S:I8WXGKE3KH/DECK" ocx:GUIDRef="9f4f2ccd-e14f-406e-bf31-51f802366069">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="101.6396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-I8WXGKE3KH.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2515" ocx:GUIDRef="1d0ee2be-6de1-4af2-8d8e-b28d0775f6bc" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="101.625" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="101.625" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="101.625" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid78" name="S:ZXDODHZOO6/DECK" ocx:GUIDRef="bcc63371-d049-4c05-a338-ce4890af5872">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="102.4646" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-ZXDODHZOO6.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2516" ocx:GUIDRef="e5361cde-bd15-4065-ab71-c0ef5c20e289" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="102.45" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="102.45" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="102.45" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid79" name="S:A87YXMBU27/DECK" ocx:GUIDRef="48a60fbf-4d72-4fea-a919-2d7e2411093e">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="103.2896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-A87YXMBU27.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2517" ocx:GUIDRef="385c9e7d-34fb-497d-8869-5460993d0c12" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="103.275" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="103.275" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="103.275" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid80" name="S:FVM6ATLE2H/DECK" ocx:GUIDRef="b3385bb5-aa48-4618-880d-14407edb989c">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="104.1145" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-FVM6ATLE2H.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2518" ocx:GUIDRef="a371b115-ea8e-4f31-a4f7-314323980c64" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="104.1" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="104.1" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="104.1" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid81" name="S:WE4KYSYS59/DECK" ocx:GUIDRef="378745f6-fd14-4fc5-82fe-790ff1d6b825">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="104.9396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-WE4KYSYS59.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2519" ocx:GUIDRef="cdaffca9-67a5-4e1d-bafe-c7cd26b93d72" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="104.925" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="104.925" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="104.925" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid82" name="S:W3SDIEIIO9/DECK" ocx:GUIDRef="ad264fd3-5d80-4f99-91b6-a904700ab04c">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="106.5896" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-W3SDIEIIO9.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2520" ocx:GUIDRef="efcdf444-562c-47c6-9f06-6f9e8c1b3133" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="106.575" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="106.575" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="106.575" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid83" name="S:HCCAZSWQ3O/DECK" ocx:GUIDRef="7050243e-593e-40f8-a0be-0ca5ffeb84e4">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="107.4146" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-HCCAZSWQ3O.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2521" ocx:GUIDRef="8fc72fb8-aab7-47db-ae09-2119cd216608" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="107.4" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="107.4" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="107.4" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid84" name="S:H09DVPBPHZ/DECK" ocx:GUIDRef="0791b15a-2686-4c96-a3ec-d9f8dad4848b">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="92.8534" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="108.2396" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="20.849" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-H09DVPBPHZ.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2522" ocx:GUIDRef="d494ea79-993f-4166-81db-9de66f3bf675" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="108.225" unit="Um"/>
+                    <ocx:Y numericvalue="16.2" unit="Um"/>
+                    <ocx:Z numericvalue="21.12" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.225" unit="Um"/>
+                    <ocx:Y numericvalue="18.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="1.0" y="0.0" z="0.0"/>
+            <ocx:Position>
+                <ocx:X numericvalue="108.225" unit="Um"/>
+                <ocx:Y numericvalue="17.1" unit="Um"/>
+                <ocx:Z numericvalue="21.06" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+    <ocx:Stiffener id="nplcid85" name="S:SQD53E5IVV/DECK" ocx:GUIDRef="14792d37-55a1-4132-a52b-8020604f8ec2">
+        <ocx:PhysicalProperties>
+            <ocx:DryWeight numericvalue="1411.5918" unit="UKg"/>
+            <ocx:CenterOfGravity>
+                <ocx:X numericvalue="94.7125" unit="Um"/>
+                <ocx:Y numericvalue="16.9714" unit="Um"/>
+                <ocx:Z numericvalue="20.8571" unit="Um"/>
+            </ocx:CenterOfGravity>
+        </ocx:PhysicalProperties>
+        <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\DECK\S-SQD53E5IVV.stp" ocx:geometryFormat=".stp"/>
+        <ocx:MaterialRef localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material"/>
+        <ocx:SectionRef localRef="nplcid7" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093" ocx:refType="ocx:BarSection"/>
+        <ocx:TraceLine>
+            <ocx:Line3D id="nplcid2523" ocx:GUIDRef="8a456c60-cc9b-4515-b4d7-cadb0f4974f5" is2D="false">
+                <ocx:StartPoint>
+                    <ocx:X numericvalue="81.0" unit="Um"/>
+                    <ocx:Y numericvalue="17.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0666" unit="Um"/>
+                </ocx:StartPoint>
+                <ocx:EndPoint>
+                    <ocx:X numericvalue="108.425" unit="Um"/>
+                    <ocx:Y numericvalue="17.0" unit="Um"/>
+                    <ocx:Z numericvalue="21.0666" unit="Um"/>
+                </ocx:EndPoint>
+            </ocx:Line3D>
+        </ocx:TraceLine>
+        <ocx:Inclination>
+            <ocx:WebDirection x="0.0" y="-0.0665" z="-0.9978"/>
+            <ocx:FlangeDirection x="0.0" y="-0.9978" z="0.0665"/>
+            <ocx:Position>
+                <ocx:X numericvalue="94.7125" unit="Um"/>
+                <ocx:Y numericvalue="17.0" unit="Um"/>
+                <ocx:Z numericvalue="21.0666" unit="Um"/>
+            </ocx:Position>
+        </ocx:Inclination>
+    </ocx:Stiffener>
+</ocx:StiffenedBy>

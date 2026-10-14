@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:BarSection xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid7" name="9 - 340X14 HP" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093">
+    <ocx:BulbFlat>
+        <ocx:Height numericvalue="0.34" unit="Um"/>
+        <ocx:WebThickness numericvalue="0.014" unit="Um"/>
+        <ocx:FlangeWidth numericvalue="0.0627" unit="Um"/>
+    </ocx:BulbFlat>
+</ocx:BarSection>

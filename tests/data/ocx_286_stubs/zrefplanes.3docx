@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:ZRefPlanes xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" isMainSystem="true">
+    <ocx:RefPlane id="nplcid297" name="Z2" ocx:GUIDRef="18c3f228-c5e3-4dd3-9942-b57aea9a2e42">
+        <ocx:ReferenceLocation numericvalue="2.0" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid731" name="Z5.55" ocx:GUIDRef="98b495a8-08d5-45c6-bea1-5dbfa571e851">
+        <ocx:ReferenceLocation numericvalue="5.55" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid789" name="Z19" ocx:GUIDRef="7c680256-0cb5-405e-9c63-fe1c9da2f19b">
+        <ocx:ReferenceLocation numericvalue="19.0" unit="Um"/>
+    </ocx:RefPlane>
+</ocx:ZRefPlanes>

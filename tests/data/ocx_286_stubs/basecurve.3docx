@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:BaseCurve xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid610" ocx:GUIDRef="c50bce61-ff53-438f-8752-830a744c4347" is2D="false">
+    <ocx:Line3D id="nplcid611" ocx:GUIDRef="fa715768-dff5-4c96-ad63-3de3c557c42c" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="28.1554" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="17.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid612" ocx:GUIDRef="82061a8c-72a4-4d64-9684-a76f8a9457a3" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="17.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="17.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid613" ocx:GUIDRef="5db05736-a44a-4514-a06d-e182588438bd" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="17.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="16.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid614" ocx:GUIDRef="410ef875-4953-4f48-8070-51dd9c580608" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="16.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="15.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid615" ocx:GUIDRef="14b46b54-8eec-411e-8442-9c21b9484be7" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="15.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="14.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid616" ocx:GUIDRef="568c4554-6b7a-401a-86ef-19a91e7c4c72" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="14.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="14.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid617" ocx:GUIDRef="cde13194-5aab-47c6-b122-c588abc7dd3e" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="14.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="13.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid618" ocx:GUIDRef="7bc84eba-3e5a-4e0b-b9c7-8105e7e49cc4" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="13.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="12.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid619" ocx:GUIDRef="22b1df14-1fa4-4a6a-93e0-d96ef29cf1ab" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="12.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="11.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid620" ocx:GUIDRef="6e8633d0-2cea-4e8c-b75e-166c727c4fd9" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="11.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="11.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid621" ocx:GUIDRef="128d5fd9-4d29-4784-8011-37a6492f47e9" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="11.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="10.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid622" ocx:GUIDRef="d1aeb76f-0686-4129-84cd-c39c9e80a3b2" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="10.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="9.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid623" ocx:GUIDRef="5b6983a8-e2e5-4ca5-9b70-3ccb1ed6494a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="9.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="8.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid624" ocx:GUIDRef="c5dc09c8-95b2-4e96-bd79-f71fef45b9ae" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="8.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="8.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid625" ocx:GUIDRef="025d0ee2-af13-4c37-b302-7d0d7816132f" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="8.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="7.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid626" ocx:GUIDRef="5785d8b2-5f01-4fd3-a638-dd243f54260d" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="7.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="6.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid627" ocx:GUIDRef="3b423146-1803-4026-accd-1989d600ef7d" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="6.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="5.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid628" ocx:GUIDRef="7673d8fc-a947-478d-b35c-e83b4f8a5fdd" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="5.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="5.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid629" ocx:GUIDRef="09555639-c0cd-4f13-9eb3-b30641c9a95a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="5.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="4.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid630" ocx:GUIDRef="d4c8d699-654a-4c08-87c0-17b0ae5548d8" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="4.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="3.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid631" ocx:GUIDRef="4cf65c3c-6a48-4640-92a3-44bce92d4a08" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="3.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="2.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid632" ocx:GUIDRef="c3abdcf4-988c-4a84-b186-c4f88afb101a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="2.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="2.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid633" ocx:GUIDRef="dbefd700-5ec2-42fd-8800-3be29d5c98e5" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="2.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="1.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid634" ocx:GUIDRef="a8a86af6-37bc-421a-bded-2cc903bacbfd" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="1.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="0.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid635" ocx:GUIDRef="08ed57c8-a9b9-4546-b45f-9bb114a61778" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="0.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-0.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid636" ocx:GUIDRef="21bbf9aa-a575-4657-a618-4d19df643c38" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-0.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-1.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid637" ocx:GUIDRef="2257fe2e-eb96-427a-b71a-4d5010b4354d" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-1.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-2.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid638" ocx:GUIDRef="4c2b1c73-095c-40c0-9d5f-1b78b3c69456" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-2.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-2.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid639" ocx:GUIDRef="a2becb13-eb2a-4e01-998a-65bc1d45f1ab" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-2.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-3.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid640" ocx:GUIDRef="dea3c22e-fbfe-44bf-8937-d0a9500b761e" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-3.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-4.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid641" ocx:GUIDRef="ae72e32d-e7b6-4cf1-bfef-b82d8354a7d8" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-4.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-5.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid642" ocx:GUIDRef="42914d61-cb11-4045-b160-a79b21f78542" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-5.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-5.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid643" ocx:GUIDRef="9f03411b-dcc2-4509-91af-e74dca8778f1" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-5.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-6.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid644" ocx:GUIDRef="61296f4b-a2a8-49d7-8e09-3ad86fa0345b" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-6.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-7.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid645" ocx:GUIDRef="09abcdee-9a61-4f57-92c1-bc2692a709c6" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-7.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-8.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid646" ocx:GUIDRef="bebb1be7-948c-4b84-b348-a82a69700011" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-8.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-8.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid647" ocx:GUIDRef="9ba49b47-0531-49f8-90f1-225a64963ae7" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-8.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-9.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid648" ocx:GUIDRef="9a1e4a3b-4f19-4f3d-ad0d-2e08e9e4ae57" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-9.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-10.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid649" ocx:GUIDRef="aef0795d-d0ae-40ee-8f21-1f47ccf54736" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-10.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-11.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid650" ocx:GUIDRef="4bd5b5f9-8fcf-49ca-86b6-f1a565c92573" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-11.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-11.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid651" ocx:GUIDRef="8905f1eb-7b01-4279-9368-34f64c2e2b89" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-11.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-12.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid652" ocx:GUIDRef="9ba6cdc2-a6b4-4ef6-b936-ca5a61eef7db" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-12.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-13.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid653" ocx:GUIDRef="a2681b8f-d1dd-40c3-a742-633e22c39471" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-13.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-14.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid654" ocx:GUIDRef="da5d8ce0-b66f-4532-9df4-a0e4dc2b0c2a" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-14.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-14.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid655" ocx:GUIDRef="bc859bfa-14e0-4871-a962-cb18c2e7e963" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-14.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-15.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid656" ocx:GUIDRef="e881ecbe-5b40-4ea3-b116-7e2e60015749" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-15.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-16.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid657" ocx:GUIDRef="4226058c-c80a-4687-9ac8-7cdb74792caf" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-16.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-17.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid658" ocx:GUIDRef="3639f378-41a8-43d0-ace3-ce3e649c8f1b" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.95" unit="Um"/>
+            <ocx:Y numericvalue="-17.0412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-17.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+    <ocx:Line3D id="nplcid659" ocx:GUIDRef="0397d3b2-de39-47b8-ad77-d788419fc07d" is2D="false">
+        <ocx:StartPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-17.5412" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:StartPoint>
+        <ocx:EndPoint>
+            <ocx:X numericvalue="81.0" unit="Um"/>
+            <ocx:Y numericvalue="-28.1554" unit="Um"/>
+            <ocx:Z numericvalue="-3.0" unit="Um"/>
+        </ocx:EndPoint>
+    </ocx:Line3D>
+</ocx:BaseCurve>
