@@ -1,6 +1,8 @@
 """Tests for OCX 2.8.6 schema support (validation, parsing, IR building)."""
 from __future__ import annotations
 
+from pathlib import Path
+
 OCX286_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
 <ocx:ocxXML xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" ocx:license="x" schemaVersion="2.8.6">
   <ocx:Header time_stamp="2020-01-01T00:00:00" name="test" author="t" organization="t" originating_system="t"/>
@@ -49,3 +51,22 @@ class Test286SchemaRegistry:
 
         assert SUPPORTED_VERSIONS["2.8.6"] == "ocx_286"
         assert load_schema("2.8.6") is not None
+
+
+class TestVersionDetection286:
+    def test_get_version_schema_version_as_last_attribute(self, tmp_path: Path):
+        """schemaVersion directly before '>' must not pick up the quote/bracket."""
+        from ocx_model_core.parsers.parser import OcxVersion
+
+        model = tmp_path / "last_attr.3docx"
+        model.write_text(
+            '<ocx:ocxXML xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" '
+            'schemaVersion="2.8.6"></ocx:ocxXML>',
+            encoding="utf-8",
+        )
+        assert OcxVersion.get_version(model) == "2.8.6"
+
+    def test_detect_schema_version_286_document(self):
+        from ocx_model_core.parsers.version import detect_schema_version
+
+        assert detect_schema_version(OCX286_MODEL) == "2.8.6"

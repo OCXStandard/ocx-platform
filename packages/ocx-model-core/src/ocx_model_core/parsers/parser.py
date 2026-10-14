@@ -18,6 +18,7 @@ from xsdata.formats.dataclass.parsers.handlers import LxmlEventHandler
 from ..exeptions import SourceError, XmlParserError
 from .base_parser import IParser
 from .dynamic_loader import DeclarationOfOcxImport, DynamicLoader
+from .version import detect_schema_version
 
 T = TypeVar("T")
 
@@ -32,17 +33,13 @@ class OcxVersion:
             model: The source file path or uri
 
         Returns:
-            The schema version of the 3Docx XML model.
+            The schema version of the 3Docx XML model, or ``"NA"`` if none is declared.
         """
         try:
-            version = "NA"
-            content = model.read_text(encoding="utf-8").split()
-            for item in content:
-                if "schemaVersion" in item:
-                    version = item[item.find("=") + 2: -1]
-            return version
-        except SourceError as e:
-            raise SourceError(e) from e
+            content = model.read_text(encoding="utf-8")
+        except OSError as e:
+            raise SourceError(f"Cannot read {model}: {e}") from e
+        return detect_schema_version(content) or "NA"
 
 class OcxParser(IParser, ABC):
     """OcxParser class for 3Docx XML files.
