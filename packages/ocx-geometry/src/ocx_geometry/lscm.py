@@ -559,6 +559,18 @@ def _tri_members(F: np.ndarray, src: list[dict]) -> np.ndarray:
     return tri_member
 
 
+def _boundary_components(F: np.ndarray) -> int:
+    """Number of separate boundary loops/chains of a triangle mesh."""
+    bnd = _boundary_edges(F)
+    if len(bnd) == 0:
+        return 0
+    verts, inv = np.unique(bnd, return_inverse=True)
+    inv = inv.reshape(bnd.shape)
+    adj = coo_matrix((np.ones(len(bnd)), (inv[:, 0], inv[:, 1])),
+                     shape=(len(verts), len(verts)))
+    return int(connected_components(adj, directed=False)[0])
+
+
 def _longest_boundary_loop(bnd: np.ndarray) -> list[int] | None:
     """Longest closed loop among the directed boundary edges.
 
@@ -1042,9 +1054,11 @@ class LscmChart:
                 pos = np.searchsorted(sel, seeds)
                 keep = np.isin(comp, np.unique(comp[pos]))
                 sub_f, sel = sub_f[keep], sel[keep]
-                if len(np.unique(comp[keep])) == 1:
+                if (len(np.unique(comp[keep])) == 1
+                        and _boundary_components(sub_f) == 1):
                     break
-                # several islands: the ball may only cover an annulus
+                # several islands, or an annulus (a second boundary loop
+                # around an unfilled interior): the ball only covers a band
                 # around the contour — widen it to fill the interior
                 radius *= 1.3
             # overlapping-sheet fins make the submesh non-manifold,

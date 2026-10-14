@@ -370,6 +370,40 @@ class TestParamForSeams:
         domain = shapely.union_all(shapely.polygons(param._V[param._F][:, :, :2]))
         assert shapely.box(0.5, 0.5, 11.5, 2.5).difference(domain).area < 1e-10
 
+    def test_wide_plate_with_short_collinear_edges_covers_interior(self):
+        """A contour whose nearest-neighbour spacing (short collinear edge
+        pieces, as on a cambered deck) is far below the plate width must
+        still select the whole interior, not just a ring around its rim."""
+        import shapely
+        from ocx_geometry.lscm import LscmChart, _ChartMesh
+        from ocx_geometry.surfaces import PlaneParam
+
+        member = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        nx, ny = 10, 20
+        vertices = np.array([[x, y - 10.0, 0.0]
+                             for x in range(nx + 1) for y in range(ny + 1)])
+        faces = []
+        for x in range(nx):
+            for y in range(ny):
+                a = (ny + 1) * x + y
+                b = a + ny + 1
+                faces.extend([(a, b, b + 1), (a, b + 1, a + 1)])
+        faces = np.asarray(faces)
+        src = [{0: tuple(uv)} for uv in member.inverse(vertices)]
+        chart = LscmChart(
+            [member],
+            _ChartMesh(vertices, faces, src, np.zeros(len(faces), dtype=int)),
+            tol_m=0.05)
+        contour = np.array([
+            [9.75, 6.2, 0], [9.75, 10, 0], [0, 10, 0], [0, 6.2, 0],
+            [0, -6.2, 0], [0, -10, 0], [9.75, -10, 0], [9.75, -6.2, 0],
+        ])
+        param = chart.param_for(contour)
+        assert param is not None
+        domain = shapely.union_all(shapely.polygons(param._V[param._F][:, :, :2]))
+        plate = shapely.Polygon(contour[:, :2])
+        assert plate.difference(domain).area < 1e-6
+
     def test_plate_spanning_tangent_seam_roundtrips(self):
         """A plate across the bottom-plane/bilge-cylinder seam, sampled at
         differing densities per member, must get a validated chart (zip +
