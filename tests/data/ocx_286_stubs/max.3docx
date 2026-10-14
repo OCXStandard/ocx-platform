@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Max xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:X numericvalue="100.801" unit="Um"/>
+    <ocx:Y numericvalue="-8.399" unit="Um"/>
+    <ocx:Z numericvalue="21.641" unit="Um"/>
+</ocx:Max>

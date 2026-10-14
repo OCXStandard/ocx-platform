@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:MaterialCatalogue xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid3">
+    <ocx:Material id="nplcid4" name="HT36" ocx:grade="A36" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852">
+        <ocx:Density numericvalue="7850.0" unit="UKgOverm3"/>
+        <ocx:YoungsModulus numericvalue="206000.0" unit="UNOvermm2"/>
+        <ocx:PoissonRatio numericvalue="0.3" unit="UDimless"/>
+        <ocx:YieldStress numericvalue="2304563.0" unit="UNOvermm2"/>
+        <ocx:UltimateStress numericvalue="4805259.0" unit="UNOvermm2"/>
+    </ocx:Material>
+    <ocx:Material id="nplcid5" name="MILD" ocx:grade="A" ocx:GUIDRef="9e2a81a7-46a7-43db-b697-d84445d9a5c0">
+        <ocx:Density numericvalue="7850.0" unit="UKgOverm3"/>
+        <ocx:YoungsModulus numericvalue="206000.0" unit="UNOvermm2"/>
+        <ocx:PoissonRatio numericvalue="0.3" unit="UDimless"/>
+        <ocx:YieldStress numericvalue="2304563.0" unit="UNOvermm2"/>
+        <ocx:UltimateStress numericvalue="3922660.0" unit="UNOvermm2"/>
+    </ocx:Material>
+</ocx:MaterialCatalogue>

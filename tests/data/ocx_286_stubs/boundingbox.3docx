@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:BoundingBox xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Max>
+        <ocx:X numericvalue="100.801" unit="Um"/>
+        <ocx:Y numericvalue="-8.399" unit="Um"/>
+        <ocx:Z numericvalue="21.641" unit="Um"/>
+    </ocx:Max>
+    <ocx:Min>
+        <ocx:X numericvalue="100.799" unit="Um"/>
+        <ocx:Y numericvalue="-8.401" unit="Um"/>
+        <ocx:Z numericvalue="20.839" unit="Um"/>
+    </ocx:Min>
+</ocx:BoundingBox>

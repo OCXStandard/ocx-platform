@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Contour xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:CompositeCurve3D id="nplcid3868" ocx:GUIDRef="6e19aa8a-f04c-491d-8e7d-969513a3447c" is2D="true">
+        <ocx:Line3D id="nplcid3870" ocx:GUIDRef="cbc9d1ce-ff6a-4962-95be-f39250bae48c" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="82.4905" unit="Um"/>
+                <ocx:Y numericvalue="2.8986" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="82.0297" unit="Um"/>
+                <ocx:Y numericvalue="3.9716" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+        <ocx:Line3D id="nplcid3872" ocx:GUIDRef="c95024a1-78a2-4c6f-bced-af078590c140" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="81.55" unit="Um"/>
+                <ocx:Y numericvalue="3.8729" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="81.55" unit="Um"/>
+                <ocx:Y numericvalue="2.8" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+        <ocx:Line3D id="nplcid3874" ocx:GUIDRef="2732b179-a782-47d2-86d5-869af7c6a87c" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="81.8" unit="Um"/>
+                <ocx:Y numericvalue="2.55" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="82.2608" unit="Um"/>
+                <ocx:Y numericvalue="2.55" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+        <ocx:Line3D id="nplcid3875" ocx:GUIDRef="90b1d2d0-4ee2-46b8-a9ac-70f17fbbd4b7" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="82.2608" unit="Um"/>
+                <ocx:Y numericvalue="2.55" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="82.3099" unit="Um"/>
+                <ocx:Y numericvalue="2.5549" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+        <ocx:CircumArc3D id="nplcid3869" ocx:GUIDRef="3ec64f41-57d4-4b11-ad2b-eff5e5069896" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="82.3099" unit="Um"/>
+                <ocx:Y numericvalue="2.5549" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:IntermediatePoint>
+                <ocx:X numericvalue="82.4821" unit="Um"/>
+                <ocx:Y numericvalue="2.6837" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:IntermediatePoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="82.4905" unit="Um"/>
+                <ocx:Y numericvalue="2.8986" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:CircumArc3D>
+        <ocx:CircumArc3D id="nplcid3871" ocx:GUIDRef="cb513c21-f368-441d-a306-fb86b4266fbd" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="82.0297" unit="Um"/>
+                <ocx:Y numericvalue="3.9716" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:IntermediatePoint>
+                <ocx:X numericvalue="81.7496" unit="Um"/>
+                <ocx:Y numericvalue="4.1178" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:IntermediatePoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="81.55" unit="Um"/>
+                <ocx:Y numericvalue="3.8729" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:CircumArc3D>
+        <ocx:CircumArc3D id="nplcid3873" ocx:GUIDRef="91ef8597-2c8c-4da2-8950-998caf6d4a01" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="81.55" unit="Um"/>
+                <ocx:Y numericvalue="2.8" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:IntermediatePoint>
+                <ocx:X numericvalue="81.6232" unit="Um"/>
+                <ocx:Y numericvalue="2.6232" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:IntermediatePoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="81.8" unit="Um"/>
+                <ocx:Y numericvalue="2.55" unit="Um"/>
+                <ocx:Z numericvalue="0.0" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:CircumArc3D>
+    </ocx:CompositeCurve3D>
+</ocx:Contour>

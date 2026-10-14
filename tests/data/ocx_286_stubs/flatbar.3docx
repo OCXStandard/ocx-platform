@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:FlatBar xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Height numericvalue="0.6" unit="Um"/>
+    <ocx:Width numericvalue="0.025" unit="Um"/>
+</ocx:FlatBar>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:YSpacingGroup xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid32" firstGridNumber="-1001" count="1">
+    <ocx:GridPosition numericvalue="-801.2" unit="Um"/>
+    <ocx:Spacing numericvalue="1.0" unit="Um"/>
+</ocx:YSpacingGroup>

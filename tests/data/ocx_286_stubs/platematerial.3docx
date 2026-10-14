@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:PlateMaterial xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" localRef="nplcid4" ocx:GUIDRef="94c8835f-5d69-46d1-9fed-bb5a3ca39852" ocx:refType="ocx:Material">
+    <ocx:Thickness numericvalue="0.022" unit="Um"/>
+</ocx:PlateMaterial>

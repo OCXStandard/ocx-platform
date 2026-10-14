@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:YRefPlanes xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" isMainSystem="true">
+    <ocx:RefPlane id="nplcid429" name="Y16.8" ocx:GUIDRef="ecdf3630-f9f9-416d-b229-37a787eee7cd">
+        <ocx:ReferenceLocation numericvalue="16.8" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid437" name="Y-16.8" ocx:GUIDRef="3cfa8c9d-0eea-430f-8b87-2fc7d6c0bb0b">
+        <ocx:ReferenceLocation numericvalue="-16.8" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid445" name="Y8.4" ocx:GUIDRef="fc677510-bc6d-4889-a972-86f42f90a8ca">
+        <ocx:ReferenceLocation numericvalue="8.4" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid454" name="Y-8.4" ocx:GUIDRef="c77ecb8e-b532-4e42-bb12-cdf277fb3af1">
+        <ocx:ReferenceLocation numericvalue="-8.4" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid463" name="Y0" ocx:GUIDRef="8db9d0a2-bec9-4d70-b090-01a30c96ec68">
+        <ocx:ReferenceLocation numericvalue="0.0" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid469" name="Y1.8" ocx:GUIDRef="3f4a2c60-8a05-4d6f-b1ad-af809a12712d">
+        <ocx:ReferenceLocation numericvalue="1.8" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid475" name="Y-1.8" ocx:GUIDRef="850e1661-31b5-4b97-b225-a4f34c74a828">
+        <ocx:ReferenceLocation numericvalue="-1.8" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid481" name="Y5" ocx:GUIDRef="4ec16a42-a672-47ca-a5b3-5d5f0b955295">
+        <ocx:ReferenceLocation numericvalue="5.0" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid487" name="Y-5" ocx:GUIDRef="5a013b41-c070-4813-85f7-b1ba347a6169">
+        <ocx:ReferenceLocation numericvalue="-5.0" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid493" name="Y8.2" ocx:GUIDRef="c9fc3495-ebde-48c7-b78a-41f60c85294d">
+        <ocx:ReferenceLocation numericvalue="8.2" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid499" name="Y-8.2" ocx:GUIDRef="4d63b368-e773-47bb-9eea-5aa812cc0960">
+        <ocx:ReferenceLocation numericvalue="-8.2" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid505" name="Y12.2" ocx:GUIDRef="8037774c-d673-4352-89eb-9a9ab09622b7">
+        <ocx:ReferenceLocation numericvalue="12.2" unit="Um"/>
+    </ocx:RefPlane>
+    <ocx:RefPlane id="nplcid511" name="Y-12.2" ocx:GUIDRef="edd5f093-cc64-4ff3-9771-474b39d2b4e5">
+        <ocx:ReferenceLocation numericvalue="-12.2" unit="Um"/>
+    </ocx:RefPlane>
+</ocx:YRefPlanes>

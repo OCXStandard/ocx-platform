@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Transformation xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:Origin>
+        <ocx:X numericvalue="101.2125" unit="Um"/>
+        <ocx:Y numericvalue="1.8" unit="Um"/>
+        <ocx:Z numericvalue="1.0" unit="Um"/>
+    </ocx:Origin>
+    <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+    <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+</ocx:Transformation>

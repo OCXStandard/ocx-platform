@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Seam xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid2460" name="V:G11ODWV5P7/DECK" ocx:GUIDRef="28f9812a-f3bb-4081-8c60-da07ce0e765b">
+    <ocx:TraceLine>
+        <ocx:Line3D id="nplcid2461" ocx:GUIDRef="730df5b5-7693-45ee-9700-1f2eb11567f4" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="80.9" unit="Um"/>
+                <ocx:Y numericvalue="15.007" unit="Um"/>
+                <ocx:Z numericvalue="21.1995" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="108.425" unit="Um"/>
+                <ocx:Y numericvalue="15.007" unit="Um"/>
+                <ocx:Z numericvalue="21.1995" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+    </ocx:TraceLine>
+</ocx:Seam>

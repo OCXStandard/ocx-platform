@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:XSectionCatalogue xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid6">
+    <ocx:BarSection id="nplcid7" name="9 - 340X14 HP" ocx:GUIDRef="4d8cd94e-dff8-4689-84cb-249847d3f093">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.34" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.014" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0627" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid8" name="4 - 240X12 HP" ocx:GUIDRef="249a1fef-3b23-4686-bc54-715fba26afd3">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.24" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.012" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0458" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid9" name="10 - 370X15 HP" ocx:GUIDRef="6ed12aa6-e36a-472b-8fa1-1fdb85705533">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.37" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.015" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0682" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid10" name="7 - 300X13 HP" ocx:GUIDRef="65ee0880-4e71-4091-84a4-54b61e2000a5">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.3" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.013" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0558" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid11" name="3 - 220X11.5 HP" ocx:GUIDRef="98663d0d-3225-4f02-b796-aaf2dede48ac">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.22" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.0115" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0423" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid12" name="8 - 320X13 HP" ocx:GUIDRef="6de35ebf-940b-422f-8b6a-c95b7e9dc23f">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.32" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.013" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0588" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid13" name="1 - 180X10 HP" ocx:GUIDRef="435a7338-eca9-4aca-bd8a-62d326a2db4d">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.18" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.01" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0349" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid14" name="HSCL&gt;&gt;HSCU" ocx:GUIDRef="e5123fb9-3741-44d1-ab56-fe42e36ed2af">
+        <ocx:TBar>
+            <ocx:Height numericvalue="0.388" unit="Um"/>
+            <ocx:Width numericvalue="0.15" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.01" unit="Um"/>
+            <ocx:FlangeThickness numericvalue="0.012" unit="Um"/>
+        </ocx:TBar>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid15" name="17 - FB600X25" ocx:GUIDRef="39e106db-903d-44af-a27a-b689b949abc7">
+        <ocx:FlatBar>
+            <ocx:Height numericvalue="0.6" unit="Um"/>
+            <ocx:Width numericvalue="0.025" unit="Um"/>
+        </ocx:FlatBar>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid16" name="14 - FB150X12" ocx:GUIDRef="f7f6c323-4f06-4fb7-b278-ad48de3100b4">
+        <ocx:FlatBar>
+            <ocx:Height numericvalue="0.15" unit="Um"/>
+            <ocx:Width numericvalue="0.012" unit="Um"/>
+        </ocx:FlatBar>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid17" name="5 - 260X12 HP" ocx:GUIDRef="0bb91ff3-98e8-4b66-8b56-b7e80bdb6821">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.26" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.012" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0488" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid18" name="16 - FB200X15" ocx:GUIDRef="38aaf0d1-3781-42a5-bf86-0b391ac06971">
+        <ocx:FlatBar>
+            <ocx:Height numericvalue="0.2" unit="Um"/>
+            <ocx:Width numericvalue="0.015" unit="Um"/>
+        </ocx:FlatBar>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid19" name="0 - 120X7 HP" ocx:GUIDRef="1fce0344-3fa8-4658-862e-7a9ac3acafbe">
+        <ocx:BulbFlat>
+            <ocx:Height numericvalue="0.12" unit="Um"/>
+            <ocx:WebThickness numericvalue="0.007" unit="Um"/>
+            <ocx:FlangeWidth numericvalue="0.0252" unit="Um"/>
+        </ocx:BulbFlat>
+    </ocx:BarSection>
+    <ocx:BarSection id="nplcid20" name="FL150X12" ocx:GUIDRef="87ac3b6b-84f3-48c6-a6c8-57bdd4d9f954">
+        <ocx:FlatBar>
+            <ocx:Height numericvalue="0.15" unit="Um"/>
+            <ocx:Width numericvalue="0.012" unit="Um"/>
+        </ocx:FlatBar>
+    </ocx:BarSection>
+</ocx:XSectionCatalogue>

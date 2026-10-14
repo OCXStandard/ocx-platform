@@ -5,10 +5,12 @@ from loguru import logger
 
 from .base import IOcxBuilder, UnsupportedSchemaVersionError
 from .v3_builder import OcxV3Builder
+from .v286_builder import Ocx286Builder
 
 # Registry: (major, minor) → builder class.
 # Add entries here as new schema families are supported.
 _BUILDER_REGISTRY: dict[tuple[int, int], type[IOcxBuilder]] = {
+    (2, 8): Ocx286Builder,
     (3, 0): OcxV3Builder,
     (3, 1): OcxV3Builder,
     (3, 2): OcxV3Builder,
@@ -16,6 +18,7 @@ _BUILDER_REGISTRY: dict[tuple[int, int], type[IOcxBuilder]] = {
 
 # Fallback: major-only registry for unknown minor versions within a known family.
 _MAJOR_FALLBACK: dict[int, type[IOcxBuilder]] = {
+    2: Ocx286Builder,
     3: OcxV3Builder,
 }
 

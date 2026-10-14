@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Hole2DContour xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid3424" name="O:321PLIZVJ7/BGR_1_P" ocx:GUIDRef="8ae34b8d-0373-40ac-a7bd-e253c4614c13">
+    <ocx:HoleRef localRef="nplcid23" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416" ocx:refType="ocx:Hole2D"/>
+    <ocx:Transformation>
+        <ocx:Origin>
+            <ocx:X numericvalue="101.2125" unit="Um"/>
+            <ocx:Y numericvalue="1.8" unit="Um"/>
+            <ocx:Z numericvalue="1.0" unit="Um"/>
+        </ocx:Origin>
+        <ocx:PrimaryAxis x="1.0" y="0.0" z="0.0"/>
+        <ocx:SecondaryAxis x="0.0" y="0.0" z="1.0"/>
+    </ocx:Transformation>
+</ocx:Hole2DContour>

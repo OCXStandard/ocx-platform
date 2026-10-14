@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:PrincipalParticulars xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" ocx:freeboardType="A">
+    <ocx:Lpp numericvalue="215.95" unit="Um"/>
+    <ocx:RuleLength numericvalue="215.95" unit="Um"/>
+    <ocx:BlockCoefficient numericvalue="0.836" unit="UDimless"/>
+    <ocx:FP_Pos numericvalue="215.95" unit="Um"/>
+    <ocx:MouldedBreadth numericvalue="36.0" unit="Um"/>
+    <ocx:MouldedDepth numericvalue="21.8" unit="Um"/>
+    <ocx:ScantlingDraught numericvalue="15.0" unit="Um"/>
+    <ocx:DesignSpeed numericvalue="14.5" unit="UKnots"/>
+    <ocx:AP_Pos numericvalue="0.0" unit="Um"/>
+</ocx:PrincipalParticulars>

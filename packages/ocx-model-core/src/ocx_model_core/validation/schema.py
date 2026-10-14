@@ -23,6 +23,7 @@ _XML_XSD = _SCHEMAS_DIR / "xml.xsd"
 
 #: OCX schema version -> vendored schema directory name
 SUPPORTED_VERSIONS: dict[str, str] = {
+    "2.8.6": "ocx_286",
     "3.0.0": "ocx_300",
     "3.0.1": "ocx_301",
     "3.1.0": "ocx_310",

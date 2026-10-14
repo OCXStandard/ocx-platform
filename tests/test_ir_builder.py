@@ -15,6 +15,7 @@ a developer who adds a new Ir* type is reminded to create a real builder test.
 from __future__ import annotations
 
 import pytest
+from ocx_model_core.builders.factory import get_builder
 from ocx_model_core.builders.v3_builder import OcxV3Builder
 from ocx_model_core.model.ir import (
     IrBracket,
@@ -81,6 +82,19 @@ def _load(stub_cls, stub_dir, declaration):
         pytest.skip(f"Stub {stub_cls.entity_file!r} not found in {stub_dir.name}")
 
 
+def _builder_for(version: str) -> OcxV3Builder:
+    """Version-appropriate builder (e.g. Ocx286Builder for 2.8.x stubs)."""
+    return get_builder(version)
+
+
+def _normalize(builder, raw):
+    """Apply the builder's raw-tree normalisation (no-op for 3.x builders)."""
+    normalize = getattr(builder, "_normalize", None)
+    if normalize is not None:
+        normalize(raw, set())
+    return raw
+
+
 def _vessel_parent() -> ParentRef:
     return ParentRef(kind=ParentKind.VESSEL, id="vessel-test")
 
@@ -121,14 +135,15 @@ class TestBuildMaterial:
         assert mat.id
 
     def test_material_has_quantity_fields(self, ocx_stub_version):
-        _, stub_dir, declaration = ocx_stub_version
-        raw = _load(StubMaterial, stub_dir, declaration)
+        version, stub_dir, declaration = ocx_stub_version
+        builder = _builder_for(version)
+        raw = _normalize(builder, _load(StubMaterial, stub_dir, declaration))
         root = _Ns(class_catalogue=_Ns(
             material_catalogue=_Ns(material=[raw]),
             xsection_catalogue=None,
         ))
         ir = _empty_ir()
-        OcxV3Builder()._build_materials(root, ir)
+        builder._build_materials(root, ir)
         mat = next(iter(ir.materials.values()))
         has_qty = any([mat.density, mat.yield_stress, mat.youngs_modulus])
         assert has_qty, "Expected at least one quantity field populated in material stub"
@@ -262,15 +277,17 @@ class TestBuildPlate:
         assert plate.parent_ref == parent
 
     def test_plate_has_material_ref(self, ocx_stub_version):
-        _, stub_dir, declaration = ocx_stub_version
-        raw = _load(StubPlate, stub_dir, declaration)
-        plate = OcxV3Builder()._build_plate(raw, _vessel_parent())
+        version, stub_dir, declaration = ocx_stub_version
+        builder = _builder_for(version)
+        raw = _normalize(builder, _load(StubPlate, stub_dir, declaration))
+        plate = builder._build_plate(raw, _vessel_parent())
         assert plate.material_ref is not None
 
     def test_plate_has_thickness(self, ocx_stub_version):
-        _, stub_dir, declaration = ocx_stub_version
-        raw = _load(StubPlate, stub_dir, declaration)
-        plate = OcxV3Builder()._build_plate(raw, _vessel_parent())
+        version, stub_dir, declaration = ocx_stub_version
+        builder = _builder_for(version)
+        raw = _normalize(builder, _load(StubPlate, stub_dir, declaration))
+        plate = builder._build_plate(raw, _vessel_parent())
         assert plate.thickness is not None
 
 

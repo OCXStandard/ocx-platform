@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:Hole2D xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid23" name="R400X600" ocx:GUIDRef="afe09fc2-d489-4174-bc9d-ae293c17f416">
+    <ocx:RectangularHole id="nplcid22">
+        <ocx:Height numericvalue="0.6" unit="Um"/>
+        <ocx:Width numericvalue="0.4" unit="Um"/>
+        <ocx:FilletRadius numericvalue="0.2" unit="Um"/>
+    </ocx:RectangularHole>
+</ocx:Hole2D>

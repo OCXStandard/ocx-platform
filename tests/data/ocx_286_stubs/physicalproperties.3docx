@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:PhysicalProperties xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema">
+    <ocx:DryWeight numericvalue="12787.7808" unit="UKg"/>
+    <ocx:CenterOfGravity>
+        <ocx:X numericvalue="93.2425" unit="Um"/>
+        <ocx:Y numericvalue="16.5035" unit="Um"/>
+        <ocx:Z numericvalue="21.0997" unit="Um"/>
+    </ocx:CenterOfGravity>
+</ocx:PhysicalProperties>

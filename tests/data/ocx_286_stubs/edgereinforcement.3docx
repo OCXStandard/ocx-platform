@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source: D-BULKER-CARGO-OCX_v286_NAPA2022_2.3docx -->
+<ocx:EdgeReinforcement xmlns:ocx="http://data.dnvgl.com/Schemas/ocxXMLSchema" id="nplcid452" name="S:CPIZKIKLPY/HSC_CH_5_P" ocx:GUIDRef="348b40f4-6bc7-47d2-9603-86646db95b5a">
+    <ocx:PhysicalProperties>
+        <ocx:DryWeight numericvalue="1748.5882" unit="UKg"/>
+        <ocx:CenterOfGravity>
+            <ocx:X numericvalue="93.375" unit="Um"/>
+            <ocx:Y numericvalue="8.448" unit="Um"/>
+            <ocx:Z numericvalue="23.4875" unit="Um"/>
+        </ocx:CenterOfGravity>
+    </ocx:PhysicalProperties>
+    <ocx:ExternalGeometryRef ocx:externalRef=".\Bulker\HSC_CH_5_P\S-CPIZKIKLPY.stp" ocx:geometryFormat=".stp"/>
+    <ocx:SectionRef localRef="nplcid15" ocx:GUIDRef="39e106db-903d-44af-a27a-b689b949abc7" ocx:refType="ocx:BarSection">
+        <ocx:OffsetV numericvalue="-0.348" unit="Um"/>
+    </ocx:SectionRef>
+    <ocx:MaterialRef localRef="nplcid5" ocx:GUIDRef="9e2a81a7-46a7-43db-b697-d84445d9a5c0" ocx:refType="ocx:Material"/>
+    <ocx:Inclination>
+        <ocx:WebDirection x="0.0" y="-1.0" z="0.0"/>
+        <ocx:FlangeDirection x="0.0" y="0.0" z="-1.0"/>
+        <ocx:Position>
+            <ocx:X numericvalue="93.375" unit="Um"/>
+            <ocx:Y numericvalue="8.4" unit="Um"/>
+            <ocx:Z numericvalue="23.5" unit="Um"/>
+        </ocx:Position>
+    </ocx:Inclination>
+    <ocx:EdgeCurveRef localRef="nplcid3379" ocx:GUIDRef="18146932-7613-4456-af29-f8326c0a4eb6" ocx:refType="ocx:FreeEdgeCurve3D"/>
+    <ocx:TraceLine>
+        <ocx:Line3D id="nplcid3390" ocx:GUIDRef="8570edf5-79ab-4603-82aa-43a0794895b7" is2D="false">
+            <ocx:StartPoint>
+                <ocx:X numericvalue="85.95" unit="Um"/>
+                <ocx:Y numericvalue="8.4" unit="Um"/>
+                <ocx:Z numericvalue="23.5" unit="Um"/>
+            </ocx:StartPoint>
+            <ocx:EndPoint>
+                <ocx:X numericvalue="100.8" unit="Um"/>
+                <ocx:Y numericvalue="8.4" unit="Um"/>
+                <ocx:Z numericvalue="23.5" unit="Um"/>
+            </ocx:EndPoint>
+        </ocx:Line3D>
+    </ocx:TraceLine>
+</ocx:EdgeReinforcement>
