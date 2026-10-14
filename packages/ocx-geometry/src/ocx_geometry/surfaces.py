@@ -19,6 +19,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from geomdl.exceptions import GeomdlException
 from loguru import logger
+from scipy.interpolate import NdBSpline
+from scipy.spatial import cKDTree
 from ocx_model_core.model.ir.geometry import (
     IrCone3D,
     IrCylinder3D,
@@ -61,6 +63,10 @@ class SurfaceParam(ABC):
         return (1.0, 1.0)
 
     def max_edge_m(self, tol_m: float) -> float | None:
+        return None
+
+    def bounds(self) -> tuple[np.ndarray, np.ndarray] | None:
+        """Axis-aligned box that contains the whole surface (None: unbounded)."""
         return None
 
 
@@ -340,38 +346,59 @@ class NurbsSurfaceParam(SurfaceParam):
         vs = np.linspace(*self.dv, self._GRID)
         grid_uv = np.array([(u, v) for u in us for v in vs])
         self._grid_uv = grid_uv
-        self._grid_pts = np.array(
-            self.s.evaluate_list([tuple(x) for x in grid_uv]))
+        # vectorised evaluator (geomdl is pure Python, ~1000x slower per point)
+        cps = np.asarray(s.ctrlpts2d, dtype=float)
+        self._spl = NdBSpline((np.asarray(ku, dtype=float),
+                               np.asarray(kv, dtype=float)), cps,
+                              (s.degree_u, s.degree_v))
+        self._bounds = (cps.reshape(-1, 3).min(axis=0),
+                        cps.reshape(-1, 3).max(axis=0))
+        self._grid_pts = self._spl(grid_uv)
+        self._grid_tree = cKDTree(self._grid_pts)
+
+    def bounds(self):
+        # convex-hull property: the surface lies inside its control-point box
+        return self._bounds
+
+    def _clip_uv(self, uv: np.ndarray) -> np.ndarray:
+        return np.clip(uv, [self.du[0], self.dv[0]], [self.du[1], self.dv[1]])
 
     def evaluate(self, uv):
-        uv = np.clip(np.asarray(uv, dtype=float),
-                     [self.du[0], self.dv[0]], [self.du[1], self.dv[1]])
-        return np.array(self.s.evaluate_list([tuple(x) for x in uv]))
-
-    def _invert_one(self, p: np.ndarray) -> tuple[float, float]:
-        i = int(np.argmin(np.linalg.norm(self._grid_pts - p, axis=1)))
-        u, v = self._grid_uv[i]
-        for _ in range(self._NEWTON_ITERS):
-            d = self.s.derivatives(float(u), float(v), order=1)
-            S = np.array(d[0][0])
-            Su, Sv = np.array(d[1][0]), np.array(d[0][1])
-            r = S - p
-            A = np.array([[Su @ Su, Su @ Sv], [Su @ Sv, Sv @ Sv]])
-            b = -np.array([Su @ r, Sv @ r])
-            try:
-                step = np.linalg.solve(A, b)
-            except np.linalg.LinAlgError:
-                break
-            u = float(np.clip(u + step[0], *self.du))
-            v = float(np.clip(v + step[1], *self.dv))
-            if abs(step[0]) * np.linalg.norm(Su) \
-                    + abs(step[1]) * np.linalg.norm(Sv) < 1e-9:
-                break
-        return u, v
+        uv = self._clip_uv(np.asarray(uv, dtype=float).reshape(-1, 2))
+        return self._spl(uv)
 
     def inverse(self, pts):
-        return np.array([self._invert_one(p)
-                         for p in np.asarray(pts, dtype=float)])
+        pts = np.asarray(pts, dtype=float).reshape(-1, 3)
+        if len(pts) == 0:
+            return np.empty((0, 2))
+        uv = self._grid_uv[self._grid_tree.query(pts)[1]].copy()
+        active = np.ones(len(pts), dtype=bool)
+        lo = np.array([self.du[0], self.dv[0]])
+        hi = np.array([self.du[1], self.dv[1]])
+        for _ in range(self._NEWTON_ITERS):
+            idx = np.flatnonzero(active)
+            if len(idx) == 0:
+                break
+            q = uv[idx]
+            S = self._spl(q)
+            Su = self._spl(q, nu=(1, 0))
+            Sv = self._spl(q, nu=(0, 1))
+            r = S - pts[idx]
+            a = np.einsum("ij,ij->i", Su, Su)
+            b = np.einsum("ij,ij->i", Su, Sv)
+            c = np.einsum("ij,ij->i", Sv, Sv)
+            g1 = -np.einsum("ij,ij->i", Su, r)
+            g2 = -np.einsum("ij,ij->i", Sv, r)
+            det = a * c - b * b
+            ok = np.abs(det) > 1e-18 * np.maximum(a * c, 1e-300)
+            active[idx[~ok]] = False        # singular: keep current uv
+            safe = np.where(ok, det, 1.0)
+            s0 = np.where(ok, (c * g1 - b * g2) / safe, 0.0)
+            s1 = np.where(ok, (a * g2 - b * g1) / safe, 0.0)
+            uv[idx] = np.clip(q + np.column_stack([s0, s1]), lo, hi)
+            conv = (np.abs(s0) * np.sqrt(a) + np.abs(s1) * np.sqrt(c)) < 1e-9
+            active[idx[conv]] = False
+        return uv
 
     def uv_scale(self):
         uc = 0.5 * (self.du[0] + self.du[1])
@@ -422,15 +449,32 @@ def _make_param_extended(surface, length: LengthResolver,
     return None
 
 
-def _member_fit(member: SurfaceParam, pts: np.ndarray
+def _member_fit(member: SurfaceParam, pts: np.ndarray, pad: float | None = None
                 ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
-    """(uv, round-trip points, residuals) of ``pts`` on ``member``."""
+    """(uv, round-trip points, residuals) of ``pts`` on ``member``.
+
+    With ``pad`` given, points farther than ``pad`` outside a bounded
+    member's bounding box cannot lie within ``pad`` of it; they are not
+    inverted and report an infinite residual.
+    """
     try:
-        uv = np.asarray(member.inverse(pts), dtype=float)
-        q = np.asarray(member.evaluate(uv), dtype=float)
+        box = member.bounds() if pad is not None else None
+        if box is None:
+            uv = np.asarray(member.inverse(pts), dtype=float)
+            q = np.asarray(member.evaluate(uv), dtype=float)
+            res = np.linalg.norm(q - pts, axis=1)
+        else:
+            near = np.all((pts >= box[0] - pad) & (pts <= box[1] + pad), axis=1)
+            uv = np.zeros((len(pts), 2))
+            q = np.array(pts, dtype=float)
+            res = np.full(len(pts), np.inf)
+            if near.any():
+                uv[near] = np.asarray(member.inverse(pts[near]), dtype=float)
+                q[near] = np.asarray(member.evaluate(uv[near]), dtype=float)
+                res[near] = np.linalg.norm(q[near] - pts[near], axis=1)
     except Exception:  # noqa: BLE001 — member disqualifies itself
         return None
     if not (np.isfinite(uv).all() and np.isfinite(q).all()):
         return None
-    return uv, q, np.linalg.norm(q - pts, axis=1)
+    return uv, q, res
 

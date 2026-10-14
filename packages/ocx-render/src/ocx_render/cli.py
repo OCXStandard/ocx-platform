@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 import typer
@@ -36,6 +37,9 @@ def render(
         help="Linear deflection tolerance in millimetres."),
     no_html: bool = typer.Option(
         False, "--no-html", help="Skip writing the HTML viewer page."),
+    log_level: str = typer.Option(
+        "INFO", "--log-level", "-l",
+        help="Log level (DEBUG shows per-stage and per-plate timing)."),
 ) -> None:
     """Tessellate MODEL into a GLB file plus a self-contained HTML viewer.
 
@@ -46,11 +50,14 @@ def render(
     from ocx_render.html_viewer import write_html
     from ocx_render.render import TessellationOptions, render_model
 
+    configure_logging(log_level.upper())
+    t0 = time.perf_counter()
     try:
         vessel = _load_vessel(model)
     except Exception as exc:  # noqa: BLE001 — any parse/build failure is exit 2
         logger.error("Cannot parse/build {}: {}", model, exc)
         raise typer.Exit(code=2) from exc
+    logger.debug("Timing: parse+build in {:.2f}s", time.perf_counter() - t0)
 
     result = render_model(
         vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))

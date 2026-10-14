@@ -6,6 +6,8 @@ in ``RenderResult.skipped`` and never abort the render.
 """
 from __future__ import annotations
 
+import time
+
 import numpy as np
 from loguru import logger
 from ocx_geometry.backend import (
@@ -205,18 +207,29 @@ def _tessellate_plates(vessel: IrVessel,
     # plates; each plate flattens only its local submesh (a whole-panel
     # conformal flattening degenerates on doubly-curved panels).
     chart_cache: dict[str, object] = {}
-    for plate, panel_id, candidates, contour in prepared:
+    n_total = len(prepared)
+    t_pass2 = time.perf_counter()
+    logger.debug("Timing: pass 1 prepared {} plates ({} panels with charts "
+                 "needed)", n_total,
+                 sum(1 for p in prepared if len(p[2]) > 1))
+    for idx, (plate, panel_id, candidates, contour) in enumerate(prepared, 1):
+        t_plate = time.perf_counter()
         local = None
         if len(candidates) > 1:
             if panel_id not in chart_cache:
+                t_chart = time.perf_counter()
                 chart_cache[panel_id] = make_lscm_chart(
                     candidates, options.tolerance_m,
                     np.vstack(hints[panel_id]))
+                logger.debug("Timing: LSCM chart for panel {} "
+                             "({} members) in {:.2f}s", panel_id,
+                             len(candidates), time.perf_counter() - t_chart)
             chart = chart_cache[panel_id]
             local = chart.param_for(contour) if chart is not None else None
             param = local or _best_param(candidates, contour)
         else:
             param = candidates[0]
+        t_param = time.perf_counter()
         panel = vessel.panels.get(panel_id)
         holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
                                                options)
@@ -240,6 +253,10 @@ def _tessellate_plates(vessel: IrVessel,
                           "kind": "plate", "functionType": plate.function_type,
                           "panel_id": panel_id})
         result.meshes.append(pm)
+        logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
+                     "(elapsed {:.0f}s)", idx, n_total, plate.id,
+                     t_param - t_plate, time.perf_counter() - t_plate,
+                     time.perf_counter() - t_pass2)
 
 
 def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
@@ -290,18 +307,31 @@ def render_model(vessel: IrVessel,
     length = LengthResolver(vessel.unit_registry)
     tess = UvTessellator()
     result = RenderResult()
+    t_start = time.perf_counter()
 
     params: dict[str, list[SurfaceParam]] = {}
     for pid, panel in vessel.panels.items():
         surfs = _resolve_panel_surfaces(panel, vessel)
         built = (make_param(s, length, options.tolerance_m) for s in surfs)
         params[pid] = [p for p in built if p is not None]
+    t_params = time.perf_counter()
+    logger.debug("Timing: surface params for {} panels in {:.2f}s",
+                 len(params), t_params - t_start)
 
     _tessellate_plates(vessel, params, tess, length, options, result)
+    t_plates = time.perf_counter()
+    logger.debug("Timing: plates done in {:.2f}s", t_plates - t_params)
     for stiffener in vessel.stiffeners.values():
         _sweep_part(stiffener, "stiffener", vessel, length, options, result)
+    t_stiff = time.perf_counter()
+    logger.debug("Timing: {} stiffeners in {:.2f}s",
+                 len(vessel.stiffeners), t_stiff - t_plates)
     for pillar in vessel.pillars.values():
         _sweep_part(pillar, "pillar", vessel, length, options, result)
+    logger.debug("Timing: {} pillars in {:.2f}s", len(vessel.pillars),
+                 time.perf_counter() - t_stiff)
+    logger.debug("Timing: render_model total {:.2f}s",
+                 time.perf_counter() - t_start)
 
     # Hole failures (keys containing "/hole:") are not skipped parts.
     part_skips = sum(1 for k in result.skipped if "/hole:" not in k)

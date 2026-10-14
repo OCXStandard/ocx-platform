@@ -424,7 +424,7 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
     res = min_res = None
     if hint_pts is not None and len(hint_pts) >= 3:
         hint_pts = np.asarray(hint_pts, dtype=float)
-        fits = [_member_fit(m, hint_pts) for m in members]
+        fits = [_member_fit(m, hint_pts, on_tol) for m in members]
         res = np.full((len(members), len(hint_pts)), np.inf)
         for i, f in enumerate(fits):
             if f is not None:
