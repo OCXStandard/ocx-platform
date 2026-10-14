@@ -56,6 +56,84 @@ def _bilge_members_and_hints():
     return [bot, cyl, side], hints
 
 
+def _paraboloid_patch(radius=10.0, size=10.0):
+    """Bicubic Bezier patch z = (x^2 + y^2) / (2 radius), exact (curvature
+    1/radius everywhere), on [0, size]^2."""
+    cz = [0.0, 0.0, 1.0 / 3.0, 1.0]       # Bezier ordinates of t^2
+    k = size * size / (2.0 * radius)
+    return IrNurbsSurface(
+        id="paraboloid", u_degree=3, v_degree=3,
+        u_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1],
+        v_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1],
+        control_points=[[pt(size * i / 3.0, size * j / 3.0, k * (cz[i] + cz[j]))
+                         for j in range(4)] for i in range(4)])
+
+
+class TestPolygonRepair:
+    def test_make_valid_collection_with_nested_multipolygon_is_kept(self):
+        """A plate whose hole rings cross the exterior repairs to a
+        GeometryCollection; its polygons must survive, not be dropped."""
+        import shapely
+        from ocx_geometry.uv_tessellator import _clean_polygon, _polygon_parts
+        nested = shapely.GeometryCollection([
+            shapely.MultiPolygon([shapely.box(0, 0, 1, 1),
+                                  shapely.box(2, 0, 3, 1)]),
+            shapely.LineString([(0, 0), (1, 1)])])
+        assert len(_polygon_parts(nested)) == 2
+        ext = np.array([[0, 0], [10, 0], [10, 10], [0, 10]], dtype=float)
+        bowtie = np.array([[1, 1], [3, 3], [3, 1], [1, 3]], dtype=float)
+        assert _clean_polygon(ext, [bowtie])
+
+
+class TestFacetSag:
+    def test_collapsed_edge_keeps_source_uv_consistent(self):
+        """A patch with a pole (one edge collapsed to a point) welds its
+        grid vertices there; the per-vertex source UV must not make the
+        fan triangles evaluate away from the mesh."""
+        from ocx_geometry.lscm import _build_mesh
+        tol = 0.01
+        size = 10.0
+        rows = []
+        for i in range(4):
+            th = i * np.pi / 6.0
+            rows.append([pt(0.0, 0.0, 0.0) if j == 0 else
+                         pt(size * j / 3.0 * np.cos(th),
+                            size * j / 3.0 * np.sin(th),
+                            3.0 * (j / 3.0) ** 2)
+                         for j in range(4)])
+        patch = IrNurbsSurface(
+            id="pole", u_degree=3, v_degree=3,
+            u_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1],
+            v_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1], control_points=rows)
+        member = make_param(patch, LR, tol_m=tol)
+        cm = _build_mesh([member], tol, None, require_connected=False)
+        rng = np.random.default_rng(0)
+        pole_fan = np.flatnonzero(
+            (np.linalg.norm(cm.V[cm.F], axis=2) < 1e-6).any(axis=1))
+        assert len(pole_fan) > 0
+        tri = rng.choice(pole_fan, 3000)
+        w = rng.dirichlet([1.0, 1.0, 1.0], 3000)
+        corners = cm.F[tri]
+        luv = np.array([[cm.src[c][0] for c in row] for row in corners])
+        uv = np.einsum("ij,ijk->ik", w, luv)
+        flat = np.einsum("ij,ijk->ik", w, cm.V[corners])
+        err = np.linalg.norm(member.evaluate(uv) - flat, axis=1)
+        assert err.max() <= 2.0 * tol
+
+    def test_nurbs_facets_stay_within_tolerance_inside_triangles(self):
+        from ocx_geometry.lscm import _facet_member, _member_domain
+        tol = 0.05
+        member = make_param(_paraboloid_patch(), LR, tol_m=tol)
+        pts, uvs, faces = _facet_member(member, _member_domain(member), tol)
+        rng = np.random.default_rng(0)
+        tri = rng.integers(0, len(faces), 4000)
+        w = rng.dirichlet([1.0, 1.0, 1.0], 4000)
+        uv = np.einsum("ij,ijk->ik", w, uvs[faces[tri]])
+        flat = np.einsum("ij,ijk->ik", w, pts[faces[tri]])
+        sag = np.linalg.norm(member.evaluate(uv) - flat, axis=1)
+        assert sag.max() <= 1.1 * tol
+
+
 class TestBuildMesh:
     def test_plane_is_clipped_to_exact_bounded_patch_footprint(self):
         import shapely

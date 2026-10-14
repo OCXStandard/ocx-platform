@@ -31,7 +31,8 @@ def _polygon_parts(geom) -> list[Polygon]:
     if isinstance(geom, Polygon):
         return [geom]
     if hasattr(geom, "geoms"):                 # MultiPolygon/GeometryCollection
-        return [g for g in geom.geoms if isinstance(g, Polygon)]
+        # make_valid can nest a MultiPolygon inside a GeometryCollection
+        return [p for g in geom.geoms for p in _polygon_parts(g)]
     return []
 
 

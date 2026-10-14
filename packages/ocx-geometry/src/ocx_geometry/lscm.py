@@ -56,11 +56,68 @@ def _member_domain(member: SurfaceParam):
     return None
 
 
+def _grid_lines(member: SurfaceParam, lo: float, hi: float, n: int,
+                other: tuple[float, float], n_other: int, along_u: bool,
+                tol_m: float) -> np.ndarray:
+    """``n + 1`` uniform parameter values on [lo, hi].
+
+    Where the patch edge at ``lo`` or ``hi`` collapses to a point (a
+    triangular patch's pole) the welded pole vertex can hold only one
+    source UV, but every fan triangle around it needs its own. A thin
+    first row of cells keeps the fan within a fraction of the tolerance
+    of the pole, so that single UV can no longer misplace the triangles.
+    """
+    def edge_pts(a: float, k: int = 5) -> np.ndarray:
+        o = np.linspace(other[0], other[1], k)
+        uv = (np.column_stack([np.full(k, a), o]) if along_u
+              else np.column_stack([o, np.full(k, a)]))
+        return np.asarray(member.evaluate(uv), dtype=float)
+
+    def collapsed(a: float) -> np.ndarray | None:
+        p = edge_pts(a)
+        return p[0] if np.linalg.norm(p - p[0], axis=1).max() < 0.1 * tol_m \
+            else None
+
+    def thin_offset(a: float, pole: np.ndarray, sign: float) -> float:
+        # Start ~0.6 tol from the pole so a stale pole UV stays within the
+        # roundtrip gate, then widen (up to 1.5 tol) until neighbours on
+        # the row are clear of _weld's 0.1 tol radius: welded row vertices
+        # would reintroduce the single-UV fan this row exists to prevent.
+        h = (hi - lo) / n
+        for _ in range(40):
+            d = np.linalg.norm(edge_pts(a + sign * h) - pole, axis=1).max()
+            if d <= 0.75 * tol_m:
+                break
+            h *= max(0.6 * tol_m / d, 0.05)
+        q = edge_pts(a + sign * h, n_other + 1)
+        gap = float(np.linalg.norm(np.diff(q, axis=0), axis=1).min())
+        d = float(np.linalg.norm(q - pole, axis=1).max())
+        if 0.0 < gap < 0.2 * tol_m and d > 0.0:
+            h *= min(0.2 * tol_m / gap, 1.5 * tol_m / d)
+        return h
+
+    pole_lo, pole_hi = collapsed(lo), collapsed(hi)
+    start = lo if pole_lo is None else lo + thin_offset(lo, pole_lo, 1.0)
+    stop = hi if pole_hi is None else hi - thin_offset(hi, pole_hi, -1.0)
+    vals = list(np.linspace(start, stop, n + 1))
+    if pole_lo is not None:
+        vals.insert(0, lo)
+    if pole_hi is not None:
+        vals.append(hi)
+    return np.asarray(vals)
+
+
 def _facet_member(member: SurfaceParam, dom, tol_m: float):
     """Sample a member on a UV grid -> (pts (n,3), uvs (n,2), faces (m,3))."""
     (u0, u1), (v0, v1) = dom
     su, sv = member.uv_scale()
     edge = member.max_edge_m(tol_m)
+    if edge is not None:
+        # max_edge_m budgets the sag of one chord. A cell is split along
+        # its diagonal, and a triangle's interior sag is set by its
+        # circumdiameter (the hypotenuse, sqrt(2) x the cell side), so
+        # shrink the cell to keep interior sag within tol.
+        edge /= math.sqrt(2.0)
 
     def n_cells(span_m: float) -> int:
         if edge is None or edge <= 0.0:
@@ -68,8 +125,9 @@ def _facet_member(member: SurfaceParam, dom, tol_m: float):
         return int(np.clip(math.ceil(span_m / edge), 1, _MAX_GRID))
 
     nu, nv = n_cells((u1 - u0) * su), n_cells((v1 - v0) * sv)
-    us = np.linspace(u0, u1, nu + 1)
-    vs = np.linspace(v0, v1, nv + 1)
+    us = _grid_lines(member, u0, u1, nu, (v0, v1), nv, True, tol_m)
+    vs = _grid_lines(member, v0, v1, nv, (u0, u1), nu, False, tol_m)
+    nu, nv = len(us) - 1, len(vs) - 1
     uu, vv = np.meshgrid(us, vs, indexing="ij")
     uvs = np.column_stack([uu.ravel(), vv.ravel()])
     pts = np.asarray(member.evaluate(uvs), dtype=float)
