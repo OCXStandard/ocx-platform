@@ -158,6 +158,17 @@ IOcxBuilder.build(root) → IrVessel   ← schema-neutral IR
 - Section type detection in `OcxV3Builder` uses `_SECTION_TYPE_MAP` (substring matching on lowercased class names). More-specific keys must precede any key that is a substring of them.
 - Geometry extraction uses `_pt`/`_vec` (unpack OCX `Point3D.coordinates`/`Vector3D.direction` lists into `IrPoint3D`/`IrVector3D`) and `_build_curve`/`_build_surface`, which dispatch on the lowercased OCX class name. The IR mirrors OCX field *semantics* but stays shallow — OCX wrapper elements (`SplitBy`, `TraceLine`, `MassProperties`, `XRefPlanes`, …) are flattened onto the parent IR object; deep sub-trees collapse to scalars/`Ref`s/id-lists/flat dicts.
 - OCX 3.2.0 renamed/restructured several elements (`PhysicalProperties`→`MassProperties`, `Material`→`Steel`/`Aluminium`, `Origin`→`PointOnSurface` on `Plane3D`, `Occurrence` `str_*Ref` names, `UnboundedGridRef`/`UnboundedSurfaceRef`). The builder always reads the 3.2.0 name first and falls back to the 3.1.0 name; the IR follows 3.2.0 shapes (`IrMassProperties`, `IrMaterial.material_type`, `IrPlane3D.point_on_surface`).
+- OCX 2.8.6 (legacy `http://data.dnvgl.com/Schemas/ocxXMLSchema` namespace) is
+  handled by `Ocx286Builder` in `builders/v286_builder.py`, registered as
+  `(2, 8)` with major-fallback `2`. Its element names are close enough to
+  3.1.0 that the inherited v3 logic reads them, but the 2.8.6 bindings declare
+  many fields as `List[...]` where 3.x has scalars; `Ocx286Builder.build`
+  first runs a generic in-place normalisation pass (unwrap any field that is
+  a list in 2.8.6 but a scalar in the 3.1.0 bindings), then delegates to the
+  v3 build. The 2.8.6 `FrameTables` wrapper on `CoordinateSystem` is
+  flattened by a small adapter. The vendored 2.8.6 XSD
+  (`schemas/ocx_286/`) has its single XSD-1.1 `xs:assert` stripped so it
+  compiles under lxml — see the README in that folder.
 
 ## Test fixtures and stubs
 
