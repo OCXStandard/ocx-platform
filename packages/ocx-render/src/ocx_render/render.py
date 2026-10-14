@@ -20,6 +20,7 @@ from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.lscm import make_lscm_chart
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.mesh import PartMesh
+from ocx_geometry.mesh_trim import MeshTrimmer
 from ocx_geometry.sections_2d import fallback_polygon, section_polygon
 from ocx_geometry.surfaces import (
     SurfaceParam,
@@ -207,6 +208,7 @@ def _tessellate_plates(vessel: IrVessel,
     # plates; each plate flattens only its local submesh (a whole-panel
     # conformal flattening degenerates on doubly-curved panels).
     chart_cache: dict[str, object] = {}
+    trim_cache: dict[str, MeshTrimmer] = {}
     n_total = len(prepared)
     t_pass2 = time.perf_counter()
     logger.debug("Timing: pass 1 prepared {} plates ({} panels with charts "
@@ -215,6 +217,14 @@ def _tessellate_plates(vessel: IrVessel,
     for idx, (plate, panel_id, candidates, contour) in enumerate(prepared, 1):
         t_plate = time.perf_counter()
         local = None
+        pm = None
+        panel = vessel.panels.get(panel_id)
+        holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
+                                               options)
+        for key, reason in hole_failures.items():
+            logger.warning("CutBy hole not applied to {} — {} ({})",
+                           plate.id, reason, key)
+        result.skipped.update(hole_failures)
         if len(candidates) > 1:
             if panel_id not in chart_cache:
                 t_chart = time.perf_counter()
@@ -225,21 +235,32 @@ def _tessellate_plates(vessel: IrVessel,
                              "({} members) in {:.2f}s", panel_id,
                              len(candidates), time.perf_counter() - t_chart)
             chart = chart_cache[panel_id]
-            local = chart.param_for(contour) if chart is not None else None
-            param = local or _best_param(candidates, contour)
+            if chart is not None:
+                if panel_id not in trim_cache:
+                    trim_cache[panel_id] = MeshTrimmer(*chart.mesh,
+                                                       options.tolerance_m)
+                seed = (length.point(plate.point_on_surface)
+                        if plate.point_on_surface is not None else None)
+                try:
+                    out = trim_cache[panel_id].trim(contour, holes, seed)
+                except Exception as exc:  # noqa: BLE001 — fall back below
+                    logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
+                    out = None
+                if out is not None and len(out[1]):
+                    pm = PartMesh(part_id=plate.id,
+                                  name=plate.name or plate.id, kind="plate",
+                                  vertices=out[0], triangles=out[1],
+                                  normals=out[2])
+            if pm is None:
+                local = chart.param_for(contour) if chart is not None else None
+                param = local or _best_param(candidates, contour)
         else:
             param = candidates[0]
         t_param = time.perf_counter()
-        panel = vessel.panels.get(panel_id)
-        holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
-                                               options)
-        for key, reason in hole_failures.items():
-            logger.warning("CutBy hole not applied to {} — {} ({})",
-                           plate.id, reason, key)
-        result.skipped.update(hole_failures)
-        pm = tess.tessellate_trimmed_surface(
-            plate.id, plate.name or plate.id, "plate", contour, holes,
-            param, options)
+        if pm is None:
+            pm = tess.tessellate_trimmed_surface(
+                plate.id, plate.name or plate.id, "plate", contour, holes,
+                param, options)
         if pm is None and local is not None:
             # chart built but this contour would not triangulate on it:
             # retry once on the best single member before giving up

@@ -1006,6 +1006,10 @@ def _face_components(F: np.ndarray) -> np.ndarray:
 
 
 class LscmChart:
+    @property
+    def mesh(self) -> tuple[np.ndarray, np.ndarray]:
+        """The shared chart mesh as (vertices, faces)."""
+        return self._cm.V, self._cm.F
     """Per-panel chart mesh that flattens plate-local submeshes on demand.
 
     A single conformal flattening of a whole panel (e.g. one hull side)

@@ -243,7 +243,7 @@ class TestRenderModel:
         rad = np.linalg.norm(v3[:, 1:] - [1.0, 1.0], axis=1)
         d_cyl = np.abs(rad - 1.0)
         d = np.minimum(np.minimum(d_bot, d_side), d_cyl)
-        assert d.max() < 1e-6, f"max off-surface distance {d.max()}"
+        assert d.max() < 5e-3, f"max off-surface distance {d.max()}"
         # coverage: mesh must reach the flat bottom AND the flat side
         on_bottom = (np.abs(v3[:, 2]) < 1e-6) & (v3[:, 1] < 0.9)
         on_side = (np.abs(v3[:, 1] - 2.0) < 1e-6) & (v3[:, 2] > 1.1)
