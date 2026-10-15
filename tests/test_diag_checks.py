@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from ocx_diagnose.analyse import analyse_model
 from ocx_diagnose.checks import (
     chart_distortion,
     mesh_health,
@@ -7,7 +8,6 @@ from ocx_diagnose.checks import (
     snap_vectors,
     surface_deviation,
 )
-from ocx_diagnose.analyse import analyse_model
 from ocx_geometry.surfaces import PlaneParam
 
 from tests.test_render_model import make_vessel
@@ -60,3 +60,14 @@ def test_chart_distortion_flags_flipped_triangle():
     assert d.flipped.sum() >= 1 and 0 < d.flipped_frac <= 1
     ok = chart_distortion(V, F, V[:, :2])
     assert ok.flipped.sum() == 0 and ok.spread_max == pytest.approx(1.0)
+
+
+def test_analyse_model_returns_panel_and_plate_results_and_sweep():
+    res = analyse_model(make_vessel(), {"pan1"}, 50.0, [25.0, 100.0])
+    assert [p.panel_id for p in res] == ["pan1"]
+    pr = res[0].plates[0]
+    assert pr.plate_id == "pl1" and pr.route == "single"
+    assert pr.dev_max_m is not None and pr.dev_max_m <= 0.05 * 2
+    assert [s.tol_mm for s in res[0].sweep] == [25.0, 100.0]
+    assert res[0].sweep[0].triangles >= res[0].sweep[1].triangles
+    assert res[0].tol_m == pytest.approx(0.05)
