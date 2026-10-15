@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 
@@ -14,6 +15,8 @@ class TessellationOptions:
     """Controls tessellation density and contour repair."""
     tolerance_m: float = 0.05        # linear deflection (metres); default 50 mm
     snap_tolerance_m: float = 0.01   # max contour gap snapped shut (metres)
+    diag: Any = None                 # optional ocx_geometry.diagnostics.DiagSink
+    only_panels: frozenset[str] | None = None  # restrict plates to these panel ids
 
 
 @dataclass
