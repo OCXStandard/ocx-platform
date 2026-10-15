@@ -25,6 +25,10 @@ making downstream tools independent of any particular OCX schema version.
   compartments and scantling write-back to LLM clients
 - **XSD schema validation** (`validator validate schema`): offline validation
   against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
+- **3-D rendering** (`ocx-render`): tessellates the model to a GLB plus a
+  self-contained HTML viewer. Multi-member shell panels are built from one
+  shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);
+  `--log-level DEBUG` prints per-stage timings
 
 ---
 
@@ -175,6 +179,9 @@ validator report all          model.3docx --destination report.md
 # model.validation.json + model.validation.html beside the model)
 validator validate schema model.3docx
 validator validate schema model.3docx --max-errors 100
+
+# tessellate to GLB + HTML viewer (DEBUG log shows timing per stage)
+ocx-render model.3docx --destination out.glb --log-level DEBUG [--tolerance MM] [--no-html]
 
 # generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs
