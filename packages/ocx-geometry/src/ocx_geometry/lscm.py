@@ -32,6 +32,7 @@ from ocx_geometry.surfaces import PlaneParam, SurfaceParam, _member_fit
 
 _MAX_GRID = 96            # max facet cells per axis per member
 _SLIVER_HALF_WIDTH_M = 1.0  # plane trim regions thinner than 2x this are suspect
+_SLIVER_SEAM_M = 0.3        # ...but strips narrower than this are kept
 _SLIVER_SUPPORT_M = 2.0     # ...and dropped when farther than this from any hint
 _MAX_SCALE_RATIO = 100.0  # reject charts with larger per-triangle scale spread
 _MAX_FLIPPED = 0.005      # tolerated fraction of flipped UV triangles
@@ -172,7 +173,11 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float,
             opened = hull.buffer(-_SLIVER_HALF_WIDTH_M).buffer(_SLIVER_HALF_WIDTH_M)
             if opened.area > 1e-12:
                 thin = hull.difference(opened.buffer(1e-6))
+                # Strips narrower than _SLIVER_SEAM_M fill the gap between a
+                # bounded patch and the centreline/keel and are real surface.
                 unsupported = thin.difference(mp.buffer(_SLIVER_SUPPORT_M))
+                unsupported = unsupported.buffer(
+                    -0.5 * _SLIVER_SEAM_M).buffer(0.5 * _SLIVER_SEAM_M)
                 hull = hull.difference(unsupported.buffer(1e-6))
     else:
         try:
@@ -256,7 +261,7 @@ def _plane_exclusion(member: PlaneParam, members: list[SurfaceParam],
         gap = np.linalg.norm(member.evaluate(local) - pts[boundary], axis=1)
         alignment = np.abs(np.einsum(
             "ij,ij->i", member.normals(local), members[k].normals(uv[boundary])))
-        touching = (gap <= tol_m) & (alignment > 0.9)
+        touching = (gap <= tol_m) & (alignment > 0.5)
         if np.count_nonzero(touching) < 2:
             continue
         seams.append(local[touching])
