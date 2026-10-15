@@ -10,6 +10,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "ocx-diagnose",
     "ocx-geometry",
     "ocx-model-core",
     "ocx-model-validator",
@@ -728,6 +729,15 @@ wheels = [
 ]
 
 [[package]]
+name = "narwhals"
+version = "2.27.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/21/f64d6b2dbea7bf3f8c38cdc786dcc6ef012ca3d173ad208c782c9a7bedf6/narwhals-2.27.1.tar.gz", hash = "sha256:aed93076a3ea42d9c32c88e4eb5ea422a21937011cbe1f480f9572a523c82094", size = 735013, upload-time = "2026-10-10T06:52:18.113Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl", hash = "sha256:d057df13f5852b8e157596e82eb5e955fad267425df5e420e0ee9863da483b31", size = 483211, upload-time = "2026-10-10T06:52:16.32Z" },
+]
+
+[[package]]
 name = "networkx"
 version = "3.7"
 source = { registry = "https://pypi.org/simple" }
@@ -829,6 +839,35 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8f/68/9d56ed83472d02a4bfca6130288c52c90df96d7a2325729273c249971b55/ocx-3.2.0.tar.gz", hash = "sha256:a370d46051c7951e9bddb2843e5cc21fbc616627765a7ec5eb25f0aa0ca10d7e", size = 820006, upload-time = "2026-08-12T11:38:45.812Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/9a/67a11ec88a484cb5ede4ffd06f196729bd269b723663adeb75d3c60b8642/ocx-3.2.0-py3-none-any.whl", hash = "sha256:5103b862ca89e3143be92c80c7f598354b452565906d260a9b35d01da06c5926", size = 840764, upload-time = "2026-08-12T11:38:44.115Z" },
+]
+
+[[package]]
+name = "ocx-diagnose"
+version = "0.1.0"
+source = { editable = "packages/ocx-diagnose" }
+dependencies = [
+    { name = "loguru" },
+    { name = "numpy" },
+    { name = "ocx-geometry" },
+    { name = "ocx-model-core" },
+    { name = "ocx-render" },
+    { name = "plotly" },
+    { name = "scipy" },
+    { name = "trimesh" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "loguru", specifier = ">=0.7" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "ocx-geometry", editable = "packages/ocx-geometry" },
+    { name = "ocx-model-core", editable = "packages/ocx-model-core" },
+    { name = "ocx-render", editable = "packages/ocx-render" },
+    { name = "plotly", specifier = ">=5.20" },
+    { name = "scipy", specifier = ">=1.11" },
+    { name = "trimesh", specifier = ">=4.0" },
+    { name = "typer", specifier = ">=0.9" },
 ]
 
 [[package]]
@@ -971,6 +1010,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/17/c8/721b3855fe457da514fe249247d404b9b39c5d16532278f70ebaa6acf18b/platformdirs-4.12.2.tar.gz", hash = "sha256:eab5f70271a490ef74618bb314fbb86e3c7e82fa3b9c922c2ea0e0a1a155d329", size = 59353, upload-time = "2026-09-29T18:27:56.009Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/89/446044f33aba0348d35e433f56d12206d010a5281a1df54054d4cfb82388/platformdirs-4.12.2-py3-none-any.whl", hash = "sha256:29dbf06d96c500bc6bdbce75fb0a14d63279c93b1842f97e72a135b33e856983", size = 32457, upload-time = "2026-09-29T18:27:54.43Z" },
+]
+
+[[package]]
+name = "plotly"
+version = "7.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "narwhals" },
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/c3/72b369f5ed7701b04ab0ea3dcf83e9bbce71c0b3bc6f07f87568550d09ea/plotly-7.1.0.tar.gz", hash = "sha256:f860166a4a3d78c69cb1f4a15f28a5c8283eade98a282a698f3bb853a449ace5", size = 6689315, upload-time = "2026-09-15T19:21:21.75Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl", hash = "sha256:dbb7fa18afce40d0a8e80d1bf162eceb3faa0ce5a77fe741ad09a74cf78f53f3", size = 9692368, upload-time = "2026-09-15T19:21:18.331Z" },
 ]
 
 [[package]]
