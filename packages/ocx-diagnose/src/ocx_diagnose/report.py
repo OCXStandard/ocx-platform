@@ -77,7 +77,9 @@ def plate_section(pr, tol_m: float) -> str:
         pts = V[F].mean(axis=1)
         if len(pts) > _MAX_DEV_POINTS:
             pts = pts[np.linspace(0, len(pts) - 1, _MAX_DEV_POINTS).astype(int)]
-        figs.append(fg.deviation_fig(pts, surface_deviation(pts, pd.candidates), tol_m))
+        figs.append(fg.deviation_fig(
+            pts, surface_deviation(pts, pd.candidates, max_samples=len(pts),
+                              chart=pd.chart), tol_m))
     if len(F):
         figs.append(fg.edges_fig(V, F))
     if pr.route == "lscm" and pd.local_param is not None:
@@ -169,3 +171,4 @@ def write_json(results, path) -> None:
             "sweep": [asdict(s) for s in panel.sweep],
         }
     Path(path).write_text(json.dumps(data, indent=2, default=float), encoding="utf-8")
+

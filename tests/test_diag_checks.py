@@ -71,3 +71,30 @@ def test_analyse_model_returns_panel_and_plate_results_and_sweep():
     assert [s.tol_mm for s in res[0].sweep] == [25.0, 100.0]
     assert res[0].sweep[0].triangles >= res[0].sweep[1].triangles
     assert res[0].tol_m == pytest.approx(0.05)
+
+
+class _CountingPlane(PlaneParam):
+    calls = 0
+
+    def inverse(self, pts):
+        type(self).calls += 1
+        return super().inverse(pts)
+
+
+def test_deviation_with_chart_only_queries_nearby_members():
+    from ocx_geometry.diagnostics import ChartDiag
+    n = 300
+    members = [_CountingPlane(np.array([0.0, 0.0, float(k)]), np.array([0.0, 0.0, 1.0]))
+               for k in range(n)]
+    V = np.vstack([[[0, 0, k], [1, 0, k], [0, 1, k]] for k in range(n)]).astype(float)
+    F = np.arange(3 * n).reshape(n, 3)
+    chart = ChartDiag(V=V, F=F, tri_member=np.arange(n))
+    pts = np.array([[0.2, 0.2, 5.01], [0.2, 0.2, 40.0]])
+    _CountingPlane.calls = 0
+    full = surface_deviation(pts, members)
+    full_calls = _CountingPlane.calls
+    _CountingPlane.calls = 0
+    fast = surface_deviation(pts, members, chart=chart)
+    assert np.allclose(fast, full)
+    assert _CountingPlane.calls < full_calls / 5
+

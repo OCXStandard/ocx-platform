@@ -300,6 +300,7 @@ def _tessellate_plates(vessel: IrVessel,
         if pdiag is not None:
             pdiag.route = route
             pdiag.local_param = local
+            pdiag.chart = sink.charts.get(panel_id)
             pdiag.seconds = time.perf_counter() - t_plate
         logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
                      "(elapsed {:.0f}s)", idx, n_total, plate.id,

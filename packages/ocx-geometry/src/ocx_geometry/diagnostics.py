@@ -40,6 +40,7 @@ class PlateDiag:
     local_param: Any = None         # LscmParam of the flattened submesh
     candidates: list = field(default_factory=list)  # exact SurfaceParam members
     contour: np.ndarray | None = None
+    chart: Any = None               # ChartDiag of the panel (multi-member panels)
     seconds: float = 0.0
 
 

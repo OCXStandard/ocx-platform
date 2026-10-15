@@ -43,8 +43,9 @@ def deviations(result, sink: DiagSink) -> np.ndarray:
     for m in plate_meshes(result, sink):
         if len(m.triangles) == 0:
             continue
-        d = surface_deviation(m.vertices[m.triangles].mean(axis=1),
-                              sink.plates[m.part_id].candidates)
+        pd = sink.plates[m.part_id]
+        d = surface_deviation(m.vertices[m.triangles].mean(axis=1), pd.candidates,
+                              chart=pd.chart)
         parts.append(d[np.isfinite(d)])
     return np.concatenate(parts) if parts else np.zeros(0)
 

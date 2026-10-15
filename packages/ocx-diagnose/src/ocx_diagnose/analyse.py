@@ -56,7 +56,8 @@ class PanelResult:
 
 def _plate_result(m: PartMesh, pd: PlateDiag, overlap: dict, tol_m: float) -> PlateResult:
     V, F = m.vertices, m.triangles
-    dev = surface_deviation(V[F].mean(axis=1), pd.candidates) if len(F) else np.zeros(0)
+    dev = (surface_deviation(V[F].mean(axis=1), pd.candidates, chart=pd.chart)
+           if len(F) else np.zeros(0))
     dev = dev[np.isfinite(dev)]
     dev_mean = float(dev.mean()) if len(dev) else None
     dev_max = float(dev.max()) if len(dev) else None
