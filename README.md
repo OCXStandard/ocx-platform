@@ -29,6 +29,10 @@ making downstream tools independent of any particular OCX schema version.
   self-contained HTML viewer. Multi-member shell panels are built from one
   shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);
   `--log-level DEBUG` prints per-stage timings
+- **Render diagnostics** (`ocx-diagnose`): runs the render with diagnostic
+  hooks and writes an interactive HTML report (plotly.js embedded) plus optional
+  JSON: per-plate route, mesh health, surface deviation, neighbour gaps/overlaps,
+  chart distortion and a tolerance sweep
 
 ---
 
@@ -182,6 +186,10 @@ validator validate schema model.3docx --max-errors 100
 
 # tessellate to GLB + HTML viewer (DEBUG log shows timing per stage)
 ocx-render model.3docx --destination out.glb --log-level DEBUG [--tolerance MM] [--no-html]
+
+# diagnose the render: HTML report (+ JSON), optional tolerance sweep in mm
+ocx-diagnose model.3docx [--panel ID] [--tolerance 50] [--tolerance-sweep 25,50,100] \
+    [--report out.html] [--json out.json] [--max-plates 12]
 
 # generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs
