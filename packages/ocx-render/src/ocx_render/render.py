@@ -16,6 +16,7 @@ from ocx_geometry.backend import (
     TessellationOptions,
 )
 from ocx_geometry.curves import sample_contour, sample_curve
+from ocx_geometry.diagnostics import PlateDiag
 from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.lscm import make_lscm_chart
 from ocx_geometry.measure import LengthResolver
@@ -189,6 +190,8 @@ def _tessellate_plates(vessel: IrVessel,
         if panel_id is None:
             result.skipped[plate.id] = "not parented to a panel"
             continue
+        if options.only_panels is not None and panel_id not in options.only_panels:
+            continue
         candidates = params.get(panel_id) or []
         if not candidates:
             result.skipped[plate.id] = "no resolvable panel surface"
@@ -216,6 +219,14 @@ def _tessellate_plates(vessel: IrVessel,
                  sum(1 for p in prepared if len(p[2]) > 1))
     for idx, (plate, panel_id, candidates, contour) in enumerate(prepared, 1):
         t_plate = time.perf_counter()
+        sink = options.diag
+        pdiag = None
+        if sink is not None:
+            pdiag = PlateDiag(plate_id=plate.id, panel_id=panel_id,
+                              candidates=list(candidates), contour=contour,
+                              max_snap_m=max(30.0 * options.tolerance_m, 1.5))
+            sink.plates[plate.id] = pdiag
+        route = "single"
         local = None
         pm = None
         panel = vessel.panels.get(panel_id)
@@ -251,9 +262,11 @@ def _tessellate_plates(vessel: IrVessel,
                                   name=plate.name or plate.id, kind="plate",
                                   vertices=out[0], triangles=out[1],
                                   normals=out[2])
+                    route = "mesh-trim"
             if pm is None:
                 local = chart.param_for(contour) if chart is not None else None
                 param = local or _best_param(candidates, contour)
+                route = "lscm" if local is not None else "best-member"
         else:
             param = candidates[0]
         t_param = time.perf_counter()
@@ -267,6 +280,7 @@ def _tessellate_plates(vessel: IrVessel,
             pm = tess.tessellate_trimmed_surface(
                 plate.id, plate.name or plate.id, "plate", contour, holes,
                 _best_param(candidates, contour), options)
+            route = "best-member"
         if pm is None:
             result.skipped[plate.id] = "triangulation failed"
             continue
@@ -274,6 +288,10 @@ def _tessellate_plates(vessel: IrVessel,
                           "kind": "plate", "functionType": plate.function_type,
                           "panel_id": panel_id})
         result.meshes.append(pm)
+        if pdiag is not None:
+            pdiag.route = route
+            pdiag.local_param = local
+            pdiag.seconds = time.perf_counter() - t_plate
         logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
                      "(elapsed {:.0f}s)", idx, n_total, plate.id,
                      t_param - t_plate, time.perf_counter() - t_plate,
@@ -332,6 +350,8 @@ def render_model(vessel: IrVessel,
 
     params: dict[str, list[SurfaceParam]] = {}
     for pid, panel in vessel.panels.items():
+        if options.only_panels is not None and pid not in options.only_panels:
+            continue
         surfs = _resolve_panel_surfaces(panel, vessel)
         built = (make_param(s, length, options.tolerance_m) for s in surfs)
         params[pid] = [p for p in built if p is not None]
