@@ -482,7 +482,7 @@ class MeshTrimmer:
 
     # -- public --------------------------------------------------------
     def trim(self, outer: np.ndarray, holes: list[np.ndarray],
-             seed: np.ndarray | None = None):
+             seed: np.ndarray | None = None, diag=None):
         """Region of the mesh inside ``outer`` and outside ``holes``.
 
         Returns ``(vertices, triangles, normals)`` or ``None`` when the
@@ -490,12 +490,18 @@ class MeshTrimmer:
         """
         max_snap = max(30.0 * self._tol, 1.5)
         state, snap = self._cut(self._mesh, outer, seed, max_snap)
+        if diag is not None:
+            diag.snap_m = float(snap)
         if state is None:
+            if diag is not None:
+                diag.trim_reject = "outer ring unusable"
             logger.debug("Mesh trim: outer ring unusable (snap {:.3f} m)",
                          snap)
             return None
         mesh = self._assemble(self._mesh, state)
         if mesh is None:
+            if diag is not None:
+                diag.trim_reject = "assembly failed"
             return None
         for h in holes:
             if len(h) < 3:

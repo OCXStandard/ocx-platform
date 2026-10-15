@@ -488,7 +488,7 @@ def _zip_boundaries(V: np.ndarray, F: np.ndarray, src: list[dict],
 
 def _build_mesh(members: list[SurfaceParam], tol_m: float,
                 hint_pts: np.ndarray | None,
-                require_connected: bool = True) -> _ChartMesh | None:
+                require_connected: bool = True, diag=None) -> _ChartMesh | None:
     weld_tol = max(1e-6, 0.1 * tol_m)
     on_tol = max(10.0 * weld_tol, tol_m)
     # Assign each hint point to its best-fitting member (ties shared):
@@ -577,8 +577,10 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
         faces_all.append(faces + offset)
         offset += len(pts)
     V = np.vstack(pts_all)
+    n_pre = len(V)
     F = np.vstack(faces_all)
     V, src, remap = _weld(V, src_all, weld_tol)
+    n_post = len(V)
     F = remap[F]
     # drop degenerate triangles produced by welding before stitching, so
     # collapsed faces cannot mask genuine boundary edges from the stitcher
@@ -588,7 +590,9 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
         F = F[np.linalg.norm(n, axis=1) > 1e-14]
     # snap: half the tolerance band — seam edges sampled at different
     # densities deviate by the chord sag of the coarser side
+    b0 = len(_boundary_edges(F)) if diag is not None else 0
     F = _stitch(V, F, src, max(weld_tol, 0.5 * tol_m))
+    b1 = len(_boundary_edges(F)) if diag is not None else 0
     # drop degenerate triangles
     F = F[(F[:, 0] != F[:, 1]) & (F[:, 1] != F[:, 2]) & (F[:, 2] != F[:, 0])]
     if len(F):
@@ -621,7 +625,15 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
     mesh = trimesh.Trimesh(V, F, process=False)
     trimesh.repair.fix_normals(mesh)
     F = np.asarray(mesh.faces, dtype=int)
-    return _ChartMesh(V, F, src, _tri_members(F, src))
+    cm = _ChartMesh(V, F, src, _tri_members(F, src))
+    if diag is not None:
+        diag.n_members = len(members)
+        diag.members_used = sorted(pieces)
+        diag.verts_before_weld, diag.verts_after_weld = n_pre, n_post
+        diag.boundary_edges_before_stitch = b0
+        diag.boundary_edges_after_stitch = b1
+        diag.V, diag.F, diag.tri_member = cm.V, cm.F, cm.tri_member
+    return cm
 
 
 def _tri_members(F: np.ndarray, src: list[dict]) -> np.ndarray:
@@ -741,6 +753,11 @@ class LscmParam(SurfaceParam):
         self._uv = uv
         self._mesh = trimesh.Trimesh(self._V, self._F, process=False)
         self._tree = STRtree([shapely.Polygon(t) for t in uv[self._F]])
+
+    @property
+    def chart(self):
+        """(vertices, faces, metric uv) of the flattened submesh."""
+        return self._V, self._F, self._uv
 
     def trimmed_regions(self, polygon: shapely.Geometry) -> Iterator[
         tuple[SurfaceParam, np.ndarray, list[np.ndarray], np.ndarray]
@@ -1041,6 +1058,7 @@ class LscmChart:
         self.members = members
         self._cm = cm
         self._tol = tol_m
+        self.last_stage: str | None = None
         self._cent = cm.V[cm.F].mean(axis=1)
         self._ctree = cKDTree(self._cent)
         self._adj = self._face_adjacency()
@@ -1095,6 +1113,7 @@ class LscmChart:
 
     def param_for(self, contour: np.ndarray) -> LscmParam | None:
         """Metric chart over the submesh around one plate contour."""
+        self.last_stage = None
         try:
             contour = np.asarray(contour, dtype=float)
             if contour.ndim != 2 or len(contour) < 3:
@@ -1305,6 +1324,7 @@ class LscmChart:
 
             sub = fresh()
             param = validated(sub, _flatten_gates(sub))
+            self.last_stage = "gates" if param is not None else None
             if param is None:
                 # conformal flattening folded or wrapped: retry without
                 # rejection gates — flips between welded coincident
@@ -1315,6 +1335,7 @@ class LscmChart:
                     uv = _apply_gates(sub, uv, scale_gate=False,
                                       reject=False)
                 param = validated(sub, uv)
+                self.last_stage = "no-gates" if param is not None else None
             if param is None:
                 # last resort: Tutte embedding — injective on disk
                 # topology, so the chart still tracks, less isometric
@@ -1324,6 +1345,7 @@ class LscmChart:
                     uv = _apply_gates(sub, uv, scale_gate=False,
                                       reject=False)
                 param = validated(sub, uv)
+                self.last_stage = "tutte" if param is not None else None
             return param
         except Exception as exc:  # noqa: BLE001 — chart disqualifies itself
             logger.debug("LSCM plate chart failed: {}", exc)
@@ -1331,11 +1353,13 @@ class LscmChart:
 
 
 def make_lscm_chart(members: list[SurfaceParam], tol_m: float,
-                    hint_pts: np.ndarray | None = None) -> LscmChart | None:
+                    hint_pts: np.ndarray | None = None,
+                    diag=None) -> LscmChart | None:
     """Chart mesh over collection members for per-plate flattening, or
     None if no usable mesh can be built."""
     try:
-        cm = _build_mesh(members, tol_m, hint_pts, require_connected=False)
+        cm = _build_mesh(members, tol_m, hint_pts, require_connected=False,
+                         diag=diag)
         if cm is None:
             return None
         return LscmChart(members, cm, tol_m)

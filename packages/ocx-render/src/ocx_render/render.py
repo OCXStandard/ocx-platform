@@ -16,7 +16,7 @@ from ocx_geometry.backend import (
     TessellationOptions,
 )
 from ocx_geometry.curves import sample_contour, sample_curve
-from ocx_geometry.diagnostics import PlateDiag
+from ocx_geometry.diagnostics import ChartDiag, PlateDiag
 from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.lscm import make_lscm_chart
 from ocx_geometry.measure import LengthResolver
@@ -239,9 +239,13 @@ def _tessellate_plates(vessel: IrVessel,
         if len(candidates) > 1:
             if panel_id not in chart_cache:
                 t_chart = time.perf_counter()
+                cdiag = (sink.charts.setdefault(panel_id, ChartDiag())
+                         if sink is not None else None)
                 chart_cache[panel_id] = make_lscm_chart(
                     candidates, options.tolerance_m,
-                    np.vstack(hints[panel_id]))
+                    np.vstack(hints[panel_id]), diag=cdiag)
+                if cdiag is not None:
+                    cdiag.build_s = time.perf_counter() - t_chart
                 logger.debug("Timing: LSCM chart for panel {} "
                              "({} members) in {:.2f}s", panel_id,
                              len(candidates), time.perf_counter() - t_chart)
@@ -253,9 +257,12 @@ def _tessellate_plates(vessel: IrVessel,
                 seed = (length.point(plate.point_on_surface)
                         if plate.point_on_surface is not None else None)
                 try:
-                    out = trim_cache[panel_id].trim(contour, holes, seed)
+                    out = trim_cache[panel_id].trim(contour, holes, seed,
+                                                    diag=pdiag)
                 except Exception as exc:  # noqa: BLE001 — fall back below
                     logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
+                    if pdiag is not None:
+                        pdiag.trim_reject = f"exception: {exc}"
                     out = None
                 if out is not None and len(out[1]):
                     pm = PartMesh(part_id=plate.id,
@@ -265,6 +272,8 @@ def _tessellate_plates(vessel: IrVessel,
                     route = "mesh-trim"
             if pm is None:
                 local = chart.param_for(contour) if chart is not None else None
+                if pdiag is not None and chart is not None:
+                    pdiag.chart_stage = chart.last_stage
                 param = local or _best_param(candidates, contour)
                 route = "lscm" if local is not None else "best-member"
         else:
