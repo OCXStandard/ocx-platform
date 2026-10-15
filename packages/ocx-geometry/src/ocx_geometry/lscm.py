@@ -31,6 +31,8 @@ from shapely.strtree import STRtree
 from ocx_geometry.surfaces import PlaneParam, SurfaceParam, _member_fit
 
 _MAX_GRID = 96            # max facet cells per axis per member
+_SLIVER_HALF_WIDTH_M = 1.0  # plane trim regions thinner than 2x this are suspect
+_SLIVER_SUPPORT_M = 2.0     # ...and dropped when farther than this from any hint
 _MAX_SCALE_RATIO = 100.0  # reject charts with larger per-triangle scale spread
 _MAX_FLIPPED = 0.005      # tolerated fraction of flipped UV triangles
 _STITCH_PASSES = 32
@@ -162,6 +164,16 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float,
         # concave hull cuts into real plate interiors. Bounded patches
         # supply the seam silhouette, rather than inferred indentations.
         hull = mp.convex_hull.difference(excluded)
+        if isinstance(member, PlaneParam):
+            # Between a flat part and a tangent contact line the convex
+            # hull leaves a thin tapering strip over surface that does not
+            # exist (e.g. a keel line under a bulb). Drop thin parts that
+            # lack nearby hint support.
+            opened = hull.buffer(-_SLIVER_HALF_WIDTH_M).buffer(_SLIVER_HALF_WIDTH_M)
+            if opened.area > 1e-12:
+                thin = hull.difference(opened.buffer(1e-6))
+                unsupported = thin.difference(mp.buffer(_SLIVER_SUPPORT_M))
+                hull = hull.difference(unsupported.buffer(1e-6))
     else:
         try:
             hull = shapely.concave_hull(mp, ratio=0.3)
