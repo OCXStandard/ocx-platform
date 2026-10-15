@@ -81,6 +81,14 @@ def _densify(ring: np.ndarray, step: float) -> np.ndarray:
     return np.vstack(out)
 
 
+def _is_ring_vertex(pts: np.ndarray, ring: np.ndarray) -> np.ndarray:
+    ring = np.asarray(ring, dtype=float)
+    if len(ring) > 1 and np.allclose(ring[0], ring[-1]):
+        ring = ring[:-1]
+    return np.isin(np.round(pts, 9).view([("", float)] * 3).ravel(),
+                   np.round(ring, 9).view([("", float)] * 3).ravel())
+
+
 def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
     """Snap a closed ring onto the mesh and cut it at triangle borders.
 
@@ -88,6 +96,7 @@ def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
     the 3-D segments of the ring inside that face, in ring direction.
     """
     pts = _densify(ring, step)
+    orig = _is_ring_vertex(pts, ring)
     snapped = dist = tri = None
     for _ in range(_MAX_REFINE):
         snapped, dist, tri = trimesh.proximity.closest_point(mesh.tm, pts)
@@ -107,6 +116,7 @@ def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
             break
         mid = 0.5 * (pts[bad] + pts[nxt[bad]])
         pts = np.insert(pts, bad + 1, mid, axis=0)
+        orig = np.insert(orig, bad + 1, False)
     segs: dict[int, list[tuple[np.ndarray, np.ndarray]]] = defaultdict(list)
     n = len(pts)
     span = float(np.ptp(mesh.V, axis=0).max())
@@ -147,7 +157,9 @@ def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
             d = d / ln
             segs[ti].append((a, a + d * span))
             segs[tj].append((b - d * span, b))
-    return segs, float(dist.max()) if len(dist) else 0.0
+    # chords between sparse samples may stray from the mesh on tight
+    # curvature; only the contour's own vertices must lie on it
+    return segs, float(dist[orig].max()) if orig.any() else 0.0
 
 
 def _on_edge(mesh: _Mesh, f: int, seg) -> tuple[int, int] | None:
@@ -476,7 +488,7 @@ class MeshTrimmer:
         Returns ``(vertices, triangles, normals)`` or ``None`` when the
         outer ring does not lie on the mesh.
         """
-        max_snap = max(10.0 * self._tol, 0.5)
+        max_snap = max(30.0 * self._tol, 1.5)
         state, snap = self._cut(self._mesh, outer, seed, max_snap)
         if state is None:
             logger.debug("Mesh trim: outer ring unusable (snap {:.3f} m)",
