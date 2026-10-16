@@ -38,3 +38,25 @@ def test_report_and_json_are_written_and_self_contained(tmp_path):
     assert data["pan1"]["plates"]["pl1"]["route"] == "single"
     assert len(data["pan1"]["sweep"]) == 2
 
+
+def test_report_and_json_include_findings(tmp_path):
+    from ocx_diagnose.advice import Finding
+
+    res = analyse_model(make_vessel(), {"pan1"}, 50.0, [])
+    f = Finding("overlap", "high", "plate", "pl1", "likely", "Plate overlaps",
+                "30000 faces", "double skin", ("mesh step",), ("source step",))
+    g = Finding("duplicate-members", "high", "panel", "pan1", "confirmed", "Duplicates",
+                "pairs #1/#2", "stacked", (), ("delete one",))
+    res[0].plates[0].findings = [f]
+    res[0].findings = [g]
+    html = tmp_path / "r.html"
+    js = tmp_path / "r.json"
+    write_report(res, html, max_plates=5, title="t")
+    write_json(res, js)
+    text = html.read_text(encoding="utf-8")
+    assert "Findings" in text and "Duplicates" in text and "delete one" in text
+    assert "Diagnosis" in text and "Improve the OCX source" in text and "mesh step" in text
+    data = json.loads(js.read_text(encoding="utf-8"))
+    assert data["pan1"]["findings"][0]["id"] == "duplicate-members"
+    assert data["pan1"]["plates"]["pl1"]["findings"][0]["id"] == "overlap"
+

@@ -16,7 +16,8 @@ from ocx_diagnose.checks import chart_distortion, surface_deviation
 _CSS = ("body{font-family:sans-serif;margin:1em}table{border-collapse:collapse;margin:.5em 0}"
         "td,th{border:1px solid #ccc;padding:2px 6px;font-size:12px}"
         ".tab{display:none}.tab.on{display:block}button.on{font-weight:bold}"
-        "details{margin:.5em 0}summary{cursor:pointer}")
+        "details{margin:.5em 0}summary{cursor:pointer}"
+        ".finding{margin:.4em 0;padding:.3em .6em;background:#fafafa;font-size:13px}")
 _fig_seq = 0
 _JS = ("function sync(){document.querySelectorAll('.lz').forEach(g=>{"
        "const vis=g.offsetParent!==null&&!g.closest('details:not([open])');"
@@ -57,6 +58,32 @@ def _table(headers, rows) -> str:
     body = "".join("<tr>" + "".join(f"<td>{_html.escape(_fmt(c))}</td>" for c in r) + "</tr>"
                    for r in rows)
     return f"<table><tr>{head}</tr>{body}</table>"
+
+
+_SEV_COLOUR = {"high": "#c0392b", "medium": "#e67e22", "low": "#7f8c8d"}
+
+
+def _finding_html(f) -> str:
+    def steps(title, items):
+        if not items:
+            return ""
+        lis = "".join(f"<li>{_html.escape(s)}</li>" for s in items)
+        return f"<b>{title}</b><ul>{lis}</ul>"
+
+    colour = _SEV_COLOUR.get(f.severity, "#555")
+    return (f'<div class="finding" style="border-left:4px solid {colour}">'
+            f"<b>[{_html.escape(f.severity.upper())}] {_html.escape(f.title)}</b> "
+            f"<i>({_html.escape(f.status)})</i>"
+            f"<div><b>Evidence:</b> {_html.escape(f.evidence)}</div>"
+            f"<div><b>Likely cause:</b> {_html.escape(f.cause)}</div>"
+            f"{steps('Improve the meshing', f.mesh_steps)}"
+            f"{steps('Improve the OCX source', f.source_steps)}</div>")
+
+
+def _findings_box(title: str, findings) -> str:
+    if not findings:
+        return ""
+    return f"<h3>{title}</h3>" + "".join(_finding_html(f) for f in findings)
 
 
 def _chart_counts(chart) -> dict:
@@ -102,14 +129,16 @@ def plate_section(pr, tol_m: float) -> str:
         figs.append(fg.chart_mesh_fig(Vc, Fc, d.spread, f"{pr.plate_id}: scale spread",
                                       flipped=d.flipped))
         figs.append(fg.uv_layout_fig(uv, Fc, d.flipped))
-    body = "".join(_fig_html(f) for f in figs)
-    label = f"{pr.plate_id} (score {pr.score:.3g}, route {pr.route})"
+    body = _findings_box("Diagnosis", pr.findings) + "".join(_fig_html(f) for f in figs)
+    n = len(pr.findings)
+    label = f"{pr.plate_id} (score {pr.score:.3g}, route {pr.route}, {n} findings)"
     return f"<details><summary>{_html.escape(label)}</summary>{body}</details>"
 
 
 def panel_section(panel, max_plates: int, tol_m: float) -> str:
     """Contents of one panel tab."""
     parts = [f"<h2>{_html.escape(panel.panel_id)}</h2>"]
+    parts.append(_findings_box("Findings", panel.findings))
     counts = _chart_counts(panel.chart)
     if counts:
         parts.append("<h3>Chart mesh</h3>")
@@ -147,9 +176,10 @@ def panel_section(panel, max_plates: int, tol_m: float) -> str:
 def _summary_row(panel) -> tuple:
     routes = ", ".join(f"{k}:{v}" for k, v in sorted(_route_counts(panel).items()))
     devs = [p.dev_max_m for p in panel.plates if p.dev_max_m is not None]
+    n_find = len(panel.findings) + sum(len(p.findings) for p in panel.plates)
     return (panel.panel_id, len(panel.plates), routes,
             max((p.score for p in panel.plates), default=None),
-            max(devs, default=None), "yes" if panel.sweep else "no")
+            max(devs, default=None), "yes" if panel.sweep else "no", n_find)
 
 
 def write_report(results, path, max_plates: int, title: str) -> None:
@@ -161,8 +191,9 @@ def write_report(results, path, max_plates: int, title: str) -> None:
     sections = "".join(
         f'<div class="tab" id="{tid}">{panel_section(p, max_plates, p.tol_m)}</div>'
         for tid, p in tabs)
-    summary = _table(("panel", "plates", "routes", "worst score", "max dev m", "sweep"),
-                     [_summary_row(p) for p in results])
+    summary = _table(("panel", "plates", "routes", "worst score",     "max dev m", "sweep",
+                          "findings"),
+                         [_summary_row(p) for p in results])
     first = f"show('{tabs[0][0]}');" if tabs else ""
     page = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<title>{_html.escape(title)}</title><style>{_CSS}</style>"
@@ -180,8 +211,10 @@ def write_json(results, path) -> None:
         data[panel.panel_id] = {
             "chart": _chart_counts(panel.chart),
             "plates": {p.plate_id: {**{k: getattr(p, k) for k in _PLATE_SCALARS},
-                                    "health": p.health}
+                                    "health": p.health,
+                                    "findings": [asdict(f) for f in p.findings]}
                        for p in panel.plates},
+            "findings": [asdict(f) for f in panel.findings],
             "sweep": [asdict(s) for s in panel.sweep],
         }
     Path(path).write_text(json.dumps(data, indent=2, default=float), encoding="utf-8")
