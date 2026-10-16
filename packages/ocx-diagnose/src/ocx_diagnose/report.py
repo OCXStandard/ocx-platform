@@ -19,10 +19,13 @@ _CSS = ("body{font-family:sans-serif;margin:1em}table{border-collapse:collapse;m
         "details{margin:.5em 0}summary{cursor:pointer}")
 _fig_seq = 0
 _JS = ("function sync(){document.querySelectorAll('.lz').forEach(g=>{"
-       "const vis=g.offsetParent!==null;"
+       "const vis=g.offsetParent!==null&&!g.closest('details:not([open])');"
        "if(vis&&!g.dataset.done){const d=JSON.parse(document.getElementById(g.id+'j')"
        ".textContent);Plotly.newPlot(g,d.data,d.layout,{responsive:true});g.dataset.done=1;}"
-       "else if(!vis&&g.dataset.done){Plotly.purge(g);g.dataset.done='';}});}"
+       "else if(!vis&&g.dataset.done){g.querySelectorAll('canvas').forEach(c=>{"
+       "const x=c.getContext('webgl')||c.getContext('webgl2');"
+       "const l=x&&x.getExtension('WEBGL_lose_context');if(l)l.loseContext();});"
+       "Plotly.purge(g);g.dataset.done='';}});}"
        "function show(id){document.querySelectorAll('.tab').forEach(e=>"
        "e.classList.toggle('on',e.id===id));document.querySelectorAll('button.tb')"
        ".forEach(b=>b.classList.toggle('on',b.dataset.t===id));sync();}"
