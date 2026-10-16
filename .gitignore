@@ -55,6 +55,11 @@ Stubs_Log.md
 .env.*
 
 # Renderer / report outputs
+out/
+models/**/*.glb
+models/**/*.html
+models/**/*.validation.json
+models/**/*_validation.md
 *.glb
 *.html
 
