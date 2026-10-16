@@ -46,7 +46,7 @@ def test_report_has_3d_model_tab_and_plate_links(tmp_path):
     text = html.read_text(encoding="utf-8")
     assert 'id="tabmodel"' in text and 'data-t="tabmodel"' in text
     assert 'data-plate="pl1"' in text and "View in 3D model" in text
-    assert '"name":"pl1"' in text  # one Mesh3d trace per plate, named by plate id
+    assert '"id":"pl1"' in text and "THREE.WebGLRenderer" in text  # embedded, offline viewer
 
 
 def test_report_and_json_include_findings(tmp_path):

@@ -1,6 +1,7 @@
 """Assemble the interactive HTML report and the JSON stats."""
 from __future__ import annotations
 
+import base64
 import html as _html
 import json
 from dataclasses import asdict
@@ -19,26 +20,22 @@ _CSS = ("body{font-family:sans-serif;margin:1em}table{border-collapse:collapse;m
         "details{margin:.5em 0}summary{cursor:pointer}"
         ".finding{margin:.4em 0;padding:.3em .6em;background:#fafafa;font-size:13px}")
 _fig_seq = 0
-_JS = ("function paint(data){const f=window.focused;data.forEach(t=>{const on=f&&t.name===f;"
-       "t.color=on?'#e00000':t.meta;t.opacity=f?(on?1:0.3):1;});}"
-       "function sync(){document.querySelectorAll('.lz').forEach(g=>{"
+_VENDOR = Path(__file__).parent / "vendor"
+_PALETTE = ("#4c78a8", "#59a14f", "#b8a04a", "#8e6bb0", "#46a6a6", "#a07850")
+_JS = ("function sync(){document.querySelectorAll('.lz').forEach(g=>{"
        "const vis=g.offsetParent!==null&&!g.closest('details:not([open])');"
        "if(vis&&!g.dataset.done){const d=JSON.parse(document.getElementById(g.id+'j')"
-       ".textContent);if(g.classList.contains('model'))paint(d.data);"
-       "Plotly.newPlot(g,d.data,d.layout,{responsive:true});g.dataset.done=1;"
-       "if(g.classList.contains('model'))g.on('plotly_click',e=>focusPlate(e.points[0].data.name));}"
+       ".textContent);Plotly.newPlot(g,d.data,d.layout,{responsive:true});g.dataset.done=1;}"
        "else if(!vis&&g.dataset.done){g.querySelectorAll('canvas').forEach(c=>{"
        "const x=c.getContext('webgl')||c.getContext('webgl2');"
        "const l=x&&x.getExtension('WEBGL_lose_context');if(l)l.loseContext();});"
        "Plotly.purge(g);g.dataset.done='';}});}"
        "function show(id){document.querySelectorAll('.tab').forEach(e=>"
        "e.classList.toggle('on',e.id===id));document.querySelectorAll('button.tb')"
-       ".forEach(b=>b.classList.toggle('on',b.dataset.t===id));sync();}"
-       "function focusPlate(p){window.focused=p||null;show('tabmodel');"
-       "const g=document.querySelector('.model');const f=window.focused;"
-       "if(g&&g.dataset.done){Plotly.restyle(g,{color:g.data.map(t=>f&&t.name===f?'#e00000':t.meta),"
-       "opacity:g.data.map(t=>f?(t.name===f?1:0.3):1)});}"
-       "const h=document.getElementById('hl');h.textContent=f?'Highlighted: '+f+' ':'';"
+       "       .forEach(b=>b.classList.toggle('on',b.dataset.t===id));sync();"
+              "if(id==='tabmodel')initViewer();}"
+              "function focusPlate(p,zoom){const f=p||null;show('tabmodel');viewerFocus(f,zoom!==false&&!!f);"
+              "const h=document.getElementById('hl');h.textContent=f?'Highlighted: '+f+' ':'';"
        "const d=f&&[...document.querySelectorAll('details[data-plate]')].find(x=>x.dataset.plate===f);"
        "if(d){const a=document.createElement('a');a.href='#';a.textContent='open its diagnosis';"
        "a.onclick=()=>{show(d.closest('.tab').id);d.open=true;sync();d.scrollIntoView();return false;};"
@@ -57,23 +54,41 @@ def _fmt(v) -> str:
     return f"{v:.4g}" if isinstance(v, float) else str(v)
 
 
-def _fig_html(fig, extra_class: str = "", height: int = 450) -> str:
+def _fig_html(fig) -> str:
     """Figure placeholder; _JS draws it lazily, since browsers cap live WebGL contexts."""
     global _fig_seq
     _fig_seq += 1
     data = fig.to_json().replace("</", "<\\/")
-    return (f'<div class="lz {extra_class}" id="fig{_fig_seq}" '
-            f'style="width:100%;height:{height}px"></div>'
+    return (f'<div class="lz" id="fig{_fig_seq}" style="width:100%;height:450px"></div>'
             f'<script type="application/json" id="fig{_fig_seq}j">{data}</script>')
 
 
+def _b64(a, dtype) -> str:
+    return base64.b64encode(np.ascontiguousarray(a, dtype=dtype).tobytes()).decode()
+
+
 def model_section(results) -> str:
-    """Contents of the 3-D model tab: every plate in one scene."""
-    plates = [(p.plate_id, panel.panel_id, p.mesh.vertices, p.mesh.triangles)
-              for panel in results for p in panel.plates]
-    return ("<h2>Rendered model</h2><p>Click a plate to highlight it. "
+    """3-D model tab: every plate as binary buffers for the embedded three.js viewer."""
+    colours: dict[str, str] = {}
+    plates = []
+    for panel in results:
+        col = colours.setdefault(panel.panel_id, _PALETTE[len(colours) % len(_PALETTE)])
+        for p in panel.plates:
+            if len(p.mesh.triangles):
+                plates.append({"id": p.plate_id, "panel": panel.panel_id, "color": col,
+                               "v": _b64(p.mesh.vertices, np.float32),
+                               "f": _b64(p.mesh.triangles, np.uint32)})
+    data = json.dumps({"plates": plates}, separators=(",", ":"))
+    return ("<h2>Rendered model</h2><p>Click a plate to highlight it; drag to orbit, "
+            "wheel to zoom, right-drag to pan. "
             '<span id="hl"></span> <button onclick="focusPlate(null)">Clear highlight</button></p>'
-            + _fig_html(fg.model_fig(plates), "model", 720))
+            '<div id="v3d" style="width:100%;height:720px;background:#f4f6fa"></div>'
+            f'<script type="application/json" id="v3dj">{data}</script>')
+
+
+def _viewer_js() -> str:
+    return "".join((_VENDOR / n).read_text(encoding="utf-8")
+                   for n in ("three.min.js", "OrbitControls.js", "viewer.js"))
 
 
 def _table(headers, rows) -> str:
@@ -228,7 +243,7 @@ def write_report(results, path, max_plates: int, title: str) -> None:
             f"<title>{_html.escape(title)}</title><style>{_CSS}</style>"
             f"<script>{plotly.offline.get_plotlyjs()}</script></head><body>"
             f"<h1>{_html.escape(title)}</h1>{summary}<div>{buttons}</div>{sections}"
-            f"<script>{_JS}{first}</script></body></html>")
+            f"<script>{_viewer_js()}</script><script>{_JS}{first}</script></body></html>")
     Path(path).write_text(page, encoding="utf-8")
     logger.info("Wrote report {} ({:.1f} MB)", path, len(page) / 1e6)
 
