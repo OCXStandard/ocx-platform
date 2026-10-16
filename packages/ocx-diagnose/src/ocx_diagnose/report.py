@@ -225,7 +225,21 @@ def _summary_row(panel) -> tuple:
             max(devs, default=None), "yes" if panel.sweep else "no", n_find)
 
 
-def write_report(results, path, max_plates: int, title: str) -> None:
+def header_html(header) -> str:
+    """Two-column table of the OCX <Header> metadata (empty string when absent)."""
+    if header is None:
+        return ""
+    rows = [(label, getattr(header, attr, None)) for label, attr in (
+        ("Name", "name"), ("Author", "author"), ("Organization", "organization"),
+        ("Originating system", "originating_system"),
+        ("Application version", "application_version"),
+        ("Time stamp", "time_stamp"), ("Documentation", "documentation"))]
+    body = "".join(f"<tr><th style='text-align:left'>{_html.escape(k)}</th>"
+                   f"<td>{_html.escape(str(v))}</td></tr>" for k, v in rows if v)
+    return f"<h3>OCX header</h3><table>{body}</table>" if body else ""
+
+
+def write_report(results, path, max_plates: int, title: str, header=None) -> None:
     """Write one self-contained HTML file with plotly.js embedded once."""
     tabs = [(f"tab{i}", p) for i, p in enumerate(results)]
     buttons = "".join(
@@ -244,7 +258,8 @@ def write_report(results, path, max_plates: int, title: str) -> None:
     page = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<title>{_html.escape(title)}</title><style>{_CSS}</style>"
             f"<script>{plotly.offline.get_plotlyjs()}</script></head><body>"
-            f"<h1>{_html.escape(title)}</h1>{summary}<div>{buttons}</div>{sections}"
+            f"<h1>{_html.escape(title)}</h1>{header_html(header)}{summary}"
+            f"<div>{buttons}</div>{sections}"
             f"<script>{_viewer_js()}</script><script>{_JS}{first}</script></body></html>")
     Path(path).write_text(page, encoding="utf-8")
     logger.info("Wrote report {} ({:.1f} MB)", path, len(page) / 1e6)

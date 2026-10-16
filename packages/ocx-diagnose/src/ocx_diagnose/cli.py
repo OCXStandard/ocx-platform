@@ -60,7 +60,7 @@ def diagnose(
     results = analyse_model(vessel, set(panel) or None, tolerance_mm, sweep_mm)
     html = report if report is not None else model.with_suffix(".diagnose.html")
     try:
-        write_report(results, html, max_plates, title=model.name)
+        write_report(results, html, max_plates, title=model.name, header=vessel.header)
         typer.echo(f"Report written to {html}")
         if json_out is not None:
             write_json(results, json_out)

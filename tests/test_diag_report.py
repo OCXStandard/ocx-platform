@@ -39,6 +39,19 @@ def test_report_and_json_are_written_and_self_contained(tmp_path):
     assert len(data["pan1"]["sweep"]) == 2
 
 
+def test_report_shows_ocx_header_below_title(tmp_path):
+    from ocx_model_core.model.ir import IrHeader
+
+    res = analyse_model(make_vessel(), {"pan1"}, 50.0, [])
+    html = tmp_path / "r.html"
+    hdr = IrHeader(name="Hull<1>", author="Ola", organization="DNV",
+                   originating_system="NAPA", time_stamp="2024-01-02T03:04:05")
+    write_report(res, html, max_plates=5, title="t", header=hdr)
+    text = html.read_text(encoding="utf-8")
+    assert "OCX header" in text and "Hull&lt;1&gt;" in text and "NAPA" in text
+    assert text.index("<h1>t</h1>") < text.index("OCX header") < text.index("<th>panel</th>")
+
+
 def test_report_has_3d_model_tab_and_plate_links(tmp_path):
     res = analyse_model(make_vessel(), {"pan1"}, 50.0, [])
     html = tmp_path / "r.html"
