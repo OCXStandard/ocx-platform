@@ -42,11 +42,9 @@ def test_degenerate_members_by_area_and_missing_faces():
     assert degenerate_members(chart, min_area_m2=1e-4) == [1, 2]
 
 
-def test_contour_probe_closed_open_and_touching():
+def test_contour_probe_touching():
     t = np.linspace(0, 2 * np.pi, 41)[:-1]
     ring = np.c_[np.cos(t), np.sin(t), np.zeros_like(t)]
-    assert contour_probe(ring).open_gap_m < 0.5 and contour_probe(ring).touching == 0
-    opened = ring[:30]
-    assert contour_probe(opened).open_gap_m > 0.5
+    assert contour_probe(ring).touching == 0
     pinched = np.vstack([ring, ring[10:11]])     # revisits a point of the ring
     assert contour_probe(pinched).touching >= 1

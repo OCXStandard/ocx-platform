@@ -130,16 +130,6 @@ def _gaps(p, tol_m, cp, dups):
         ("Snap neighbouring plate contours to common edge curves.",))
 
 
-def _open_contour(p, tol_m, cp, dups):
-    if cp is None or cp.open_gap_m <= 10 * tol_m:
-        return None
-    return Finding(
-        "open-contour", "high", "plate", p.plate_id, "confirmed", "Trim contour is not closed",
-        f"Contour end points are {cp.open_gap_m:.3g} m apart (beyond one segment).",
-        "An open contour cannot enclose an area, so trimming is unreliable.",
-        (), ("Close the contour curve in the OCX source (last point = first point).",))
-
-
 def _touching_contour(p, tol_m, cp, dups):
     if cp is None or cp.touching <= 0:
         return None
@@ -151,7 +141,7 @@ def _touching_contour(p, tol_m, cp, dups):
 
 
 _PLATE_RULES = (_overlap, _trim_reject, _snap, _chart_distortion, _deviation, _non_manifold,
-                _gaps, _open_contour, _touching_contour)
+                _gaps, _touching_contour)
 
 
 def plate_findings(plate, cprobe: ContourProbe | None, duplicates, tol_m: float) -> list[Finding]:
@@ -191,10 +181,10 @@ def panel_findings(panel_id: str, chart, duplicates, degenerate) -> list[Finding
     if chart is not None and chart.boundary_edges_after_stitch > 0.2 * max(
             chart.boundary_edges_before_stitch, 1):
         out.append(Finding(
-            "seam-gaps", "medium", "panel", panel_id, "likely", "Seams between members stay open",
+            "seam-gaps", "low", "panel", panel_id, "likely", "Seams between members may stay open",
             f"{chart.boundary_edges_after_stitch} of {chart.boundary_edges_before_stitch} "
-            "member boundary edges remain unstitched.",
-            "Adjacent members do not share edges within the weld distance.",
+            "member boundary edges remain unstitched (this includes the panel's free outer boundary).",
+            "Adjacent members may not share edges within the weld distance.",
             ("A coarser --tolerance widens the weld distance and may close small seams.",),
             ("Make neighbouring NURBS members share edge curves exactly.",)))
     return rank(out)

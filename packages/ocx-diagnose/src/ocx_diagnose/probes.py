@@ -65,20 +65,15 @@ def degenerate_members(chart, min_area_m2: float = 1e-4) -> list[int]:
 
 @dataclass
 class ContourProbe:
-    open_gap_m: float   # distance between the last and first contour point
     touching: int       # non-adjacent contour points closer than 1e-6 m
 
 
 def contour_probe(contour) -> ContourProbe:
-    """Closure and self-contact of a trim contour (k, 3)."""
+    """Self-contact of a trim contour (k, 3); the ring is implicitly closed."""
     c = None if contour is None else np.asarray(contour, float)
     if c is None or len(c) < 4:
-        return ContourProbe(0.0, 0)
-    seg = np.linalg.norm(np.diff(c, axis=0), axis=1)
-    gap = float(np.linalg.norm(c[-1] - c[0]))
-    # a closed ring's end gap is about one segment; report the excess over that
-    open_gap = max(0.0, gap - float(np.median(seg)))
+        return ContourProbe(0)
     pairs = cKDTree(c).query_pairs(1e-6, output_type="ndarray")
     n = len(c)
     touching = int(sum(1 for i, j in pairs if (j - i) > 1 and (j - i) < n - 1))
-    return ContourProbe(open_gap, touching)
+    return ContourProbe(touching)

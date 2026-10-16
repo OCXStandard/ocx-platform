@@ -18,15 +18,15 @@ def _ids(fs):
 
 
 def test_healthy_plate_has_no_findings():
-    assert plate_findings(_plate(), ContourProbe(0.0, 0), [], 0.05) == []
+    assert plate_findings(_plate(), ContourProbe(0), [], 0.05) == []
 
 
 def test_overlap_without_probe_is_likely_and_with_probe_confirmed():
     p = _plate(overlap_faces=30000)
-    f = {x.id: x for x in plate_findings(p, ContourProbe(0, 0), [], 0.05)}["overlap"]
+    f = {x.id: x for x in plate_findings(p, ContourProbe(0), [], 0.05)}["overlap"]
     assert f.status == "likely" and f.severity == "high"
     assert "30000" in f.evidence and f.source_steps and f.mesh_steps
-    g = {x.id: x for x in plate_findings(p, ContourProbe(0, 0), [(3, 7, 6)], 0.05)}["overlap"]
+    g = {x.id: x for x in plate_findings(p, ContourProbe(0), [(3, 7, 6)], 0.05)}["overlap"]
     assert g.status == "confirmed" and "3" in g.evidence and "7" in g.evidence
 
 
@@ -41,9 +41,8 @@ def test_each_plate_rule_fires():
         "gaps": _plate(gap_vertices=10, max_gap_m=0.02),
     }
     for fid, plate in cases.items():
-        assert fid in _ids(plate_findings(plate, ContourProbe(0, 0), [], tol)), fid
-    assert "open-contour" in _ids(plate_findings(_plate(), ContourProbe(2.0, 0), [], tol))
-    assert "self-touching-contour" in _ids(plate_findings(_plate(), ContourProbe(0, 3), [], tol))
+        assert fid in _ids(plate_findings(plate, ContourProbe(0), [], tol)), fid
+    assert "self-touching-contour" in _ids(plate_findings(_plate(), ContourProbe(3), [], tol))
 
 
 def test_panel_findings_and_ranking():
