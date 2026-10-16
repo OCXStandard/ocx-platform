@@ -1,15 +1,30 @@
 // WebGL viewer for the diagnose report: one mesh per plate, GPU colour-id picking.
 (function () {
-  let R, S, P, cam, ctl, pickT, host, ready = false, focus = null;
+  let R, S, P, cam, ctl, pickT, host, ready = false, focus = null, hover = null, selLab, tip;
   const meshes = {}, pickMeshes = [], names = [];
-  const BG = new THREE.Color(0xf4f6fa), RED = new THREE.Color(0xe00000);
+  const BG = new THREE.Color(0xf4f6fa), RED = new THREE.Color(0xe00000),
+        ORANGE = new THREE.Color(0xff9900);
+  const LAB = 'position:absolute;pointer-events:none;display:none;padding:1px 5px;' +
+    'font:12px sans-serif;background:rgba(255,255,255,.9);border:1px solid #888;border-radius:3px;';
 
   function b64(s, T) {
     const b = atob(s), u = new Uint8Array(b.length);
     for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
     return new T(u.buffer);
   }
-  function render() { if (ready) R.render(S, cam); }
+  function render() { if (ready) { R.render(S, cam); labels(); } }
+  function place(el, v, dx, dy) {
+    el.style.left = (v.x + dx) + 'px'; el.style.top = (v.y + dy) + 'px';
+  }
+  function labels() {
+    const m = focus && meshes[focus];
+    if (!m) { selLab.style.display = 'none'; return; }
+    const v = m.geometry.boundingSphere.center.clone().project(cam);
+    const w = host.clientWidth, h = host.clientHeight;
+    selLab.textContent = focus;
+    selLab.style.display = v.z < 1 ? 'block' : 'none';
+    place(selLab, { x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h }, 0, 0);
+  }
   function resize() {
     const w = host.clientWidth, h = host.clientHeight;
     if (!w || !h) return;
@@ -28,8 +43,10 @@
   }
   function paint() {
     for (const n in meshes) {
-      const m = meshes[n], c = m.userData.col.clone();
-      m.material.color.copy(!focus ? c : (n === focus ? RED : c.lerp(BG, 0.65)));
+      const m = meshes[n], c = m.userData.col.clone(), sel = n === focus;
+      m.material.color.copy(sel ? RED : n === hover ? ORANGE : (focus ? c.lerp(BG, 0.65) : c));
+      m.material.depthTest = !sel;
+      m.renderOrder = sel ? 2 : 0;
     }
     render();
   }
@@ -40,7 +57,7 @@
     if (m && zoom) {
       const s = m.geometry.boundingSphere, d = cam.position.clone().sub(ctl.target).normalize();
       ctl.target.copy(s.center);
-      cam.position.copy(s.center).addScaledVector(d, Math.max(s.radius, 1e-3) * 3);
+      cam.position.copy(s.center).addScaledVector(d, Math.max(s.radius, 1e-3) * 2.2);
       ctl.update(); render();
     }
   };
@@ -51,6 +68,12 @@
     R = new THREE.WebGLRenderer({ antialias: true });
     R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     host.appendChild(R.domElement);
+    host.style.position = 'relative';
+    selLab = document.createElement('div');
+    selLab.style.cssText = LAB + 'color:#e00000;font-weight:bold;transform:translate(-50%,-50%);';
+    tip = document.createElement('div');
+    tip.style.cssText = LAB + 'color:#333;';
+    host.append(selLab, tip);
     S = new THREE.Scene(); S.background = BG;
     P = new THREE.Scene(); P.background = new THREE.Color(0x000000);
     cam = new THREE.PerspectiveCamera(40, 1, 0.1, 1e6);
@@ -87,6 +110,26 @@
       const r = R.domElement.getBoundingClientRect();
       const name = pick(Math.round(e.clientX - r.left), Math.round(e.clientY - r.top));
       if (name) focusPlate(name, false);
+    });
+    let queued = null;
+    R.domElement.addEventListener('pointermove', e => {
+      if (e.buttons) { tip.style.display = 'none'; return; }
+      const r = R.domElement.getBoundingClientRect();
+      const x = Math.round(e.clientX - r.left), y = Math.round(e.clientY - r.top);
+      if (queued) { queued = [x, y]; return; }
+      queued = [x, y];
+      setTimeout(() => {
+        const [qx, qy] = queued; queued = null;
+        const n = pick(qx, qy);
+        if (n !== hover) { hover = n; paint(); }
+        tip.textContent = n || '';
+        tip.style.display = n ? 'block' : 'none';
+        place(tip, { x: qx, y: qy }, 12, 12);
+      }, 16);
+    });
+    R.domElement.addEventListener('pointerleave', () => {
+      tip.style.display = 'none';
+      if (hover) { hover = null; paint(); }
     });
     new ResizeObserver(resize).observe(host);
     ready = true;
