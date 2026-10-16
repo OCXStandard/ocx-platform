@@ -8,6 +8,27 @@ from ocx_diagnose.checks import edge_segments, snap_vectors
 
 _SCENE = dict(aspectmode="data")
 _MARGIN = dict(l=0, r=0, t=40, b=0)
+_PALETTE = ("#4c78a8", "#59a14f", "#b8a04a", "#8e6bb0", "#46a6a6", "#a07850")
+
+
+def model_fig(plates, title="Rendered model"):
+    """All plates in one scene, one Mesh3d trace per plate (trace name = plate id).
+
+    ``plates`` is an iterable of (plate_id, panel_id, V, F); colour is per panel.
+    """
+    fig = go.Figure()
+    colours: dict[str, str] = {}
+    for plate_id, panel_id, V, F in plates:
+        if len(F) == 0:
+            continue
+        col = colours.setdefault(panel_id, _PALETTE[len(colours) % len(_PALETTE)])
+        V = np.asarray(V, np.float32)
+        fig.add_trace(go.Mesh3d(
+            x=V[:, 0], y=V[:, 1], z=V[:, 2], i=F[:, 0], j=F[:, 1], k=F[:, 2],
+            color=col, name=plate_id, hovertext=f"{plate_id} ({panel_id})", hoverinfo="text",
+            flatshading=True, showlegend=False, meta=col))
+    fig.update_layout(title=title, scene=_SCENE, margin=_MARGIN)
+    return fig
 
 
 def _lines(segments: np.ndarray):

@@ -39,6 +39,16 @@ def test_report_and_json_are_written_and_self_contained(tmp_path):
     assert len(data["pan1"]["sweep"]) == 2
 
 
+def test_report_has_3d_model_tab_and_plate_links(tmp_path):
+    res = analyse_model(make_vessel(), {"pan1"}, 50.0, [])
+    html = tmp_path / "r.html"
+    write_report(res, html, max_plates=5, title="t")
+    text = html.read_text(encoding="utf-8")
+    assert 'id="tabmodel"' in text and 'data-t="tabmodel"' in text
+    assert 'data-plate="pl1"' in text and "View in 3D model" in text
+    assert '"name":"pl1"' in text  # one Mesh3d trace per plate, named by plate id
+
+
 def test_report_and_json_include_findings(tmp_path):
     from ocx_diagnose.advice import Finding
 
