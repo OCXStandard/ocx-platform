@@ -76,6 +76,8 @@ def model_section(results) -> str:
         for p in panel.plates:
             if len(p.mesh.triangles):
                 plates.append({"id": p.plate_id, "panel": panel.panel_id, "color": col,
+                               "info": {"route": p.route, "score": round(float(p.score), 3),
+                                        "findings": [[f.severity, f.title] for f in p.findings]},
                                "v": _b64(p.mesh.vertices, np.float32),
                                "f": _b64(p.mesh.triangles, np.uint32)})
     data = json.dumps({"plates": plates}, separators=(",", ":"))

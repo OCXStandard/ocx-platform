@@ -1,7 +1,8 @@
 // WebGL viewer for the diagnose report: one mesh per plate, GPU colour-id picking.
 (function () {
-  let R, S, P, cam, ctl, pickT, host, ready = false, focus = null, hover = null, selLab, tip;
-  const meshes = {}, pickMeshes = [], names = [];
+  let R, S, P, cam, ctl, pickT, host, ready = false, focus = null, hover = null, selLab, tip, info;
+  const meshes = {}, pickMeshes = [], names = [], infos = {};
+  const SEV = { high: '#c00000', medium: '#b36b00', low: '#666' };
   const BG = new THREE.Color(0xf4f6fa), RED = new THREE.Color(0xe00000),
         ORANGE = new THREE.Color(0xff9900);
   const LAB = 'position:absolute;pointer-events:none;display:none;padding:1px 5px;' +
@@ -16,14 +17,35 @@
   function place(el, v, dx, dy) {
     el.style.left = (v.x + dx) + 'px'; el.style.top = (v.y + dy) + 'px';
   }
+  function card(el, name) {
+    const p = infos[name];
+    el.replaceChildren();
+    const t = document.createElement('b'); t.textContent = name; el.append(t);
+    if (!p) return;
+    const s = document.createElement('div');
+    s.textContent = p.panel + ' · route ' + p.route + ' · score ' + p.score;
+    el.append(s);
+    const fs = p.findings;
+    const h = document.createElement('div');
+    h.textContent = fs.length ? fs.length + ' finding' + (fs.length > 1 ? 's' : '') : 'no findings';
+    el.append(h);
+    fs.slice(0, 6).forEach(([sev, title]) => {
+      const d = document.createElement('div');
+      d.textContent = '● ' + title; d.style.color = SEV[sev] || '#555';
+      el.append(d);
+    });
+    if (fs.length > 6) { const d = document.createElement('div'); d.textContent = '… +' + (fs.length - 6) + ' more'; el.append(d); }
+  }
   function labels() {
     const m = focus && meshes[focus];
-    if (!m) { selLab.style.display = 'none'; return; }
+    if (!m) { selLab.style.display = 'none'; info.style.display = 'none'; return; }
     const v = m.geometry.boundingSphere.center.clone().project(cam);
     const w = host.clientWidth, h = host.clientHeight;
     selLab.textContent = focus;
     selLab.style.display = v.z < 1 ? 'block' : 'none';
     place(selLab, { x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h }, 0, 0);
+    if (info.dataset.n !== focus) { card(info, focus); info.dataset.n = focus; }
+    info.style.display = 'block';
   }
   function resize() {
     const w = host.clientWidth, h = host.clientHeight;
@@ -72,8 +94,11 @@
     selLab = document.createElement('div');
     selLab.style.cssText = LAB + 'color:#e00000;font-weight:bold;transform:translate(-50%,-50%);';
     tip = document.createElement('div');
-    tip.style.cssText = LAB + 'color:#333;';
-    host.append(selLab, tip);
+    tip.style.cssText = LAB + 'color:#333;max-width:360px;';
+    info = document.createElement('div');
+    info.style.cssText = LAB + 'left:8px;top:8px;max-width:380px;padding:6px 8px;' +
+      'border-color:#e00000;color:#333;';
+    host.append(selLab, tip, info);
     S = new THREE.Scene(); S.background = BG;
     P = new THREE.Scene(); P.background = new THREE.Color(0x000000);
     cam = new THREE.PerspectiveCamera(40, 1, 0.1, 1e6);
@@ -90,7 +115,7 @@
       box.union(g.boundingBox);
       const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: p.color, side: THREE.DoubleSide }));
       m.userData.col = new THREE.Color(p.color);
-      S.add(m); meshes[p.id] = m; names.push(p.id);
+      S.add(m); meshes[p.id] = m;       names.push(p.id); infos[p.id] = Object.assign({ panel: p.panel }, p.info);
       const id = i + 1;
       P.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({
         color: new THREE.Color((id >> 16 & 255) / 255, (id >> 8 & 255) / 255, (id & 255) / 255),
@@ -122,7 +147,7 @@
         const [qx, qy] = queued; queued = null;
         const n = pick(qx, qy);
         if (n !== hover) { hover = n; paint(); }
-        tip.textContent = n || '';
+        if (n) card(tip, n);
         tip.style.display = n ? 'block' : 'none';
         place(tip, { x: qx, y: qy }, 12, 12);
       }, 16);
