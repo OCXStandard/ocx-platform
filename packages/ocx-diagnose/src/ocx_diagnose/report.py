@@ -225,6 +225,27 @@ def _summary_row(panel) -> tuple:
             max(devs, default=None), "yes" if panel.sweep else "no", n_find)
 
 
+_EXPLAIN = (
+    "<h3>How to read this report</h3><ul style='margin:0;padding-left:1.2em;font-size:12px'>"
+    "<li><b>Route</b>: how a plate was meshed. <i>single</i> = one surface; <i>mesh-trim</i> = "
+    "cut from the panel's shared chart mesh (best); <i>lscm</i> = local flattening fallback; "
+    "<i>best-member</i> = trimmed on the closest member surface (last resort).</li>"
+    "<li><b>Score</b>: weighted badness (higher is worse): deviation/tolerance, snap/max snap, "
+    "flipped UV triangles, non-manifold edges, overlaps, gaps, bounding-box offset, and a "
+    "penalty for fallback routes.</li>"
+    "<li><b>dev max m</b>: largest distance from the plate mesh to the true surface; "
+    "<b>snap</b>: how far the trim contour was moved onto the mesh.</li>"
+    "<li><b>overlaps / gaps</b>: faces overlapping neighbouring plates / vertices with no "
+    "neighbour within tolerance. <b>boundary / non-manifold</b>: open and over-shared mesh edges.</li>"
+    "<li><b>Charts</b>: <i>contour and snap</i> = trim ring on the mesh; <i>Deviation</i> = "
+    "colour by distance to surface; <i>Boundary / non-manifold edges</i> = mesh defects; "
+    "<i>scale spread</i> and <i>UV layout</i> (lscm) = flattening distortion and flipped "
+    "triangles; <i>Chart mesh by member</i> = which source surface each face came from; "
+    "<i>Tolerance sweep</i> = deviation and triangle count vs tolerance.</li>"
+    "<li><b>Findings</b>: rule-based diagnoses, <i>confirmed</i> if backed by a probe, "
+    "<i>likely</i> if inferred from metrics.</li></ul>")
+
+
 def header_html(header) -> str:
     """Two-column table of the OCX <Header> metadata (empty string when absent)."""
     if header is None:
@@ -237,6 +258,12 @@ def header_html(header) -> str:
     body = "".join(f"<tr><th style='text-align:left'>{_html.escape(k)}</th>"
                    f"<td>{_html.escape(str(v))}</td></tr>" for k, v in rows if v)
     return f"<h3>OCX header</h3><table>{body}</table>" if body else ""
+
+
+def intro_html(header) -> str:
+    """OCX header on the left, static legend on the right."""
+    return (f"<div style='display:flex;gap:2em;align-items:flex-start'>"
+            f"<div>{header_html(header)}</div><div style='flex:1'>{_EXPLAIN}</div></div>")
 
 
 def write_report(results, path, max_plates: int, title: str, header=None) -> None:
@@ -258,7 +285,7 @@ def write_report(results, path, max_plates: int, title: str, header=None) -> Non
     page = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<title>{_html.escape(title)}</title><style>{_CSS}</style>"
             f"<script>{plotly.offline.get_plotlyjs()}</script></head><body>"
-            f"<h1>{_html.escape(title)}</h1>{header_html(header)}{summary}"
+            f"<h1>{_html.escape(title)}</h1>{intro_html(header)}{summary}"
             f"<div>{buttons}</div>{sections}"
             f"<script>{_viewer_js()}</script><script>{_JS}{first}</script></body></html>")
     Path(path).write_text(page, encoding="utf-8")

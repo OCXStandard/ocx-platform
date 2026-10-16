@@ -50,6 +50,7 @@ def test_report_shows_ocx_header_below_title(tmp_path):
     text = html.read_text(encoding="utf-8")
     assert "OCX header" in text and "Hull&lt;1&gt;" in text and "NAPA" in text
     assert text.index("<h1>t</h1>") < text.index("OCX header") < text.index("<th>panel</th>")
+    assert text.index("OCX header") < text.index("How to read this report") < text.index("<th>panel</th>")
 
 
 def test_report_has_3d_model_tab_and_plate_links(tmp_path):
