@@ -17,10 +17,16 @@ _CSS = ("body{font-family:sans-serif;margin:1em}table{border-collapse:collapse;m
         "td,th{border:1px solid #ccc;padding:2px 6px;font-size:12px}"
         ".tab{display:none}.tab.on{display:block}button.on{font-weight:bold}"
         "details{margin:.5em 0}summary{cursor:pointer}")
-_JS = ("function show(id){document.querySelectorAll('.tab').forEach(e=>"
+_fig_seq = 0
+_JS = ("function sync(){document.querySelectorAll('.lz').forEach(g=>{"
+       "const vis=g.offsetParent!==null;"
+       "if(vis&&!g.dataset.done){const d=JSON.parse(document.getElementById(g.id+'j')"
+       ".textContent);Plotly.newPlot(g,d.data,d.layout,{responsive:true});g.dataset.done=1;}"
+       "else if(!vis&&g.dataset.done){Plotly.purge(g);g.dataset.done='';}});}"
+       "function show(id){document.querySelectorAll('.tab').forEach(e=>"
        "e.classList.toggle('on',e.id===id));document.querySelectorAll('button.tb')"
-       ".forEach(b=>b.classList.toggle('on',b.dataset.t===id));"
-       "window.dispatchEvent(new Event('resize'));}")
+       ".forEach(b=>b.classList.toggle('on',b.dataset.t===id));sync();}"
+       "document.addEventListener('toggle',sync,true);")
 
 _PLATE_SCALARS = ("route", "trim_reject", "snap_m", "max_snap_m", "chart_stage", "seconds",
                   "dev_mean_m", "dev_max_m", "overlap_faces", "gap_vertices", "max_gap_m",
@@ -35,7 +41,12 @@ def _fmt(v) -> str:
 
 
 def _fig_html(fig) -> str:
-    return fig.to_html(full_html=False, include_plotlyjs=False)
+    """Figure placeholder; _JS draws it lazily, since browsers cap live WebGL contexts."""
+    global _fig_seq
+    _fig_seq += 1
+    data = fig.to_json().replace("</", "<\\/")
+    return (f'<div class="lz" id="fig{_fig_seq}" style="width:100%;height:450px"></div>'
+            f'<script type="application/json" id="fig{_fig_seq}j">{data}</script>')
 
 
 def _table(headers, rows) -> str:
