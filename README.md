@@ -32,7 +32,11 @@ making downstream tools independent of any particular OCX schema version.
 - **Render diagnostics** (`ocx-diagnose`): runs the render with diagnostic
   hooks and writes an interactive HTML report (plotly.js embedded) plus optional
   JSON: per-plate route, mesh health, surface deviation, neighbour gaps/overlaps,
-  chart distortion and a tolerance sweep
+  chart distortion and a tolerance sweep. The report also contains ranked
+  *Findings* per panel and a *Diagnosis* box per worst plate, each with
+  evidence, likely cause, "Improve the meshing" steps and "Improve the OCX
+  source" steps. Status `confirmed` means a probe proved it, `likely` means it
+  was inferred from metrics. Findings are also written to the JSON output.
 
 ---
 
