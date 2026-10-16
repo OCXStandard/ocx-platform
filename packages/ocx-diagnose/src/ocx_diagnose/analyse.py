@@ -11,6 +11,7 @@ from ocx_geometry.diagnostics import ChartDiag, DiagSink, PlateDiag
 from ocx_geometry.mesh import PartMesh
 from ocx_render.render import render_model
 
+from ocx_diagnose.advice import Finding, advise_panel
 from ocx_diagnose.checks import (
     chart_distortion,
     mesh_health,
@@ -41,6 +42,7 @@ class PlateResult:
     mesh: PartMesh                  # kept for figures
     diag: PlateDiag
     score: float                    # badness; sorts the "worst" plates
+    findings: list[Finding] = field(default_factory=list)
 
 
 @dataclass
@@ -52,6 +54,7 @@ class PanelResult:
     sweep: list[SweepPoint] = field(default_factory=list)
     seconds: float = 0.0
     tol_m: float = 0.05
+    findings: list[Finding] = field(default_factory=list)
 
 
 def _plate_result(m: PartMesh, pd: PlateDiag, overlap: dict, tol_m: float) -> PlateResult:
@@ -119,9 +122,15 @@ def analyse_model(vessel, panel_ids: set[str] | None, tolerance_mm: float,
                          for m in meshes), key=lambda p: p.plate_id)
         plate_ids = {p.id for p in vessel.plates.values()
                      if getattr(p.parent_ref, "id", None) == panel_id}
-        panels.append(PanelResult(
+        panel = PanelResult(
             panel_id=panel_id, chart=sink.charts.get(panel_id), plates=plates,
             skipped={k: v for k, v in skips.items() if k.split("/")[0] in plate_ids},
             sweep=run_sweep(vessel, {panel_id}, sweep_mm) if sweep_mm else [],
-            seconds=sum(p.seconds for p in plates), tol_m=tol_m))
+            seconds=sum(p.seconds for p in plates), tol_m=tol_m)
+        t_adv = time.perf_counter()
+        advise_panel(panel)
+        logger.info("Advice for {}: {} findings in {:.1f}s", panel_id,
+                    len(panel.findings) + sum(len(p.findings) for p in plates),
+                    time.perf_counter() - t_adv)
+        panels.append(panel)
     return panels

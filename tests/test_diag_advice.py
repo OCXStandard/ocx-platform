@@ -52,3 +52,12 @@ def test_panel_findings_and_ranking():
     assert _ids(fs) == {"duplicate-members", "degenerate-members", "seam-gaps"}
     assert fs[0].severity == "high"          # ranked high -> medium -> low
     assert all(isinstance(f, Finding) and f.scope == "panel" for f in fs)
+
+
+def test_analyse_model_attaches_findings():
+    from ocx_diagnose.analyse import analyse_model
+
+    from tests.test_render_model import make_vessel
+    panels = analyse_model(make_vessel(), {"pan1"}, 50.0, [])
+    assert isinstance(panels[0].findings, list)
+    assert all(isinstance(p.findings, list) for p in panels[0].plates)
