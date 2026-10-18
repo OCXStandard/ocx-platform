@@ -1,0 +1,43 @@
+"""ValidationContext — lazy access to the raw XML tree and the parsed IR.
+
+Rules declare what they need via ``RuleSpec.requires``; the context only pays
+for what is actually accessed. A run containing only XML rules never builds
+the IR.
+"""
+from __future__ import annotations
+
+from functools import cached_property
+from pathlib import Path
+
+import lxml.etree as etree
+from loguru import logger
+
+
+def _build_vessel(model_path: Path):
+    """Parse *model_path* and build the IR (module-level so tests can patch it)."""
+    from ocx_model_core.builders.factory import get_builder
+    from ocx_model_core.parsers.parser import OcxParser
+
+    parser = OcxParser()
+    root = parser.parse(str(model_path))
+    builder = get_builder(root.schema_version)
+    return builder.build(root)
+
+
+class ValidationContext:
+    """Shared, lazily-populated inputs for all rule checks on one model."""
+
+    def __init__(self, model_path: Path) -> None:
+        self.model_path = Path(model_path)
+
+    @cached_property
+    def xml_tree(self) -> etree._ElementTree:
+        """The raw lxml tree (line numbers preserved for Finding.location)."""
+        logger.debug("Parsing XML tree: {}", self.model_path)
+        return etree.parse(str(self.model_path))
+
+    @cached_property
+    def vessel(self):
+        """The schema-neutral IR (IrVessel); built on first access."""
+        logger.debug("Building IR: {}", self.model_path)
+        return _build_vessel(self.model_path)
