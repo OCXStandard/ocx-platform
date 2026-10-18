@@ -59,3 +59,24 @@ class TestPointPolylineDistance:
         pl = np.array([[0, 0, 0], [10, 0, 0]], dtype=float)
         d = point_polyline_distance(np.array([13.0, 4.0, 0]), pl)
         assert abs(d - 5.0) < 1e-12
+
+
+class TestMalformedInputDegradation:
+    def test_polygon_ok_nan_ring(self):
+        assert polygon_ok(np.full((4, 2), np.nan)) is not None
+
+    def test_polygon_ok_wrong_shape(self):
+        assert polygon_ok(np.array([1.0, 2.0, 3.0, 4.0])) is not None
+
+    def test_region_count_malformed_cut(self):
+        assert region_count(_SQ, [np.array([1.0, 2.0, 3.0, 4.0])]) == 1
+
+    def test_region_count_nan_outer(self):
+        assert region_count(np.full((4, 2), np.nan), []) == 1
+
+    def test_distance_empty_polyline(self):
+        assert point_polyline_distance(
+            np.zeros(3), np.zeros((0, 3))) == float("inf")
+
+    def test_distance_none_polyline(self):
+        assert point_polyline_distance(np.zeros(3), None) == float("inf")
