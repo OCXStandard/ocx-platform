@@ -374,7 +374,11 @@ def validate_rules_cmd(
 
     Exit codes: 0 = no error-level findings, 1 = error-level findings or
     crashed rules, 2 = cannot run (bad model path, config or catalogue).
+    Always writes MODEL.rules.json beside the model file with every finding
+    and its source provenance (for downstream agent consumption).
     """
+    import json
+
     from ocx_rules import (
         CatalogueError,
         ConfigError,
@@ -385,7 +389,7 @@ def validate_rules_cmd(
         load_config,
     )
 
-    from ocx_model_validator.reporting.generators import rules_report
+    from ocx_model_validator.reporting.generators import rules_json, rules_report
 
     try:
         manager = RuleManager(config=load_config(config))
@@ -397,6 +401,15 @@ def validate_rules_cmd(
 
     _emit(rules_report.build(results, source_file=str(model),
                              max_findings=max_findings), fmt, destination)
+
+    json_path = model.with_suffix(".rules.json")
+    try:
+        json_path.write_text(
+            json.dumps(rules_json.build(results, model=str(model)), indent=2),
+            encoding="utf-8")
+        typer.echo(f"Sidecar written: {json_path}")
+    except OSError as exc:
+        logger.error("Cannot write sidecar file: {}", exc)
 
     failed = any(
         (r.status is RuleStatus.FAILED and r.spec.severity is Severity.ERROR)

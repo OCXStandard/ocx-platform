@@ -215,7 +215,9 @@ validator report all          model.3docx --destination report.md
 validator validate schema model.3docx
 validator validate schema model.3docx --max-errors 100
 
-# run configurable best-practice rules (exit 0 clean / 1 error findings / 2 cannot run)
+# run configurable best-practice rules (exit 0 clean / 1 error findings / 2 cannot run;
+# writes model.rules.json beside the model — agent-friendly JSON with every
+# finding and its source provenance)
 validator validate rules model.3docx
 validator validate rules model.3docx --config ocx-rules.toml --category identity
 validator validate rules model.3docx --rule OCX-ID-002 --destination rules.md
