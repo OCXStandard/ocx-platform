@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import time
+from collections.abc import Sequence
 from importlib.metadata import entry_points
 
 from loguru import logger
@@ -55,8 +56,11 @@ class RuleManager:
         return packs
 
     def rules(self, *, category: str | None = None,
-              rule_id: str | None = None) -> list[RuleSpec]:
-        """All enabled rules after config, optionally filtered."""
+              rule_id: str | Sequence[str] | None = None) -> list[RuleSpec]:
+        """All enabled rules after config, optionally filtered.
+
+        ``rule_id`` accepts a single id or a sequence of ids.
+        """
         if self._packs is None:
             self.discover()
         specs: list[RuleSpec] = []
@@ -72,11 +76,12 @@ class RuleManager:
         if category is not None:
             specs = [s for s in specs if s.category == category]
         if rule_id is not None:
-            specs = [s for s in specs if s.rule_id == rule_id]
+            wanted = {rule_id} if isinstance(rule_id, str) else set(rule_id)
+            specs = [s for s in specs if s.rule_id in wanted]
         return specs
 
     def run(self, context: ValidationContext, *, category: str | None = None,
-            rule_id: str | None = None) -> list[RuleResult]:
+            rule_id: str | Sequence[str] | None = None) -> list[RuleResult]:
         """Execute every enabled (filtered) rule against *context*."""
         return [self._run_one(spec, context)
                 for spec in self.rules(category=category, rule_id=rule_id)]

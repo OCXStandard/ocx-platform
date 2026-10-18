@@ -361,8 +361,9 @@ def validate_rules_cmd(
         help="Rule configuration TOML (disable rules, override severity/params)."),
     category: str | None = typer.Option(
         None, "--category", help="Run only rules in this category."),
-    rule: str | None = typer.Option(
-        None, "--rule", help="Run only the rule with this id."),
+    rule: list[str] | None = typer.Option(
+        None, "--rule",
+        help="Run only the rule(s) with these ids (repeatable)."),
     max_findings: int = typer.Option(
         50, "--max-findings", min=1,
         help="Maximum number of findings listed in the report."),
@@ -389,7 +390,7 @@ def validate_rules_cmd(
     try:
         manager = RuleManager(config=load_config(config))
         results = manager.run(ValidationContext(model),
-                              category=category, rule_id=rule)
+                              category=category, rule_id=rule or None)
     except (CatalogueError, ConfigError) as exc:
         logger.error("{}", exc)
         raise typer.Exit(code=2) from exc

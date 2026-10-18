@@ -31,6 +31,17 @@ class TestValidateRulesCli:
         assert "OCX-ID-002" in result.output
         assert "OCX-TOP-001" not in result.output
 
+    def test_rule_filter_repeatable(self, stub_dir_310: Path):
+        result = runner.invoke(app, ["validate", "rules",
+                                     str(stub_dir_310 / "ocxxml.3docx"),
+                                     "--rule", "OCX-ID-002",
+                                     "--rule", "OCX-ID-001"])
+        assert result.exit_code in (0, 1)
+        assert "rules run: 2" in result.output
+        assert "OCX-ID-001" in result.output
+        assert "OCX-ID-002" in result.output
+        assert "OCX-TOP-001" not in result.output
+
     def test_markdown_destination(self, stub_dir_310: Path, tmp_path: Path):
         dest = tmp_path / "rules.md"
         result = runner.invoke(app, ["validate", "rules",
