@@ -9,9 +9,7 @@ category    = "references"
 severity    = "error"
 requires    = ["xml"]
 [rule.check]
-primitive     = "ref_resolves"
-ref_attribute = "*Ref"
-target_xpath  = "//*[@id or @ocx:GUIDRef]"
+primitive = "ref_resolves"
 
 [[rule]]
 id          = "OCX-REF-002"
