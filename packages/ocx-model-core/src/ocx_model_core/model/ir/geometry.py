@@ -152,6 +152,7 @@ class IrNurbsSurface(IrSurface3D):
     u_knot_vector: list[float] = field(default_factory=list)
     v_knot_vector: list[float] = field(default_factory=list)
     control_points: list[list[IrPoint3D]] = field(default_factory=list)
+    face_boundary_curve: IrCurve3D | None = None
     normal: IrVector3D | None = None
     point_on_surface: IrPoint3D | None = None
 
