@@ -30,7 +30,8 @@ making downstream tools independent of any particular OCX schema version.
   (identity, document, references, curves/surfaces, topology, properties),
   defined declaratively in TOML, extensible via `ocx_rules.packs` entry-point
   plugins and tunable through a user config (disable rules, override
-  severity/parameters)
+  severity/parameters). The 24 content rules are fully implemented; the 12
+  geometry-dependent rules await the geometry kernel (Phase B)
 - **3-D rendering** (`ocx-render`): tessellates the model to a GLB plus a
   self-contained HTML viewer. Multi-member shell panels are built from one
   shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);
@@ -156,11 +157,12 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   │   └── src/ocx_rules/
 │   │       ├── model.py           ← RuleSpec, RuleResult, Finding, Severity, RuleStatus
 │   │       ├── context.py         ← ValidationContext (lazy lxml tree + lazy IrVessel)
+│   │       ├── xml_index.py       ← XmlIndex: shared identity/reference scan of the document
 │   │       ├── catalogue.py       ← TOML rule-catalogue loader (load-time validation)
 │   │       ├── primitives/        ← parameterized check primitives (PRIMITIVE_REGISTRY)
 │   │       ├── manager.py         ← RuleManager: entry-point discovery + execution
 │   │       ├── config.py          ← user TOML config (disable/severity/params)
-│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks.py
+│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks/ package
 │   └── ocx-model-validator/       ← validation, reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── cli.py             ← validator / ocx-validate CLI entrypoint
