@@ -25,6 +25,12 @@ making downstream tools independent of any particular OCX schema version.
   compartments and scantling write-back to LLM clients
 - **XSD schema validation** (`validator validate schema`): offline validation
   against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
+- **Rule-based validation** (`validator validate rules`): configurable
+  best-practice rules beyond the XSD — 36 wiki-sourced rules in 6 categories
+  (identity, document, references, curves/surfaces, topology, properties),
+  defined declaratively in TOML, extensible via `ocx_rules.packs` entry-point
+  plugins and tunable through a user config (disable rules, override
+  severity/parameters)
 - **3-D rendering** (`ocx-render`): tessellates the model to a GLB plus a
   self-contained HTML viewer. Multi-member shell panels are built from one
   shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);
@@ -117,7 +123,7 @@ MCP client configuration (e.g. `mcp.json`):
 
 ## Project structure
 
-A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with three packages:
+A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with five packages:
 
 ```
 ocx-platform/                      ← workspace root (virtual — no package here)
@@ -140,6 +146,21 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   ├── ocx-geometry/              ← geometry evaluation kernel (numpy, no display)
 │   │   └── src/ocx_geometry/
 │   │       └── measure.py         ← length/area/closure measurements on the IR
+│   ├── ocx-render/                ← tessellated GLB/HTML renderer (core + geometry)
+│   │   └── src/ocx_render/
+│   │       ├── render.py          ← render_model(vessel, options) → RenderResult
+│   │       ├── gltf_writer.py     ← write meshes to a .glb file
+│   │       ├── html_viewer.py     ← self-contained HTML viewer around the GLB
+│   │       └── cli.py             ← ocx-render / ocx-diagnose entrypoints
+│   ├── ocx-rules/                 ← configurable best-practice rule engine
+│   │   └── src/ocx_rules/
+│   │       ├── model.py           ← RuleSpec, RuleResult, Finding, Severity, RuleStatus
+│   │       ├── context.py         ← ValidationContext (lazy lxml tree + lazy IrVessel)
+│   │       ├── catalogue.py       ← TOML rule-catalogue loader (load-time validation)
+│   │       ├── primitives/        ← parameterized check primitives (PRIMITIVE_REGISTRY)
+│   │       ├── manager.py         ← RuleManager: entry-point discovery + execution
+│   │       ├── config.py          ← user TOML config (disable/severity/params)
+│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks.py
 │   └── ocx-model-validator/       ← validation, reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── cli.py             ← validator / ocx-validate CLI entrypoint
@@ -162,7 +183,10 @@ ocx-platform/                      ← workspace root (virtual — no package he
     └── test_*.py
 ```
 
-Dependency direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`.
+Dependency direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
+`ocx-render` → `ocx-geometry` → `ocx-model-core`, and
+`ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
+geometry lazily when installed).
 A tessellation render/viewer can depend on core + geometry without ever being
 deployed with the validator.
 
@@ -187,6 +211,11 @@ validator report all          model.3docx --destination report.md
 # model.validation.json + model.validation.html beside the model)
 validator validate schema model.3docx
 validator validate schema model.3docx --max-errors 100
+
+# run configurable best-practice rules (exit 0 clean / 1 error findings / 2 cannot run)
+validator validate rules model.3docx
+validator validate rules model.3docx --config ocx-rules.toml --category identity
+validator validate rules model.3docx --rule OCX-ID-002 --destination rules.md
 
 # tessellate to GLB + HTML viewer (DEBUG log shows timing per stage)
 ocx-render model.3docx --destination out.glb --log-level DEBUG [--tolerance MM] [--no-html]
