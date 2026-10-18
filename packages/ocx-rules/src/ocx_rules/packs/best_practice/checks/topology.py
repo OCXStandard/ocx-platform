@@ -1,4 +1,4 @@
-"""Geometry topology checks (OCX-TOP-001/002/003, later 004/005/008/009)."""
+"""Geometry topology checks (OCX-TOP-001 through 005, 008 and 009)."""
 from __future__ import annotations
 
 from typing import Any
@@ -14,6 +14,7 @@ from ocx_geometry.topology2d import (
 )
 from ocx_model_core.model.ir.base import ParentKind
 from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
+from scipy.spatial import cKDTree
 
 from ocx_rules.model import Finding
 
@@ -326,4 +327,153 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
                                  f"contour ({d_hole * 1000:.2f} mm away, "
                                  f"tolerance {tol_m * 1000:.2f} mm)"),
                         element_id=sid, guid=seam.guidref))
+    return findings
+
+
+_ADJACENCY_TOL_M = 0.001   # boundary proximity that makes two members adjacent
+_MAX_SHARED_SAMPLES = 5    # normal evaluations per adjacent member pair
+
+
+def _normal_at(param, point: np.ndarray) -> np.ndarray | None:
+    """Unit surface normal of ``param`` at the UV nearest ``point``, or None."""
+    uv = np.asarray(param.inverse(np.asarray([point], dtype=float)), dtype=float)
+    du, dv = param.first_derivs(uv)
+    n = np.cross(du[0], dv[0])
+    norm = float(np.linalg.norm(n))
+    if not np.isfinite(norm) or norm < 1e-12:
+        return None
+    return n / norm
+
+
+def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-TOP-008: normals must be consistent across a surface collection."""
+    tol_deg = float(params.get("angle_tolerance_deg", 90.0))
+    findings: list[Finding] = []
+    geo = context.geometry
+    for cid, coll in context.vessel.surface_collections.items():
+        members = []
+        for surf in coll.surfaces:
+            geom = surf.geometry
+            boundary = geo.sample(getattr(geom, "face_boundary_curve", None))
+            param = geo.surface_param(geom)
+            if param is None or boundary is None or len(boundary) < 2:
+                logger.debug("TOP-008: member {} of collection {} skipped "
+                             "(no buildable surface or boundary)", surf.id, cid)
+                continue
+            members.append((surf, param, boundary))
+        if len(members) < 2:
+            logger.debug("TOP-008: collection {} skipped "
+                         "(fewer than 2 buildable members)", cid)
+            continue
+        for i in range(len(members)):
+            surf_a, param_a, bnd_a = members[i]
+            for surf_b, param_b, bnd_b in members[i + 1:]:
+                try:
+                    d, idx = cKDTree(bnd_b).query(bnd_a)
+                except Exception as exc:  # noqa: BLE001 — lean-pass per pair
+                    logger.debug("TOP-008: pair {}/{} skipped ({})",
+                                 surf_a.id, surf_b.id, exc)
+                    continue
+                close = np.flatnonzero(d <= _ADJACENCY_TOL_M)
+                if len(close) == 0:
+                    continue  # not adjacent
+                nearest = close[np.argsort(d[close])][:_MAX_SHARED_SAMPLES]
+                angles = []
+                for k in nearest:
+                    p = 0.5 * (bnd_a[k] + bnd_b[idx[k]])
+                    try:
+                        na = _normal_at(param_a, p)
+                        nb = _normal_at(param_b, p)
+                    except Exception as exc:  # noqa: BLE001 — skip sample
+                        logger.debug("TOP-008: normal evaluation failed for "
+                                     "{}/{}: {}", surf_a.id, surf_b.id, exc)
+                        continue
+                    if na is None or nb is None:
+                        continue
+                    dot = float(np.clip(na @ nb, -1.0, 1.0))
+                    angles.append(np.degrees(np.arccos(dot)))
+                if not angles:
+                    logger.debug("TOP-008: pair {}/{} skipped (no evaluable "
+                                 "shared boundary samples)", surf_a.id, surf_b.id)
+                    continue
+                angle = float(np.median(angles))
+                if angle > tol_deg:
+                    findings.append(Finding(
+                        message=(f"Surface normals deviate across the shared "
+                                 f"boundary with member {surf_b.id} in "
+                                 f"collection {cid}: {angle:.1f} deg exceeds "
+                                 f"{tol_deg:.1f} deg"),
+                        element_id=surf_a.id, guid=surf_a.guidref))
+    return findings
+
+
+_DUP_POSITION_TOL_M = 1e-6
+
+
+def _inclination_positions(geo, entries) -> list[np.ndarray | None]:
+    """Inclination positions in metres (None where missing/unparseable)."""
+    out: list[np.ndarray | None] = []
+    for entry in entries:
+        pos = getattr(entry, "position", None)
+        if pos is None:
+            out.append(None)
+            continue
+        try:
+            out.append(np.asarray(geo.length.point(pos), dtype=float))
+        except Exception as exc:  # noqa: BLE001 — skip entry
+            logger.debug("TOP-009: unparseable inclination position: {}", exc)
+            out.append(None)
+    return out
+
+
+def _direction_flip(entries, field: str) -> tuple[int, int] | None:
+    """First consecutive pair of inclination entries whose ``field`` vectors
+    have a negative dot product (entries without the vector are skipped)."""
+    prev_idx: int | None = None
+    prev_vec: np.ndarray | None = None
+    for i, entry in enumerate(entries):
+        v = getattr(entry, field, None)
+        if v is None:
+            continue
+        vec = np.array([v.x, v.y, v.z], dtype=float)
+        if not np.isfinite(vec).all() or np.linalg.norm(vec) < 1e-12:
+            continue
+        if prev_vec is not None and float(prev_vec @ vec) < 0.0:
+            return prev_idx, i
+        prev_idx, prev_vec = i, vec
+    return None
+
+
+def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-TOP-009: inclination series must be duplicate-free and smooth."""
+    findings: list[Finding] = []
+    geo = context.geometry
+    vessel = context.vessel
+    members = list(vessel.stiffeners.items()) + list(vessel.pillars.items())
+    for mid, member in members:
+        entries = getattr(member, "inclinations", None) or []
+        if len(entries) < 2:
+            continue
+        positions = _inclination_positions(geo, entries)
+        dup = next(((i, j)
+                    for i in range(len(positions))
+                    for j in range(i + 1, len(positions))
+                    if positions[i] is not None and positions[j] is not None
+                    and np.linalg.norm(positions[i] - positions[j])
+                    < _DUP_POSITION_TOL_M), None)
+        if dup is not None:
+            findings.append(Finding(
+                message=(f"Duplicate inclination position: entries {dup[0]} "
+                         f"and {dup[1]} are less than "
+                         f"{_DUP_POSITION_TOL_M:g} m apart"),
+                element_id=mid, guid=member.guidref))
+        for field, label in (("web_direction", "Web"),
+                             ("flange_direction", "Flange")):
+            flip = _direction_flip(entries, field)
+            if flip is not None:
+                findings.append(Finding(
+                    message=(f"{label} direction flips between inclination "
+                             f"entries {flip[0]} and {flip[1]} "
+                             f"(negative dot product)"),
+                    element_id=mid, guid=member.guidref))
     return findings

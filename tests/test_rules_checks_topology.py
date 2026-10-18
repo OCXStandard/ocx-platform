@@ -1,22 +1,29 @@
-"""Tests for OCX-TOP-001/002/003 topology checks (checks/topology.py)."""
+"""Tests for OCX-TOP-001..005/008/009 topology checks (checks/topology.py)."""
 from __future__ import annotations
 
 from types import SimpleNamespace
 
 from ocx_model_core.model.ir import (
     IrCompositeCurve3D,
+    IrExtrudedSurface,
     IrHole2D,
     IrHole2DContour,
     IrHoleShapeCatalogue,
+    IrInclination,
     IrLimitedByRef,
     IrLine3D,
     IrNurbs3D,
     IrPanel,
     IrParametricHole,
+    IrPillar,
     IrPlane3D,
     IrPlate,
     IrPoint3D,
+    IrPolyLine3D,
     IrSeam,
+    IrStiffener,
+    IrSurface,
+    IrSurfaceCollection,
     IrTransformation,
     IrUnboundedGeometry,
     IrUnit,
@@ -34,6 +41,8 @@ from ocx_rules.packs.best_practice.checks.topology import (
     hole_not_splitting_plate,
     panel_limited_by_closed,
     seam_topology,
+    stiffener_inclinations,
+    surface_normals_and_boundaries,
 )
 
 _UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
@@ -317,3 +326,127 @@ class TestSeamTopology:
         panel = IrPanel(id="pan1", limited_by=_square_sides())
         ctx = _ctx(_vessel({"pan1": panel}))
         assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
+
+
+def _coll_member(sid: str, x0_mm: float, x1_mm: float, sweep_y: float = 1.0,
+                 guid: str | None = None, buildable: bool = True) -> IrSurface:
+    """1 m deep extruded strip spanning [x0, x1] mm with a rectangular
+    face boundary; ``sweep_y`` flips the analytic normal (+z vs -z)."""
+    boundary = IrPolyLine3D(curve_length=None, vertices=[
+        _pt(x0_mm, 0), _pt(x1_mm, 0), _pt(x1_mm, 1000),
+        _pt(x0_mm, 1000), _pt(x0_mm, 0)], is_closed=True)
+    geom = IrExtrudedSurface(
+        base_curve=_line(_pt(x0_mm, 0), _pt(x1_mm, 0)) if buildable else None,
+        sweep=IrVector3D(0.0, sweep_y, 0.0) if buildable else None,
+        face_boundary_curve=boundary)
+    return IrSurface(id=sid, guidref=guid, geometry=geom)
+
+
+def _coll_ctx(*members: IrSurface) -> SimpleNamespace:
+    vessel = _vessel({})
+    vessel.surface_collections["sc1"] = IrSurfaceCollection(
+        id="sc1", surfaces=list(members))
+    return _ctx(vessel)
+
+
+class TestSurfaceNormalsAndBoundaries:
+    PARAMS = {"angle_tolerance_deg": 90.0}
+
+    def test_coplanar_adjacent_members_pass(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000),
+                        _coll_member("sb", 1000, 2000))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+
+    def test_opposed_normals_fail(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
+                        _coll_member("sb", 1000, 2000, sweep_y=-1.0))
+        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
+        assert finding.element_id == "sa"
+        assert finding.guid == "ga"
+        assert "normals deviate" in finding.message
+        assert "sb" in finding.message
+
+    def test_unbuildable_member_skipped(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000),
+                        _coll_member("sb", 1000, 2000, sweep_y=-1.0,
+                                     buildable=False))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+
+    def test_distant_members_not_adjacent(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000),
+                        _coll_member("sb", 3000, 4000, sweep_y=-1.0))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+
+    def test_no_collections_passes(self):
+        ctx = _ctx(_vessel({}))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+
+
+def _incl(x_mm: float, web: tuple = (0, 0, 1),
+          flange: tuple | None = None) -> IrInclination:
+    return IrInclination(
+        position=_pt(x_mm, 0),
+        web_direction=IrVector3D(*web),
+        flange_direction=IrVector3D(*flange) if flange is not None else None)
+
+
+def _vessel_parent() -> ParentRef:
+    return ParentRef(kind=ParentKind.VESSEL, id="v1")
+
+
+def _stiffener_ctx(inclinations: list[IrInclination]) -> SimpleNamespace:
+    vessel = _vessel({})
+    vessel.stiffeners["st1"] = IrStiffener(
+        id="st1", parent_ref=_vessel_parent(), guidref="gst",
+        inclinations=inclinations)
+    return _ctx(vessel)
+
+
+class TestStiffenerInclinations:
+    def test_monotone_consistent_inclinations_pass(self):
+        ctx = _stiffener_ctx([_incl(0, flange=(0, 1, 0)),
+                              _incl(500, flange=(0, 1, 0)),
+                              _incl(1000, flange=(0, 1, 0))])
+        assert stiffener_inclinations(ctx, {}) == []
+
+    def test_duplicate_position_fails(self):
+        ctx = _stiffener_ctx([_incl(0), _incl(500), _incl(500)])
+        (finding,) = stiffener_inclinations(ctx, {})
+        assert finding.element_id == "st1"
+        assert finding.guid == "gst"
+        assert "duplicate inclination position" in finding.message.lower()
+
+    def test_web_direction_flip_fails(self):
+        ctx = _stiffener_ctx([_incl(0, web=(0, 0, 1)),
+                              _incl(500, web=(0, 0, -1))])
+        (finding,) = stiffener_inclinations(ctx, {})
+        assert finding.element_id == "st1"
+        assert finding.guid == "gst"
+        assert "web direction flips" in finding.message.lower()
+
+    def test_flange_direction_flip_fails(self):
+        ctx = _stiffener_ctx([_incl(0, flange=(0, 1, 0)),
+                              _incl(500, flange=(0, -1, 0))])
+        (finding,) = stiffener_inclinations(ctx, {})
+        assert "flange direction flips" in finding.message.lower()
+
+    def test_missing_vectors_skipped(self):
+        ctx = _stiffener_ctx([
+            _incl(0, web=(0, 0, 1)),
+            IrInclination(position=_pt(500, 0)),   # no vectors
+            _incl(1000, web=(0, 0, 1))])
+        assert stiffener_inclinations(ctx, {}) == []
+
+    def test_stiffener_without_inclinations_passes(self):
+        ctx = _stiffener_ctx([])
+        assert stiffener_inclinations(ctx, {}) == []
+
+    def test_pillar_web_flip_fails(self):
+        vessel = _vessel({})
+        vessel.pillars["pil1"] = IrPillar(
+            id="pil1", parent_ref=_vessel_parent(), guidref="gpil",
+            inclinations=[_incl(0, web=(1, 0, 0)), _incl(500, web=(-1, 0, 0))])
+        (finding,) = stiffener_inclinations(_ctx(vessel), {})
+        assert finding.element_id == "pil1"
+        assert finding.guid == "gpil"
+        assert "web direction flips" in finding.message.lower()
