@@ -1517,11 +1517,20 @@ class OcxV3Builder(IOcxBuilder):
             for fec in getattr(limited_by, "free_edge_curve3_d", []):
                 guid = getattr(fec, "guidref", None)
                 name_val = getattr(fec, "name", None)
+                fec_curve = None
+                for attr in self._CONTOUR_ATTRS:
+                    raw_c = getattr(fec, attr, None)
+                    if isinstance(raw_c, list):  # 2.8.6 list-typed fields
+                        raw_c = raw_c[0] if raw_c else None
+                    if raw_c is not None:
+                        fec_curve = self._build_curve(raw_c)
+                        break
                 limited_by_refs.append(
                     IrLimitedByRef(
                         ref_type="FreeEdgeCurve3D",
                         local_ref=name_val or "",
                         guidref=guid,
+                        curve=fec_curve,
                     )
                 )
 
