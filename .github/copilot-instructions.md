@@ -4,8 +4,10 @@
 
 A **uv workspace** (virtual root — the root `pyproject.toml` holds only
 `[tool.uv.workspace]`, shared dev deps, ruff and pytest config). Dependency
-direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`, and
-`ocx-render` → `ocx-geometry` → `ocx-model-core`.
+direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
+`ocx-render` → `ocx-geometry` → `ocx-model-core`, and
+`ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
+geometry lazily when installed).
 
 ```
 ocx-platform/                  ← repo / workspace root
@@ -51,6 +53,15 @@ ocx-platform/                  ← repo / workspace root
 │   │       ├── gltf_writer.py   ← write meshes to a .glb file
 │   │       ├── html_viewer.py   ← self-contained HTML viewer around the GLB
 │   │       └── cli.py           ← ocx-render entrypoint
+│   ├── ocx-rules/              ← configurable best-practice rule engine
+│   │   └── src/ocx_rules/
+│   │       ├── model.py         ← RuleSpec/RuleResult/Finding/Severity/RuleStatus
+│   │       ├── context.py       ← ValidationContext (lazy lxml tree + lazy IrVessel)
+│   │       ├── catalogue.py     ← TOML rule-catalogue loader (load-time validation)
+│   │       ├── primitives/      ← parameterized check primitives (PRIMITIVE_REGISTRY)
+│   │       ├── manager.py       ← RuleManager: entry-point discovery + execution
+│   │       ├── config.py        ← user TOML config (disable/severity/params)
+│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks.py
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
@@ -106,6 +117,9 @@ validator report all          model.3docx --destination report.html
 
 # Validate against the bundled OCX XSD (exit 0 valid / 1 errors / 2 cannot validate)
 validator validate schema model.3docx [--max-errors N]
+
+# Run configurable best-practice rules (exit 0 clean / 1 error findings / 2 cannot run)
+validator validate rules model.3docx [--config FILE] [--category CAT] [--rule ID]
 
 # Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse / 3 cannot write output)
 ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
