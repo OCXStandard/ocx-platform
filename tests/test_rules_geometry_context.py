@@ -50,3 +50,11 @@ class TestValidationContextWiring:
         g1 = ctx.geometry
         assert isinstance(g1, GeometryContext)
         assert ctx.geometry is g1
+
+
+class TestToSiFallback:
+    def test_length_fallback_without_registry(self):
+        from ocx_model_core.model.ir import IrVessel, Quantity
+
+        gctx = GeometryContext(IrVessel(id="v1"))
+        assert abs(gctx.to_si(Quantity(10.0, "Umm")) - 0.01) < 1e-12

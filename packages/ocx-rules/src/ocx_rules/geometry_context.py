@@ -35,14 +35,19 @@ class GeometryContext:
         return LengthResolver(self.vessel.unit_registry)
 
     def to_si(self, q: "Quantity | None") -> float | None:
-        """Any Quantity → SI float via the model's unit registry."""
+        """Any Quantity → SI float via the model's unit registry.
+
+        Registry misses for length units delegate to ``LengthResolver`` (which
+        knows common fallback factors and warns once per unknown unit); other
+        unknown units are treated as SI with a one-time warning.
+        """
         if q is None or q.value is None:
             return None
         unit = self.vessel.unit_registry.get(q.unit) if q.unit else None
         if unit is not None and unit.to_si_factor is not None:
             return float(q.value) * float(unit.to_si_factor)
         if q.unit:
-            logger.debug("Unknown unit {!r}; treating value as SI", q.unit)
+            return float(self.length.to_m(float(q.value), q.unit))
         return float(q.value)
 
     def sample(self, curve: "IrCurve3D | None",
