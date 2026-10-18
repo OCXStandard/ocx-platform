@@ -1,8 +1,9 @@
 """Custom check callables for the best_practice pack.
 
 Phase A: identity, document, references and curves_surfaces checks plus
-OCX-PROP-004 are real implementations; the 12 geometry checks remain stubs
-(see geometry_stubs, Phase B). TOML rules address every name as
+OCX-PROP-004 are real implementations. Phase B implemented the geometry
+checks in topology and properties; only the two compartment checks remain
+stubs (see geometry_stubs). TOML rules address every name as
 ``ocx_rules.packs.best_practice.checks:<name>``.
 """
 from __future__ import annotations
@@ -24,16 +25,6 @@ from ocx_rules.packs.best_practice.checks.document import (
 from ocx_rules.packs.best_practice.checks.geometry_stubs import (
     compartment_closure,
     compartments_disjoint,
-    composite_curve_continuous,
-    hole_contours_closed,
-    hole_not_splitting_plate,
-    panel_limited_by_closed,
-    panel_weight_cog_consistent,
-    plate_weight_consistent,
-    profile_closed_section,
-    seam_topology,
-    stiffener_inclinations,
-    surface_normals_and_boundaries,
 )
 from ocx_rules.packs.best_practice.checks.identity import (
     entitybase_has_guid_and_id,
@@ -41,6 +32,9 @@ from ocx_rules.packs.best_practice.checks.identity import (
     names_not_identifiers,
 )
 from ocx_rules.packs.best_practice.checks.properties import (
+    panel_weight_cog_consistent,
+    plate_weight_consistent,
+    profile_closed_section,
     renewal_thickness_on_instance,
 )
 from ocx_rules.packs.best_practice.checks.references import (
@@ -49,6 +43,15 @@ from ocx_rules.packs.best_practice.checks.references import (
     panel_as_occurrence_group,
     slot_lug_plate_refs,
     stiffener_end_configurations,
+)
+from ocx_rules.packs.best_practice.checks.topology import (
+    composite_curve_continuous,
+    hole_contours_closed,
+    hole_not_splitting_plate,
+    panel_limited_by_closed,
+    seam_topology,
+    stiffener_inclinations,
+    surface_normals_and_boundaries,
 )
 
 __all__ = [
