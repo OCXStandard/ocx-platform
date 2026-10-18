@@ -6,22 +6,34 @@ from types import SimpleNamespace
 from ocx_model_core.model.ir import (
     IrCompositeCurve3D,
     IrHole2D,
+    IrHole2DContour,
     IrHoleShapeCatalogue,
     IrLimitedByRef,
     IrLine3D,
     IrNurbs3D,
     IrPanel,
     IrParametricHole,
+    IrPlane3D,
+    IrPlate,
     IrPoint3D,
+    IrSeam,
+    IrTransformation,
+    IrUnboundedGeometry,
     IrUnit,
+    IrVector3D,
     IrVessel,
+    ParentKind,
+    ParentRef,
     Quantity,
+    Ref,
 )
 from ocx_rules.geometry_context import GeometryContext
 from ocx_rules.packs.best_practice.checks.topology import (
     composite_curve_continuous,
     hole_contours_closed,
+    hole_not_splitting_plate,
     panel_limited_by_closed,
+    seam_topology,
 )
 
 _UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
@@ -178,3 +190,130 @@ class TestHoleContoursClosed:
         cat = IrHoleShapeCatalogue(id="cat", holes={"h1": hole})
         ctx = _ctx(_vessel(catalogue=cat))
         assert hole_contours_closed(ctx, {"tolerance_mm": 0.1}) == []
+
+
+# ---------------------------------------------------------------------------
+# TOP-004 / TOP-005 shared helpers
+# ---------------------------------------------------------------------------
+
+_Z_PLANE = IrPlane3D(
+    id="surf1",
+    point_on_surface=_pt(0, 0, 0),
+    normal=IrVector3D(x=0.0, y=0.0, z=1.0),
+    udirection=IrVector3D(x=1.0, y=0.0, z=0.0),
+)
+
+
+def _square_outline() -> IrCompositeCurve3D:
+    """Closed 1 m square contour in the z=0 plane (mm units)."""
+    a, b, c, d = _pt(0, 0), _pt(1000, 0), _pt(1000, 1000), _pt(0, 1000)
+    return IrCompositeCurve3D(curve_length=None, segments=[
+        _line(a, b), _line(b, c), _line(c, d), _line(d, a)])
+
+
+def _placement(x_mm: float, y_mm: float) -> IrTransformation:
+    return IrTransformation(
+        origin=_pt(x_mm, y_mm),
+        primary_axis=IrVector3D(x=1.0, y=0.0, z=0.0),
+        secondary_axis=IrVector3D(x=0.0, y=1.0, z=0.0))
+
+
+def _circle_hole(diameter_mm: float) -> IrHole2D:
+    return IrHole2D(id="h1", parametric=IrParametricHole(
+        variant="parametric_circle",
+        diameter=Quantity(value=diameter_mm, unit="Umm")))
+
+
+def _rect_hole(width_mm: float, height_mm: float) -> IrHole2D:
+    return IrHole2D(id="h1", parametric=IrParametricHole(
+        variant="rectangular_hole",
+        width=Quantity(value=width_mm, unit="Umm"),
+        height=Quantity(value=height_mm, unit="Umm")))
+
+
+class TestHoleNotSplittingPlate:
+    def _ctx_with_plate(self, hole: IrHole2D, x_mm: float, y_mm: float,
+                        surface=_Z_PLANE) -> SimpleNamespace:
+        panel = IrPanel(
+            id="pan1", plate_ids=["pl1"],
+            unbounded_geometry=(IrUnboundedGeometry(surface=surface)
+                                if surface is not None else None))
+        plate = IrPlate(
+            id="pl1", guidref="gpl1",
+            parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
+            outer_contour=_square_outline(),
+            cut_by_holes=[IrHole2DContour(
+                id="hc1", hole_ref=Ref(local_ref="h1"),
+                transformation=_placement(x_mm, y_mm))])
+        cat = IrHoleShapeCatalogue(id="cat", holes={"h1": hole})
+        vessel = _vessel({"pan1": panel}, catalogue=cat)
+        vessel.plates["pl1"] = plate
+        return _ctx(vessel)
+
+    def test_hole_inside_outline_passes(self):
+        ctx = self._ctx_with_plate(_circle_hole(100.0), 500.0, 500.0)
+        assert hole_not_splitting_plate(ctx, {}) == []
+
+    def test_hole_cutting_across_plate_fails(self):
+        # 2 m wide slot across a 1 m plate -> splits it into two regions
+        ctx = self._ctx_with_plate(_rect_hole(2000.0, 100.0), 500.0, 500.0)
+        (finding,) = hole_not_splitting_plate(ctx, {})
+        assert finding.element_id == "pl1"
+        assert finding.guid == "gpl1"
+        assert "split" in finding.message
+
+    def test_plate_without_buildable_surface_skipped(self):
+        ctx = self._ctx_with_plate(_rect_hole(2000.0, 100.0), 500.0, 500.0,
+                                   surface=None)
+        assert hole_not_splitting_plate(ctx, {}) == []
+
+    def test_no_plates_passes(self):
+        ctx = _ctx(_vessel({}))
+        assert hole_not_splitting_plate(ctx, {}) == []
+
+
+class TestSeamTopology:
+    def _ctx_with_seam(self, seam: IrSeam,
+                       hole_at: tuple[float, float] | None = None
+                       ) -> SimpleNamespace:
+        cut_by = []
+        cat = None
+        if hole_at is not None:
+            cat = IrHoleShapeCatalogue(id="cat",
+                                       holes={"h1": _circle_hole(100.0)})
+            cut_by = [IrHole2DContour(
+                id="hc1", hole_ref=Ref(local_ref="h1"),
+                transformation=_placement(*hole_at))]
+        panel = IrPanel(
+            id="pan1", seam_ids=[seam.id], limited_by=_square_sides(),
+            unbounded_geometry=IrUnboundedGeometry(surface=_Z_PLANE),
+            cut_by_holes=cut_by)
+        vessel = _vessel({"pan1": panel}, catalogue=cat)
+        vessel.seams[seam.id] = seam
+        return _ctx(vessel)
+
+    def test_seam_endpoints_on_boundary_pass(self):
+        seam = IrSeam(id="s1",
+                      trace_line=_line(_pt(0, 500), _pt(1000, 500)))
+        ctx = self._ctx_with_seam(seam, hole_at=(500.0, 100.0))
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
+
+    def test_seam_endpoint_on_hole_contour_fails(self):
+        # hole: r=50 mm circle at (500, 500); seam ends at (450, 500)
+        seam = IrSeam(id="s1", guidref="gs1",
+                      trace_line=_line(_pt(0, 500), _pt(450, 500)))
+        ctx = self._ctx_with_seam(seam, hole_at=(500.0, 500.0))
+        (finding,) = seam_topology(ctx, {"tolerance_mm": 5.0})
+        assert finding.element_id == "s1"
+        assert finding.guid == "gs1"
+        assert "hole" in finding.message
+
+    def test_unsampleable_seam_trace_skipped(self):
+        seam = IrSeam(id="s1", trace_line=IrNurbs3D(curve_length=None))
+        ctx = self._ctx_with_seam(seam, hole_at=(500.0, 500.0))
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
+
+    def test_panel_without_seams_passes(self):
+        panel = IrPanel(id="pan1", limited_by=_square_sides())
+        ctx = _ctx(_vessel({"pan1": panel}))
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []

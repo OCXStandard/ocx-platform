@@ -5,9 +5,14 @@ from typing import Any
 
 import numpy as np
 from loguru import logger
-from ocx_geometry.holes import parametric_profile
+from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.measure import chain_polylines, ordered_junction_gaps
-from ocx_geometry.topology2d import polygon_ok
+from ocx_geometry.topology2d import (
+    point_polyline_distance,
+    polygon_ok,
+    region_count,
+)
+from ocx_model_core.model.ir.base import ParentKind
 from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
 
 from ocx_rules.model import Finding
@@ -158,4 +163,167 @@ def hole_contours_closed(context, params: dict[str, Any]) -> list[Finding]:
                          f"{gap * 1000:.2f} mm exceeds "
                          f"{tol_m * 1000:.2f} mm"),
                 element_id=hid, guid=hole.guidref))
+    return findings
+
+
+def _resolve_catalogue_hole(vessel, ref):
+    """IrHole2D behind a hole Ref (by local id, then by GUID), or None."""
+    catalogue = vessel.hole_shape_catalogue
+    if catalogue is None or ref is None:
+        return None
+    hole = catalogue.holes.get(ref.local_ref)
+    if hole is None and ref.guidref:
+        for candidate in catalogue.holes.values():
+            if candidate.guidref == ref.guidref:
+                return candidate
+    return hole
+
+
+def _open_ring(pts: np.ndarray) -> np.ndarray:
+    """Drop an exactly-repeated closing point.
+
+    Shapely's ``split`` treats an exactly-closed interior ring as a splitter
+    (inner disk + remainder), which would flag every normal hole. Open rings
+    keep interior holes as one region while a ring crossing the plate
+    outline still splits it.
+    """
+    if len(pts) > 3 and np.linalg.norm(pts[0] - pts[-1]) < 1e-12:
+        return pts[:-1]
+    return pts
+
+
+def _placed_hole_outlines(context, cut_by_holes, cut_by_contours,
+                          tol_m=_SAMPLE_TOL_M):
+    """3D hole outlines in metres from CutBy data -> (outlines, n_skipped).
+
+    Catalogue holes (``IrHole2DContour``) are profiled (parametric or
+    sampled contour) and mapped through their placement frame; inline
+    cut-by contours are already in model space and only sampled.
+    """
+    geo = context.geometry
+    outlines: list[np.ndarray] = []
+    skipped = 0
+    for hc in cut_by_holes:
+        hole = _resolve_catalogue_hole(context.vessel, hc.hole_ref)
+        profile = None
+        if hole is not None:
+            if hole.parametric is not None:
+                profile = parametric_profile(hole.parametric, geo.length, tol_m)
+            elif hole.contour is not None:
+                profile = geo.sample(hole.contour, tol_m)
+        placed = None
+        if profile is not None and len(profile) >= 3:
+            placed = place_hole(np.asarray(profile, dtype=float),
+                                hc.transformation, geo.length)
+        if placed is None:
+            skipped += 1
+        else:
+            outlines.append(_open_ring(placed))
+    for contour in cut_by_contours:
+        pts = geo.sample(contour, tol_m)
+        if pts is None or len(pts) < 3:
+            skipped += 1
+        else:
+            outlines.append(_open_ring(pts))
+    return outlines, skipped
+
+
+def hole_not_splitting_plate(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-TOP-004: a hole must not split a plate into disjoint regions."""
+    findings: list[Finding] = []
+    geo = context.geometry
+    vessel = context.vessel
+    for pid, plate in vessel.plates.items():
+        if not plate.cut_by_holes and not plate.cut_by_contours:
+            continue
+        panel = None
+        pr = plate.parent_ref
+        if pr is not None and pr.kind == ParentKind.PANEL:
+            panel = vessel.panels.get(pr.id)
+        if panel is None:
+            logger.debug("TOP-004: plate {} skipped (no owning panel)", pid)
+            continue
+        param = geo.surface_param(geo.panel_surface(panel))
+        if param is None:
+            logger.debug("TOP-004: plate {} skipped (no buildable panel "
+                         "surface)", pid)
+            continue
+        if param.periodic_u:
+            logger.debug("TOP-004: plate {} skipped (periodic surface, "
+                         "ambiguous UV mapping)", pid)
+            continue
+        outline = geo.sample(plate.outer_contour)
+        if outline is None or len(outline) < 3:
+            logger.debug("TOP-004: plate {} skipped (unsampleable outer "
+                         "contour)", pid)
+            continue
+        holes_3d, skipped = _placed_hole_outlines(
+            context, plate.cut_by_holes, plate.cut_by_contours)
+        if skipped:
+            logger.debug("TOP-004: plate {}: {} hole(s) could not be "
+                         "placed; skipped", pid, skipped)
+        if not holes_3d:
+            continue
+        try:
+            outline_uv = np.asarray(param.inverse(outline), dtype=float)
+            cuts_uv = [np.asarray(param.inverse(h), dtype=float)
+                       for h in holes_3d]
+        except Exception as exc:  # noqa: BLE001 — lean-pass on UV failure
+            logger.debug("TOP-004: plate {} skipped (UV mapping failed: {})",
+                         pid, exc)
+            continue
+        n = region_count(outline_uv, cuts_uv)
+        if n > 1:
+            findings.append(Finding(
+                message=f"Hole splits plate into {n} regions",
+                element_id=pid, guid=plate.guidref))
+    return findings
+
+
+def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-TOP-005: seam endpoints must not land on hole contours."""
+    tol_m = float(params.get("tolerance_mm", 5.0)) / 1000.0
+    findings: list[Finding] = []
+    geo = context.geometry
+    vessel = context.vessel
+    for pid, panel in vessel.panels.items():
+        seams = [(sid, vessel.seams[sid]) for sid in panel.seam_ids
+                 if sid in vessel.seams]
+        if not seams:
+            continue
+        boundary, _ = _panel_boundary_samples(context, panel)
+        cut_holes = list(panel.cut_by_holes)
+        cut_contours = list(panel.cut_by_contours)
+        for plate_id in panel.plate_ids:
+            plate = vessel.plates.get(plate_id)
+            if plate is not None:
+                cut_holes += plate.cut_by_holes
+                cut_contours += plate.cut_by_contours
+        hole_outlines, _ = _placed_hole_outlines(context, cut_holes,
+                                                 cut_contours)
+        seam_samples: dict[str, np.ndarray] = {}
+        for sid, seam in seams:
+            pts = geo.sample(seam.trace_line)
+            if pts is None or len(pts) < 2:
+                logger.debug("TOP-005: seam {} on panel {} skipped "
+                             "(unsampleable trace)", sid, pid)
+                continue
+            seam_samples[sid] = pts
+        if not hole_outlines:
+            continue
+        for sid, pts in seam_samples.items():
+            seam = vessel.seams[sid]
+            non_hole = boundary + [p for osid, p in seam_samples.items()
+                                   if osid != sid]
+            for label, endpoint in (("start", pts[0]), ("end", pts[-1])):
+                d_hole = min((point_polyline_distance(endpoint, h)
+                              for h in hole_outlines), default=float("inf"))
+                d_other = min((point_polyline_distance(endpoint, c)
+                               for c in non_hole), default=float("inf"))
+                if d_hole <= tol_m and d_hole < d_other:
+                    findings.append(Finding(
+                        message=(f"Seam {label} endpoint lies on a hole "
+                                 f"contour ({d_hole * 1000:.2f} mm away, "
+                                 f"tolerance {tol_m * 1000:.2f} mm)"),
+                        element_id=sid, guid=seam.guidref))
     return findings

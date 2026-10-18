@@ -56,7 +56,8 @@ category    = "topology"
 severity    = "error"
 requires    = ["ir", "geometry"]
 [rule.check]
-custom = "ocx_rules.packs.best_practice.checks:seam_topology"
+custom       = "ocx_rules.packs.best_practice.checks:seam_topology"
+tolerance_mm = 5.0
 
 [[rule]]
 id          = "OCX-TOP-006"
