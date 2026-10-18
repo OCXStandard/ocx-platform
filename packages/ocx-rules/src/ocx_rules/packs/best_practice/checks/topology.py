@@ -14,7 +14,6 @@ from ocx_geometry.topology2d import (
 )
 from ocx_model_core.model.ir.base import ParentKind
 from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
-from scipy.spatial import cKDTree
 
 from ocx_rules.model import Finding
 
@@ -369,18 +368,24 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
             surf_a, param_a, bnd_a = members[i]
             for surf_b, param_b, bnd_b in members[i + 1:]:
                 try:
-                    d, idx = cKDTree(bnd_b).query(bnd_a)
+                    # Symmetric point-to-segment proximity: vertices of one
+                    # boundary may lie on the interior of the other's
+                    # segments (e.g. T-configurations without shared
+                    # corners), so check both directions.
+                    cand = (
+                        [(point_polyline_distance(p, bnd_b), p) for p in bnd_a]
+                        + [(point_polyline_distance(p, bnd_a), p) for p in bnd_b]
+                    )
                 except Exception as exc:  # noqa: BLE001 — lean-pass per pair
                     logger.debug("TOP-008: pair {}/{} skipped ({})",
                                  surf_a.id, surf_b.id, exc)
                     continue
-                close = np.flatnonzero(d <= _ADJACENCY_TOL_M)
-                if len(close) == 0:
+                close = sorted((c for c in cand if c[0] <= _ADJACENCY_TOL_M),
+                               key=lambda c: c[0])
+                if not close:
                     continue  # not adjacent
-                nearest = close[np.argsort(d[close])][:_MAX_SHARED_SAMPLES]
                 angles = []
-                for k in nearest:
-                    p = 0.5 * (bnd_a[k] + bnd_b[idx[k]])
+                for _, p in close[:_MAX_SHARED_SAMPLES]:
                     try:
                         na = _normal_at(param_a, p)
                         nb = _normal_at(param_b, p)

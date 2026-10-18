@@ -377,6 +377,22 @@ class TestSurfaceNormalsAndBoundaries:
                         _coll_member("sb", 3000, 4000, sweep_y=-1.0))
         assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
 
+    def test_t_configuration_without_shared_corners_fails(self):
+        # Member B abuts the interior of A's x=1000 edge (no coincident
+        # boundary vertices) — adjacency must still be detected.
+        boundary_b = IrPolyLine3D(curve_length=None, vertices=[
+            _pt(1000, 250), _pt(2000, 250), _pt(2000, 750),
+            _pt(1000, 750), _pt(1000, 250)], is_closed=True)
+        geom_b = IrExtrudedSurface(
+            base_curve=_line(_pt(1000, 250), _pt(2000, 250)),
+            sweep=IrVector3D(0.0, -1.0, 0.0),
+            face_boundary_curve=boundary_b)
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
+                        IrSurface(id="sb", geometry=geom_b))
+        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
+        assert finding.element_id == "sa"
+        assert "sb" in finding.message
+
     def test_no_collections_passes(self):
         ctx = _ctx(_vessel({}))
         assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
