@@ -24,6 +24,11 @@ from .geometry_stubs import (
     stiffener_inclinations,
     surface_normals_and_boundaries,
 )
+from .identity import (
+    entitybase_has_guid_and_id,
+    idbase_has_id,
+    names_not_identifiers,
+)
 
 __all__ = [
     "compartment_closure",
@@ -67,12 +72,6 @@ def _stub(summary: str):
     check.__doc__ = summary
     return check
 
-
-# identity
-entitybase_has_guid_and_id = _stub(
-    "Every EntityBase-derived object carries GUIDRef and id")
-idbase_has_id = _stub("IDBase-derived geometry carries a local id")
-names_not_identifiers = _stub("Names are not used as identifiers")
 
 # document
 schema_location_tuple = _stub(
