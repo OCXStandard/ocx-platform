@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "ocx-model-core>=0.5,<0.6",
+    "ocx-geometry",
     "lxml>=6.0",
     "loguru>=0.7",
 ]
@@ -22,3 +23,4 @@ packages = ["src/ocx_rules"]
 
 [tool.uv.sources]
 ocx-model-core = { workspace = true }
+ocx-geometry = { workspace = true }
