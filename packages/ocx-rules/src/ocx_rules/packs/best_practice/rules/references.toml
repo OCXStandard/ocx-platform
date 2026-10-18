@@ -38,8 +38,8 @@ custom = "ocx_rules.packs.best_practice.checks:stiffener_end_configurations"
 
 [[rule]]
 id          = "OCX-REF-004"
-title       = "Two-lug slot has two LugPlateRef"
-description = "A slot with two attached lug plates must contain exactly two LugPlateRef references, one per lug plate."
+title       = "Slot carries at most two LugPlateRef"
+description = "A slot connection carries at most two LugPlateRef references, one per attached lug plate."
 source      = "slots"
 category    = "references"
 severity    = "error"
