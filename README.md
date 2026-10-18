@@ -30,8 +30,9 @@ making downstream tools independent of any particular OCX schema version.
   (identity, document, references, curves/surfaces, topology, properties),
   defined declaratively in TOML, extensible via `ocx_rules.packs` entry-point
   plugins and tunable through a user config (disable rules, override
-  severity/parameters). The 24 content rules are fully implemented; the 12
-  geometry-dependent rules await the geometry kernel (Phase B)
+  severity/parameters). 34 of the 36 rules are fully implemented (24 content
+  rules + 10 geometry-dependent rules backed by the analytic geometry
+  kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred
 - **3-D rendering** (`ocx-render`): tessellates the model to a GLB plus a
   self-contained HTML viewer. Multi-member shell panels are built from one
   shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);

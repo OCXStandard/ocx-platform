@@ -636,6 +636,8 @@ class OcxV3Builder(IOcxBuilder):
                 u_knot_vector=[float(k) for k in (getattr(uk, "value", None) or [])] if uk else [],
                 v_knot_vector=[float(k) for k in (getattr(vk, "value", None) or [])] if vk else [],
                 control_points=rows,
+                face_boundary_curve=self._curve_or_contour(
+                    getattr(elem, "face_boundary_curve", None)),
                 normal=normal, point_on_surface=pos)
         logger.debug("Unknown surface type: {}", type(elem).__name__)
         return None
@@ -1517,11 +1519,13 @@ class OcxV3Builder(IOcxBuilder):
             for fec in getattr(limited_by, "free_edge_curve3_d", []):
                 guid = getattr(fec, "guidref", None)
                 name_val = getattr(fec, "name", None)
+                fec_curve = self._build_contour(fec)
                 limited_by_refs.append(
                     IrLimitedByRef(
                         ref_type="FreeEdgeCurve3D",
                         local_ref=name_val or "",
                         guidref=guid,
+                        curve=fec_curve,
                     )
                 )
 

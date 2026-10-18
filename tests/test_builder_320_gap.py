@@ -322,6 +322,33 @@ def test_nurbs_surface_populates_degrees_knots_and_control_grid():
     assert ir.control_points[1][0].z == 9.2
 
 
+def test_nurbs_surface_keeps_face_boundary_curve():
+    """A FaceBoundaryCurve wrapper on a NURBSSurface lands in the IR."""
+    surface = NurbsSurface(
+        id="N4",
+        normal=_dir3(0.0, -1.0, 0.0),
+        point_on_surface=_pt3(0.0, 0.0, 0.0),
+        u_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        v_nurbsproperties=NS(degree=1, num_ctrl_pts=2, num_knots=4),
+        uknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        vknot_vector=NS(value=[0.0, 0.0, 1.0, 1.0]),
+        control_pt_list=[NS(control_point=[
+            _pt3(0.0, 0.0, 0.0), _pt3(0.0, 1.0, 0.0),
+            _pt3(1.0, 0.0, 0.0), _pt3(1.0, 1.0, 0.0),
+        ])],
+        face_boundary_curve=NS(line3_d=[
+            Line3D(id="B1", start_point=_pt3(0.0, 0.0, 0.0),
+                   end_point=_pt3(1.0, 0.0, 0.0)),
+            Line3D(id="B2", start_point=_pt3(1.0, 0.0, 0.0),
+                   end_point=_pt3(1.0, 1.0, 0.0)),
+        ]),
+    )
+    ir = _b()._build_surface(surface)
+    assert isinstance(ir, IrNurbsSurface)
+    assert ir.face_boundary_curve is not None
+    assert len(ir.face_boundary_curve.segments) == 2
+
+
 def test_nurbs_surface_mismatched_grid_yields_empty_control_points():
     """A control-point count that disagrees with numCtrlPts u*v degrades to []."""
     surface = NurbsSurface(

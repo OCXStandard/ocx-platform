@@ -980,6 +980,7 @@ source = { editable = "packages/ocx-rules" }
 dependencies = [
     { name = "loguru" },
     { name = "lxml" },
+    { name = "ocx-geometry" },
     { name = "ocx-model-core" },
 ]
 
@@ -987,6 +988,7 @@ dependencies = [
 requires-dist = [
     { name = "loguru", specifier = ">=0.7" },
     { name = "lxml", specifier = ">=6.0" },
+    { name = "ocx-geometry", editable = "packages/ocx-geometry" },
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
 ]
 

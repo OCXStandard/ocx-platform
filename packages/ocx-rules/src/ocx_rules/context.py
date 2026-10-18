@@ -14,6 +14,7 @@ import lxml.etree as etree
 from loguru import logger
 
 if TYPE_CHECKING:
+    from ocx_rules.geometry_context import GeometryContext
     from ocx_rules.xml_index import XmlIndex
 
 
@@ -56,3 +57,10 @@ class ValidationContext:
         from ocx_rules.xml_index import XmlIndex
 
         return XmlIndex(self.xml_tree)
+
+    @cached_property
+    def geometry(self) -> "GeometryContext":
+        """Shared geometry facade over the IR; built on first access."""
+        from ocx_rules.geometry_context import GeometryContext
+
+        return GeometryContext(self.vessel)

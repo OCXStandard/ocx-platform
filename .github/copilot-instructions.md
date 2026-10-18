@@ -62,9 +62,11 @@ ocx-platform/                  ← repo / workspace root
 │   │       ├── primitives/      ← parameterized check primitives (PRIMITIVE_REGISTRY)
 │   │       ├── manager.py       ← RuleManager: entry-point discovery + execution
 │   │       ├── config.py        ← user TOML config (disable/severity/params)
+│   │       ├── geometry_context.py ← GeometryContext: geometry services for checks
 │   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks/ package
-│   │                              (24 content rules implemented; 12 geometry
-│   │                              rules are Phase B stubs in geometry_stubs.py)
+│   │                              (34 of 36 rules implemented — 24 content +
+│   │                              10 geometry; OCX-TOP-006/007 compartment
+│   │                              rules are deferred stubs in geometry_stubs.py)
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)

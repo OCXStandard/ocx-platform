@@ -23,6 +23,7 @@ requires    = ["ir", "geometry"]
 [rule.check]
 custom             = "ocx_rules.packs.best_practice.checks:panel_weight_cog_consistent"
 relative_tolerance = 0.02
+cog_tolerance_mm   = 50.0
 
 [[rule]]
 id          = "OCX-PROP-003"

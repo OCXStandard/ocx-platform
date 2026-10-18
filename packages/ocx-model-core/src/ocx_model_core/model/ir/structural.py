@@ -265,6 +265,7 @@ class IrLimitedByRef:
     offset: Quantity | None = None
     offset_direction: IrVector3D | None = None
     contour_mid_point: IrPoint3D | None = None
+    curve: IrCurve3D | None = None  # inline FreeEdgeCurve3D geometry only
 
     def as_ref(self) -> "Ref":
         """Return a plain Ref for backward-compatible look-ups."""
