@@ -10,6 +10,13 @@ from __future__ import annotations
 
 from ocx_rules.model import CheckNotImplemented
 
+from .curves import (
+    catalogue_holes_planar,
+    nurbs_control_points,
+    nurbs_knot_multiplicity,
+    nurbs_knots_non_decreasing,
+    polyline_closed,
+)
 from .document import (
     enumerated_root_units,
     root_declarations,
@@ -91,13 +98,7 @@ def _stub(summary: str):
 #   (implemented in .references, re-exported above)
 
 # curves_surfaces
-nurbs_control_points = _stub("NURBS control-point count >= degree + 1")
-nurbs_knots_non_decreasing = _stub("NURBS knot vectors are non-decreasing")
-nurbs_knot_multiplicity = _stub("NURBS knot multiplicity <= degree")
-polyline_closed = _stub(
-    "Closed Polyline3D repeats its first point; adjacent segments coincide")
-catalogue_holes_planar = _stub(
-    "Catalogue hole contours are 2-D (Z=0) and centered at the origin")
+#   (implemented in .curves, re-exported above)
 
 # properties
 renewal_thickness_on_instance = _stub(
