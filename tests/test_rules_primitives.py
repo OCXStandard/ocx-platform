@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from ocx_rules.model import CheckNotImplemented
 from ocx_rules.primitives import PRIMITIVE_REGISTRY
 

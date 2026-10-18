@@ -13,10 +13,10 @@ Overrides may change severity and any check parameter; never the check itself.
 """
 from __future__ import annotations
 
-import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+import tomllib
 from loguru import logger
 
 from ocx_rules.model import RuleSpec, Severity

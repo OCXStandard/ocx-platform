@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from ocx_rules.config import ConfigError, RuleConfig, apply_config, load_config
 from ocx_rules.model import CheckRef, RuleSpec, Severity
 

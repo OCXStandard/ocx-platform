@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from ocx_rules.catalogue import CatalogueError, load_catalogue_dir, parse_rules_toml
 from ocx_rules.model import Severity
 

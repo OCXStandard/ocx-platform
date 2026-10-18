@@ -7,9 +7,8 @@ load time — never at run time.
 from __future__ import annotations
 
 import importlib
-import tomllib
-from pathlib import Path
 
+import tomllib
 from loguru import logger
 
 from ocx_rules.model import VALID_REQUIREMENTS, CheckRef, RuleSpec, Severity

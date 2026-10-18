@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from ocx_model_validator.cli import app
+from typer.testing import CliRunner
 
 runner = CliRunner(env={"COLUMNS": "200"})
 

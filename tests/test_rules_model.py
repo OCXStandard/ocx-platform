@@ -4,7 +4,6 @@ from __future__ import annotations
 import dataclasses
 
 import pytest
-
 from ocx_rules.model import (
     CheckNotImplemented,
     CheckRef,

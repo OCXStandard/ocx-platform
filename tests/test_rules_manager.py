@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from ocx_rules.config import RuleConfig
 from ocx_rules.context import ValidationContext
 from ocx_rules.manager import RuleManager
