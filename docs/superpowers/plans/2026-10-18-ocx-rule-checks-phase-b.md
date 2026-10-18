@@ -1595,3 +1595,31 @@ git commit -m "docs: Phase B geometry rule checks implemented"
 
 
 
+
+---
+
+## PLAN CORRECTION — spec realignment (supersedes Tasks 6-9 sketches above)
+
+The sketches above for Tasks 6-9 drifted from the approved spec
+(`docs/superpowers/specs/2026-10-18-ocx-rule-checks-phase-b-design.md`) and the
+committed rule TOMLs. The authoritative semantics, function names (must equal
+the existing `geometry_stubs` names so the Task 10 facade switch is a pure
+import change) and params are:
+
+| Rule | Check function | Semantics (spec) | Params |
+|------|----------------|------------------|--------|
+| TOP-001 | `panel_limited_by_closed` | Panel LimitedBy resolves to one closed contour (chain + gaps vs `tolerance_mm` 1.0) | tolerance_mm |
+| TOP-002 | `composite_curve_continuous` | Every `IrCompositeCurve3D` in the model (panel boundary curves, seam traces, stiffener/pillar traces, plate outer contours, hole contours): sample segments in declared order; junction gap > `tolerance_mm` 0.1 → finding per curve | tolerance_mm |
+| TOP-003 | `hole_contours_closed` | Hole/opening contours in `hole_shape_catalogue`: parametric profiles → generated ring must be a valid closed polygon; curve contours → sampled closure gap ≤ `tolerance_mm` 0.1 | tolerance_mm |
+| TOP-004 | `hole_not_splitting_plate` | For each plate with holes: plate outline + placed hole outlines in the panel surface UV; `region_count(outline, holes)` > 1 → finding. Skip plates without buildable surface/outline. | — |
+| TOP-005 | `seam_topology` | For each panel: sample boundary, seams, hole contours; classify seam endpoints by nearest contour (boundary/seam/hole, within tol) — endpoint on a hole contour → finding; optional: seams+boundary partition panel into valid regions. | tolerance_mm (endpoint classification tol, default 5.0) |
+| TOP-008 | `surface_normals_and_boundaries` | For each `IrSurfaceCollection`: adjacent members (shared boundary proximity via face boundary curves); analytic normals sampled near the shared boundary; deviation > `angle_tolerance_deg` 90 → finding. Members lacking params/boundaries skipped. | angle_tolerance_deg |
+| TOP-009 | `stiffener_inclinations` | Per stiffener/pillar inclination series: duplicate positions (<1e-6 m apart) or consecutive web/flange vectors with negative dot → finding. Pure IR vector math. | — |
+| PROP-001 | `plate_weight_consistent` | surface_area x thickness x density vs declared moulded dry weight; rel deviation > `relative_tolerance` 0.02 → finding | relative_tolerance |
+| PROP-002 | `panel_weight_cog_consistent` | Σ child plate masses vs panel declared (rel tol 0.02); mass-weighted child CoG vs panel CoG > `cog_tolerance_mm` 50 → finding (param added to TOML) | relative_tolerance, cog_tolerance_mm |
+| PROP-003 | `profile_closed_section` | `section_polygon` per section; `polygon_ok` must pass → else finding | — |
+
+Corrective actions during execution: Task 6 was first implemented with drifted
+semantics (`panel_closed_contour`/`boundary_continuity`/`seam_continuity`);
+a follow-up commit realigns it to the table above. Tasks 7-9 are dispatched
+directly from this table.
