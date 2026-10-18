@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
+import mapbox_earcut
 import numpy as np
 from loguru import logger
 from ocx_model_core.model.ir.base import IrUnit, Quantity
 from ocx_model_core.model.ir.geometry import IrPoint3D
+
+if TYPE_CHECKING:
+    from ocx_geometry.surfaces import SurfaceParam
 
 
 def polyline_length(points: Sequence[IrPoint3D]) -> float:
@@ -121,3 +126,60 @@ def ordered_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
             gaps.append(d0)
             tail = pts[-1]
     return gaps
+
+
+# 3-point Gauss rule on the reference triangle (degree-2 exact); barycentric.
+_TRI_GAUSS = np.array([[2 / 3, 1 / 6, 1 / 6],
+                       [1 / 6, 2 / 3, 1 / 6],
+                       [1 / 6, 1 / 6, 2 / 3]])
+
+
+def _triangulate_uv(outer: np.ndarray,
+                    holes: Sequence[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    rings = [np.asarray(outer, dtype=float)[:, :2]]
+    rings += [np.asarray(h, dtype=float)[:, :2] for h in holes]
+    verts = np.vstack(rings)
+    ends = np.cumsum([len(r) for r in rings]).astype(np.uint32)
+    tris = np.asarray(
+        mapbox_earcut.triangulate_float64(verts, ends), dtype=np.int64
+    ).reshape(-1, 3)
+    return verts, tris
+
+
+def surface_area(param: SurfaceParam, outer_uv: np.ndarray,
+                 holes_uv: Sequence[np.ndarray] | None = None,
+                 refine: int = 2) -> float:
+    """Area in m2 of the trimmed UV region on *param* - quadrature, no mesh.
+
+    ``outer_uv``/``holes_uv`` are closed (N, 2) rings without a repeated last
+    point. The UV polygon is earcut-decomposed exactly, each UV triangle is
+    uniformly refined ``refine`` times (4**refine subtriangles) and
+    sqrt(EG - F^2) is integrated with a 3-point Gauss rule. 0.0 for degenerate
+    input.
+    """
+    outer_uv = np.asarray(outer_uv, dtype=float)
+    if len(outer_uv) < 3:
+        return 0.0
+    verts, tris = _triangulate_uv(outer_uv, holes_uv or [])
+    if len(tris) == 0:
+        return 0.0
+    corners = verts[tris]                      # (T, 3, 2)
+    for _ in range(refine):                    # 1-to-4 uniform split
+        a, b, c = corners[:, 0], corners[:, 1], corners[:, 2]
+        ab, bc, ca = (a + b) / 2, (b + c) / 2, (c + a) / 2
+        corners = np.concatenate([
+            np.stack([a, ab, ca], axis=1), np.stack([ab, b, bc], axis=1),
+            np.stack([ca, bc, c], axis=1), np.stack([ab, bc, ca], axis=1)])
+    a, b, c = corners[:, 0], corners[:, 1], corners[:, 2]
+    area2d = 0.5 * np.abs((b[:, 0] - a[:, 0]) * (c[:, 1] - a[:, 1])
+                          - (c[:, 0] - a[:, 0]) * (b[:, 1] - a[:, 1]))
+    total = 0.0
+    for bary in _TRI_GAUSS:
+        uv = bary[0] * a + bary[1] * b + bary[2] * c   # (T, 2)
+        du, dv = param.first_derivs(uv)
+        e = np.einsum("ij,ij->i", du, du)
+        f = np.einsum("ij,ij->i", du, dv)
+        g = np.einsum("ij,ij->i", dv, dv)
+        metric = np.sqrt(np.maximum(e * g - f * f, 0.0))
+        total += float(np.sum(metric * area2d)) / len(_TRI_GAUSS)
+    return total

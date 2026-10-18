@@ -59,6 +59,15 @@ class SurfaceParam(ABC):
         norms[norms < 1e-15] = 1.0
         return n / norms
 
+    def first_derivs(self, uv: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """(dS/du, dS/dv) at each uv row — numeric central differences."""
+        uv = np.asarray(uv, dtype=float)
+        span = max(float(np.ptp(uv[:, 0])), float(np.ptp(uv[:, 1])), 1.0)
+        eps = 1e-5 * span
+        du = (self.evaluate(uv + [eps, 0.0]) - self.evaluate(uv - [eps, 0.0])) / (2 * eps)
+        dv = (self.evaluate(uv + [0.0, eps]) - self.evaluate(uv - [0.0, eps])) / (2 * eps)
+        return du, dv
+
     def uv_scale(self) -> tuple[float, float]:
         return (1.0, 1.0)
 
@@ -97,6 +106,10 @@ class PlaneParam(SurfaceParam):
 
     def normals(self, uv):
         return np.tile(self.n, (len(np.asarray(uv)), 1))
+
+    def first_derivs(self, uv):
+        n = len(np.asarray(uv))
+        return np.tile(self.u, (n, 1)), np.tile(self.v, (n, 1))
 
 
 class CylinderParam(SurfaceParam):
@@ -366,6 +379,10 @@ class NurbsSurfaceParam(SurfaceParam):
     def evaluate(self, uv):
         uv = self._clip_uv(np.asarray(uv, dtype=float).reshape(-1, 2))
         return self._spl(uv)
+
+    def first_derivs(self, uv):
+        uv = self._clip_uv(np.asarray(uv, dtype=float).reshape(-1, 2))
+        return self._spl(uv, nu=(1, 0)), self._spl(uv, nu=(0, 1))
 
     def inverse(self, pts):
         pts = np.asarray(pts, dtype=float).reshape(-1, 3)
