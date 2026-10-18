@@ -1,7 +1,7 @@
 """Tests for OCX-PROP-001/002/003/004 property checks (checks/properties.py)."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import SimpleNamespace
 
 from ocx_model_core.model.ir import (
@@ -192,6 +192,15 @@ class TestPlateWeightConsistent:
 
     def test_no_plates_passes(self):
         assert plate_weight_consistent(_geo_ctx(_vessel()), self.PARAMS) == []
+
+    def test_degenerate_outline_skipped(self):
+        # A collapsed (linear) outline yields surface_area 0.0, which must
+        # be treated as unevaluable, not as a weight deviation.
+        ctx = self._ctx_with_plate(declared_kg=78.5)
+        ctx.vessel.plates["pl1"] = replace(
+            ctx.vessel.plates["pl1"],
+            outer_contour=_line(_pt(0, 0), _pt(1000, 0)))
+        assert plate_weight_consistent(ctx, self.PARAMS) == []
 
 
 class TestPanelWeightCogConsistent:

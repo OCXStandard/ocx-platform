@@ -102,6 +102,10 @@ def plate_weight_consistent(context, params: dict[str, Any]) -> list[Finding]:
             logger.debug("PROP-001: plate {} skipped (area evaluation "
                          "failed: {})", pid, exc)
             continue
+        if not np.isfinite(area) or area <= 0.0:
+            logger.debug("PROP-001: plate {} skipped (degenerate computed "
+                         "area {})", pid, area)
+            continue
         computed = area * thickness * density
         if abs(computed - declared) / declared > tol:
             findings.append(Finding(
