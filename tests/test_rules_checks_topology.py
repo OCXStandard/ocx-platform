@@ -92,6 +92,24 @@ class TestPanelLimitedByClosed:
         ctx = _ctx(_vessel({}))
         assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == []
 
+    def test_single_closed_boundary_curve_passes(self):
+        a, b, c, d = _pt(0, 0), _pt(1000, 0), _pt(1000, 1000), _pt(0, 1000)
+        ring = IrCompositeCurve3D(curve_length=None, segments=[
+            _line(a, b), _line(b, c), _line(c, d), _line(d, a)])
+        panel = IrPanel(id="p1", limited_by=[_fec(ring)])
+        ctx = _ctx(_vessel({"p1": panel}))
+        assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == []
+
+    def test_single_open_boundary_curve_fails(self):
+        a, b, c, d = _pt(0, 0), _pt(1000, 0), _pt(1000, 1000), _pt(0, 1000)
+        open_curve = IrCompositeCurve3D(curve_length=None, segments=[
+            _line(a, b), _line(b, c), _line(c, d)])
+        panel = IrPanel(id="p1", guidref="g1", limited_by=[_fec(open_curve)])
+        ctx = _ctx(_vessel({"p1": panel}))
+        (finding,) = panel_limited_by_closed(ctx, {"tolerance_mm": 1.0})
+        assert finding.element_id == "p1"
+        assert "gap" in finding.message
+
 
 class TestCompositeCurveContinuous:
     def _panel_with_composite(self, segments) -> IrPanel:

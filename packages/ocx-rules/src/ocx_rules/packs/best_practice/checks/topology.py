@@ -37,9 +37,13 @@ def panel_limited_by_closed(context, params: dict[str, Any]) -> list[Finding]:
         if not panel.limited_by:
             continue
         samples, skipped = _panel_boundary_samples(context, panel)
-        if skipped or len(samples) < 2:
+        if skipped:
             logger.debug("TOP-001: panel {} skipped ({} unresolved refs)",
                          pid, skipped)
+            continue
+        if not samples:
+            logger.debug("TOP-001: panel {} skipped (no sampleable boundary)",
+                         pid)
             continue
         ring, gaps = chain_polylines(samples)
         if ring is None:
