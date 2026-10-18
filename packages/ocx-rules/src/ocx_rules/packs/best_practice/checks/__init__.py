@@ -1,12 +1,63 @@
 """Custom check callables for the best_practice pack.
 
-Step 1: every check is a stub raising CheckNotImplemented. Step 2 replaces
-stubs with real implementations keeping name and signature
+Geometry checks live in :mod:`.geometry_stubs` and are re-exported here so
+TOML ``custom = "ocx_rules.packs.best_practice.checks:<name>"`` paths keep
+working. The remaining checks are stubs raising CheckNotImplemented until
+real implementations replace them, keeping name and signature
 ``(context: ValidationContext, params: dict) -> list[Finding]``.
 """
 from __future__ import annotations
 
 from ocx_rules.model import CheckNotImplemented
+
+from .geometry_stubs import (
+    compartment_closure,
+    compartments_disjoint,
+    composite_curve_continuous,
+    hole_contours_closed,
+    hole_not_splitting_plate,
+    panel_limited_by_closed,
+    panel_weight_cog_consistent,
+    plate_weight_consistent,
+    profile_closed_section,
+    seam_topology,
+    stiffener_inclinations,
+    surface_normals_and_boundaries,
+)
+
+__all__ = [
+    "compartment_closure",
+    "compartments_disjoint",
+    "composite_curve_continuous",
+    "hole_contours_closed",
+    "hole_not_splitting_plate",
+    "panel_limited_by_closed",
+    "panel_weight_cog_consistent",
+    "plate_weight_consistent",
+    "profile_closed_section",
+    "seam_topology",
+    "stiffener_inclinations",
+    "surface_normals_and_boundaries",
+    "entitybase_has_guid_and_id",
+    "idbase_has_id",
+    "names_not_identifiers",
+    "schema_location_tuple",
+    "root_declarations",
+    "unit_definitions",
+    "unit_refs_resolve",
+    "enumerated_root_units",
+    "stiffener_end_configurations",
+    "slot_lug_plate_refs",
+    "explicit_connectivity",
+    "panel_as_occurrence_group",
+    "hole_single_representation",
+    "nurbs_control_points",
+    "nurbs_knots_non_decreasing",
+    "nurbs_knot_multiplicity",
+    "polyline_closed",
+    "catalogue_holes_planar",
+    "renewal_thickness_on_instance",
+]
 
 
 def _stub(summary: str):
@@ -50,29 +101,6 @@ polyline_closed = _stub(
 catalogue_holes_planar = _stub(
     "Catalogue hole contours are 2-D (Z=0) and centered at the origin")
 
-# topology
-panel_limited_by_closed = _stub("Panel LimitedBy resolves to one closed contour")
-composite_curve_continuous = _stub(
-    "CompositeCurve3D segments ordered end-to-end and continuous")
-hole_contours_closed = _stub("Hole contours are closed")
-hole_not_splitting_plate = _stub("A hole does not split a plate into disjoint regions")
-seam_topology = _stub("Seams never connect boundary/seam/hole to a hole; "
-                      "seam pattern yields closed plate contours")
-compartment_closure = _stub("CompartmentFace/ContourBound curves closed; "
-                            "CellBoundary forms a closed volume")
-compartments_disjoint = _stub("Compartments do not physically overlap")
-surface_normals_and_boundaries = _stub(
-    "Surface-collection normals consistent; boundary loops closed, "
-    "inner/outer distinguished")
-stiffener_inclinations = _stub(
-    "Stiffener inclinations: no duplicates, no web/flange vector flips")
-
 # properties
-plate_weight_consistent = _stub(
-    "Plate weight ~= area x thickness x density within tolerance")
-panel_weight_cog_consistent = _stub(
-    "Panel weight/CoG consistent with its composed parts")
-profile_closed_section = _stub(
-    "Profile parameters reproduce a closed section contour")
 renewal_thickness_on_instance = _stub(
     "Renewal thickness assigned to the part instance, not only a shared definition")
