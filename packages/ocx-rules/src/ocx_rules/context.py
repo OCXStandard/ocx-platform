@@ -8,9 +8,13 @@ from __future__ import annotations
 
 from functools import cached_property
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import lxml.etree as etree
 from loguru import logger
+
+if TYPE_CHECKING:
+    from ocx_rules.xml_index import XmlIndex
 
 
 def _build_vessel(model_path: Path):
@@ -34,10 +38,21 @@ class ValidationContext:
     def xml_tree(self) -> etree._ElementTree:
         """The raw lxml tree (line numbers preserved for Finding.location)."""
         logger.debug("Parsing XML tree: {}", self.model_path)
-        return etree.parse(str(self.model_path))
+        # collect_ids=False: lxml's default parser raises on duplicate xml:id,
+        # but the duplicate-id checks (e.g. OCX-DOC-003) must see such
+        # documents rather than have every xml rule skipped on a parse error.
+        xml_parser = etree.XMLParser(collect_ids=False)
+        return etree.parse(str(self.model_path), parser=xml_parser)
 
     @cached_property
     def vessel(self):
         """The schema-neutral IR (IrVessel); built on first access."""
         logger.debug("Building IR: {}", self.model_path)
         return _build_vessel(self.model_path)
+
+    @cached_property
+    def xml_index(self) -> "XmlIndex":
+        """Shared identity/reference index over the XML tree."""
+        from ocx_rules.xml_index import XmlIndex
+
+        return XmlIndex(self.xml_tree)

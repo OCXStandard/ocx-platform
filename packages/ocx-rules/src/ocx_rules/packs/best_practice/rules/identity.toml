@@ -20,9 +20,11 @@ category    = "identity"
 severity    = "error"
 requires    = ["xml"]
 [rule.check]
-primitive = "unique"
-xpath     = "//*[@ocx:GUIDRef]"
-key       = "@ocx:GUIDRef"
+primitive          = "unique"
+xpath              = "//*[@ocx:GUIDRef and not(@ocx:refType) and not(@localRef)]"
+key                = "@ocx:GUIDRef"
+normalize          = "guid"
+exclude_tag_suffix = "Ref"
 
 [[rule]]
 id          = "OCX-ID-003"

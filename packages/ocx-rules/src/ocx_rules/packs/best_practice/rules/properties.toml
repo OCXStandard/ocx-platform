@@ -42,6 +42,6 @@ description = "Renewal thickness must be assigned to the individual part instanc
 source      = "renewal_thickness"
 category    = "properties"
 severity    = "error"
-requires    = ["ir"]
+requires    = ["ir", "xml"]
 [rule.check]
 custom = "ocx_rules.packs.best_practice.checks:renewal_thickness_on_instance"

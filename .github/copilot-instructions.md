@@ -57,11 +57,14 @@ ocx-platform/                  ← repo / workspace root
 │   │   └── src/ocx_rules/
 │   │       ├── model.py         ← RuleSpec/RuleResult/Finding/Severity/RuleStatus
 │   │       ├── context.py       ← ValidationContext (lazy lxml tree + lazy IrVessel)
+│   │       ├── xml_index.py     ← XmlIndex: shared identity/reference document scan
 │   │       ├── catalogue.py     ← TOML rule-catalogue loader (load-time validation)
 │   │       ├── primitives/      ← parameterized check primitives (PRIMITIVE_REGISTRY)
 │   │       ├── manager.py       ← RuleManager: entry-point discovery + execution
 │   │       ├── config.py        ← user TOML config (disable/severity/params)
-│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks.py
+│   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks/ package
+│   │                              (24 content rules implemented; 12 geometry
+│   │                              rules are Phase B stubs in geometry_stubs.py)
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
