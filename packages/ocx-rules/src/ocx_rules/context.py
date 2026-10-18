@@ -38,7 +38,11 @@ class ValidationContext:
     def xml_tree(self) -> etree._ElementTree:
         """The raw lxml tree (line numbers preserved for Finding.location)."""
         logger.debug("Parsing XML tree: {}", self.model_path)
-        return etree.parse(str(self.model_path))
+        # collect_ids=False: lxml's default parser raises on duplicate xml:id,
+        # but the duplicate-id checks (e.g. OCX-DOC-003) must see such
+        # documents rather than have every xml rule skipped on a parse error.
+        xml_parser = etree.XMLParser(collect_ids=False)
+        return etree.parse(str(self.model_path), parser=xml_parser)
 
     @cached_property
     def vessel(self):

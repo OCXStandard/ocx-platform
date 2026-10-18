@@ -42,3 +42,14 @@ class TestValidationContext:
         ctx = ValidationContext(tmp_path / "nope.3docx")  # no raise here
         with pytest.raises(Exception):
             _ = ctx.xml_tree
+
+    def test_duplicate_xml_id_still_parses(self, tmp_path: Path):
+        """Documents with duplicate xml:id must parse so DOC-003 can report them."""
+        doc = tmp_path / "dup.3docx"
+        doc.write_text(
+            '<root xmlns:xml="http://www.w3.org/XML/1998/namespace">'
+            '<a xml:id="u1"/><b xml:id="u1"/></root>'
+        )
+        ctx = ValidationContext(doc)
+        ids = [el.get("{http://www.w3.org/XML/1998/namespace}id") for el in ctx.xml_tree.getroot()]
+        assert ids == ["u1", "u1"]
