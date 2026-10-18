@@ -61,6 +61,10 @@ def chain_polylines(
     chained polyline (not explicitly closed) and ``gaps`` has one entry per
     junction plus a final entry for the closure gap ring-end -> ring-start.
     Returns ``(None, [])`` when no usable polylines are given. Never raises.
+
+    Intended for inputs that form a closed loop: segments attach only at the
+    growing chain tail, so open chains whose first segment is interior will
+    report inflated gaps.
     """
     parts = [np.asarray(p, dtype=float) for p in polylines
              if p is not None and len(p) >= 2]
