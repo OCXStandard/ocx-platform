@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "ocx-model-core>=0.5,<0.6",
     "ocx-geometry>=0.1,<0.2",
+    "ocx-rules>=0.1,<0.2",
     "mcp>=1.0,<2",
     "loguru>=0.7",
     "typer>=0.9",
@@ -29,3 +30,4 @@ packages = ["src/ocx_model_validator"]
 [tool.uv.sources]
 ocx-model-core = { workspace = true }
 ocx-geometry = { workspace = true }
+ocx-rules = { workspace = true }

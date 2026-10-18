@@ -15,6 +15,7 @@ members = [
     "ocx-model-core",
     "ocx-model-validator",
     "ocx-render",
+    "ocx-rules",
 ]
 
 [manifest.dependency-groups]
@@ -932,6 +933,7 @@ dependencies = [
     { name = "mcp" },
     { name = "ocx-geometry" },
     { name = "ocx-model-core" },
+    { name = "ocx-rules" },
     { name = "rich" },
     { name = "typer" },
 ]
@@ -943,6 +945,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.0,<2" },
     { name = "ocx-geometry", editable = "packages/ocx-geometry" },
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
+    { name = "ocx-rules", editable = "packages/ocx-rules" },
     { name = "rich", specifier = ">=13" },
     { name = "typer", specifier = ">=0.9" },
 ]
@@ -968,6 +971,23 @@ requires-dist = [
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
     { name = "trimesh", specifier = ">=4.0" },
     { name = "typer", specifier = ">=0.9" },
+]
+
+[[package]]
+name = "ocx-rules"
+version = "0.1.0"
+source = { editable = "packages/ocx-rules" }
+dependencies = [
+    { name = "loguru" },
+    { name = "lxml" },
+    { name = "ocx-model-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "loguru", specifier = ">=0.7" },
+    { name = "lxml", specifier = ">=6.0" },
+    { name = "ocx-model-core", editable = "packages/ocx-model-core" },
 ]
 
 [[package]]
