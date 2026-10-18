@@ -10,6 +10,13 @@ from __future__ import annotations
 
 from ocx_rules.model import CheckNotImplemented
 
+from .document import (
+    enumerated_root_units,
+    root_declarations,
+    schema_location_tuple,
+    unit_definitions,
+    unit_refs_resolve,
+)
 from .geometry_stubs import (
     compartment_closure,
     compartments_disjoint,
@@ -72,14 +79,6 @@ def _stub(summary: str):
     check.__doc__ = summary
     return check
 
-
-# document
-schema_location_tuple = _stub(
-    "Root xsi:schemaLocation contains the (namespace, XSD location) tuple")
-root_declarations = _stub("schemaVersion, xmlns:ocx and xmlns:xsi present on root")
-unit_definitions = _stub("Every Unit has a unique id and UnitName")
-unit_refs_resolve = _stub("Unit and Dimension references resolve")
-enumerated_root_units = _stub("Enumerated UnitsML root units used when available")
 
 # references
 stiffener_end_configurations = _stub(

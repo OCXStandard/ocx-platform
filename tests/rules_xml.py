@@ -12,6 +12,10 @@ UNITSML_NS = "urn:oasis:names:tc:unitsml:schema:xsd:UnitsMLSchema_lite-0.9.18"
 
 DEFAULT_ROOT_ATTRS = f'xsi:schemaLocation="{OCX_NS} {OCX_NS}" schemaVersion="3.1.0"'
 
+#: Don't collect xml:id values at parse time so tests can build documents with
+#: duplicate ids (the duplicate-id checks must see them, not a parser error).
+_PARSER = etree.XMLParser(collect_ids=False)
+
 
 def ocx_doc(body: str = "", *, root_attrs: str | None = None) -> etree._ElementTree:
     """Wrap *body* fragments in a 3.1.0 ocxXML root with standard namespaces."""
@@ -20,7 +24,7 @@ def ocx_doc(body: str = "", *, root_attrs: str | None = None) -> etree._ElementT
         f'<ocx:ocxXML xmlns:ocx="{OCX_NS}" xmlns:xsi="{XSI_NS}" '
         f'xmlns:unitsml="{UNITSML_NS}" {attrs}>\n{body}\n</ocx:ocxXML>'
     )
-    return etree.ElementTree(etree.fromstring(xml.encode()))
+    return etree.ElementTree(etree.fromstring(xml.encode(), parser=_PARSER))
 
 
 def context_for(body: str = "", *, root_attrs: str | None = None) -> ValidationContext:
@@ -33,5 +37,6 @@ def context_for(body: str = "", *, root_attrs: str | None = None) -> ValidationC
 def context_for_xml(xml: str) -> ValidationContext:
     """ValidationContext for a complete raw XML document string."""
     ctx = ValidationContext(Path("inline.3docx"))
-    ctx.__dict__["xml_tree"] = etree.ElementTree(etree.fromstring(xml.encode()))
+    ctx.__dict__["xml_tree"] = etree.ElementTree(
+        etree.fromstring(xml.encode(), parser=_PARSER))
     return ctx
