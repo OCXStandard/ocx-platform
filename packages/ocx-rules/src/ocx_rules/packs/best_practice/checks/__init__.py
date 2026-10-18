@@ -36,6 +36,13 @@ from .identity import (
     idbase_has_id,
     names_not_identifiers,
 )
+from .references import (
+    explicit_connectivity,
+    hole_single_representation,
+    panel_as_occurrence_group,
+    slot_lug_plate_refs,
+    stiffener_end_configurations,
+)
 
 __all__ = [
     "compartment_closure",
@@ -81,14 +88,7 @@ def _stub(summary: str):
 
 
 # references
-stiffener_end_configurations = _stub(
-    "A Stiffener has at most two end configurations, one per end")
-slot_lug_plate_refs = _stub("A two-lug slot has exactly two LugPlateRef references")
-explicit_connectivity = _stub("Structural connectivity encoded explicitly via references")
-panel_as_occurrence_group = _stub(
-    "A Panel is represented as OccurrenceGroup, never a direct Occurrence")
-hole_single_representation = _stub(
-    "A hole/slot appears in only one representation (CutBy xor OuterContour)")
+#   (implemented in .references, re-exported above)
 
 # curves_surfaces
 nurbs_control_points = _stub("NURBS control-point count >= degree + 1")
