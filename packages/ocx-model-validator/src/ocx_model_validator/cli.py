@@ -13,6 +13,7 @@ Usage::
     validator report bom MODEL.3docx ...
     validator report all MODEL.3docx ...
     validator validate schema MODEL.3docx [--max-errors N]
+    validator validate rules MODEL.3docx [--config FILE] [--category CAT] [--rule ID] ...
 """
 from __future__ import annotations
 
@@ -350,6 +351,57 @@ def validate_schema_cmd(
         logger.error("Cannot write sidecar files: {}", exc)
 
     raise typer.Exit(code=0 if result.valid else 1)
+
+
+@validate_app.command("rules")
+def validate_rules_cmd(
+    model: Path = _MODEL_ARG,
+    config: Path | None = typer.Option(
+        None, "--config", exists=True, readable=True,
+        help="Rule configuration TOML (disable rules, override severity/params)."),
+    category: str | None = typer.Option(
+        None, "--category", help="Run only rules in this category."),
+    rule: str | None = typer.Option(
+        None, "--rule", help="Run only the rule with this id."),
+    max_findings: int = typer.Option(
+        50, "--max-findings", min=1,
+        help="Maximum number of findings listed in the report."),
+    fmt: ReportFormat | None = _FORMAT_OPT,
+    destination: Path | None = _DEST_OPT,
+) -> None:
+    """Run the configurable best-practice rules against the model.
+
+    Exit codes: 0 = no error-level findings, 1 = error-level findings or
+    crashed rules, 2 = cannot run (bad model path, config or catalogue).
+    """
+    from ocx_rules import (
+        CatalogueError,
+        ConfigError,
+        RuleManager,
+        RuleStatus,
+        Severity,
+        ValidationContext,
+        load_config,
+    )
+
+    from ocx_model_validator.reporting.generators import rules_report
+
+    try:
+        manager = RuleManager(config=load_config(config))
+        results = manager.run(ValidationContext(model),
+                              category=category, rule_id=rule)
+    except (CatalogueError, ConfigError) as exc:
+        logger.error("{}", exc)
+        raise typer.Exit(code=2) from exc
+
+    _emit(rules_report.build(results, source_file=str(model),
+                             max_findings=max_findings), fmt, destination)
+
+    failed = any(
+        (r.status is RuleStatus.FAILED and r.spec.severity is Severity.ERROR)
+        or r.status is RuleStatus.CRASHED
+        for r in results)
+    raise typer.Exit(code=1 if failed else 0)
 
 
 def entrypoint() -> None:
