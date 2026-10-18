@@ -8,9 +8,13 @@ from __future__ import annotations
 
 from functools import cached_property
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import lxml.etree as etree
 from loguru import logger
+
+if TYPE_CHECKING:
+    from ocx_rules.xml_index import XmlIndex
 
 
 def _build_vessel(model_path: Path):
@@ -41,3 +45,10 @@ class ValidationContext:
         """The schema-neutral IR (IrVessel); built on first access."""
         logger.debug("Building IR: {}", self.model_path)
         return _build_vessel(self.model_path)
+
+    @cached_property
+    def xml_index(self) -> "XmlIndex":
+        """Shared identity/reference index over the XML tree."""
+        from ocx_rules.xml_index import XmlIndex
+
+        return XmlIndex(self.xml_tree)
