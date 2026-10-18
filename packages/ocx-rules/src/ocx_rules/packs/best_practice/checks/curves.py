@@ -40,7 +40,9 @@ def _unit_scales_mm(idx) -> dict[str, float]:
 
 
 def _nurbs_nodes(idx) -> list:
-    return idx.xpath("//ocx:NURBSproperties")
+    """NURBSproperties of curves plus the per-direction surface variants."""
+    return idx.xpath(
+        "//ocx:NURBSproperties | //ocx:U_NURBSproperties | //ocx:V_NURBSproperties")
 
 
 def nurbs_control_points(context, params: dict) -> list[Finding]:
@@ -49,27 +51,42 @@ def nurbs_control_points(context, params: dict) -> list[Finding]:
     findings = []
     for props in _nurbs_nodes(idx):
         parent = props.getparent()
+        props_tag = localname(props.tag)
         where = f"<{localname(parent.tag)}> at line {parent.sourceline}"
         degree = _int_of(props, "degree")
         if degree is None:
             findings.append(Finding(
-                message=f"{where} NURBSproperties has no integer 'degree'",
+                message=f"{where} {props_tag} has no integer 'degree'",
                 element_id=parent.get("id"), location=props.sourceline))
             continue
-        points = parent.xpath("./ocx:ControlPtList/ocx:ControlPoint", namespaces=idx.nsmap)
-        count = len(points) or _int_of(props, "numCtrlPts") or 0
+        if props_tag == "NURBSproperties":
+            points = parent.xpath("./ocx:ControlPtList/ocx:ControlPoint", namespaces=idx.nsmap)
+            count = len(points) or _int_of(props, "numCtrlPts") or 0
+        else:
+            # Surface U/V direction: the control-point grid cannot be counted
+            # per direction, so trust the declared numCtrlPts.
+            count = _int_of(props, "numCtrlPts") or 0
         if count < degree + 1:
             findings.append(Finding(
-                message=(f"{where} has {count} control points; a degree-{degree} "
-                         f"NURBS needs at least {degree + 1}"),
+                message=(f"{where} has {count} control points ({props_tag}); a "
+                         f"degree-{degree} NURBS needs at least {degree + 1}"),
                 element_id=parent.get("id"), location=props.sourceline))
     return findings
 
 
+#: knot-vector element name → matching NURBS-properties element name.
+_KNOTS_TO_PROPS = {
+    "KnotVector": "NURBSproperties",
+    "UknotVector": "U_NURBSproperties",
+    "VknotVector": "V_NURBSproperties",
+}
+
+
 def _knot_vectors(idx):
-    for kv in idx.xpath("//ocx:KnotVector"):
+    for kv in idx.xpath("//ocx:KnotVector | //ocx:UknotVector | //ocx:VknotVector"):
         parent = kv.getparent()
-        props = parent.xpath("./ocx:NURBSproperties", namespaces=idx.nsmap)
+        props_name = _KNOTS_TO_PROPS[localname(kv.tag)]
+        props = parent.xpath(f"./ocx:{props_name}", namespaces=idx.nsmap)
         degree = _int_of(props[0], "degree") if props else None
         yield kv, parent, degree
 

@@ -61,6 +61,34 @@ class TestNurbsKnots:
         assert nurbs_knot_multiplicity(ctx, {}) == []
 
 
+def _nurbs_surface(u_knots: str, v_knots: str, u_pts: int = 4, v_pts: int = 4) -> str:
+    return (
+        '<ocx:NURBSSurface id="s1">'
+        f'<ocx:U_NURBSproperties degree="3" numCtrlPts="{u_pts}"/>'
+        f'<ocx:UknotVector value="{u_knots}"/>'
+        f'<ocx:V_NURBSproperties degree="3" numCtrlPts="{v_pts}"/>'
+        f'<ocx:VknotVector value="{v_knots}"/>'
+        "</ocx:NURBSSurface>")
+
+
+class TestNurbsSurface:
+    def test_valid_surface_passes(self):
+        ctx = context_for(_nurbs_surface("0 0 0 0 1 1 1 1", "0 0 0 0 1 1 1 1"))
+        assert nurbs_control_points(ctx, {}) == []
+        assert nurbs_knots_non_decreasing(ctx, {}) == []
+        assert nurbs_knot_multiplicity(ctx, {}) == []
+
+    def test_decreasing_v_knots_fail(self):
+        ctx = context_for(_nurbs_surface("0 0 0 0 1 1 1 1", "0 0 0 0 1 0.5 1 1"))
+        (finding,) = nurbs_knots_non_decreasing(ctx, {})
+        assert "non-decreasing" in finding.message
+
+    def test_too_few_u_control_points_fail(self):
+        ctx = context_for(_nurbs_surface("0 0 0 0 1 1 1 1", "0 0 0 0 1 1 1 1", u_pts=3))
+        (finding,) = nurbs_control_points(ctx, {})
+        assert "U_NURBSproperties" in finding.message
+
+
 class TestPolylineClosed:
     def _poly(self, closed: str, coords: list[str]) -> str:
         pts = "".join(f'<ocx:Point3D coordinates="{c}"/>' for c in coords)
