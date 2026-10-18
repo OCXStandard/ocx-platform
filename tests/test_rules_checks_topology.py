@@ -4,19 +4,24 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from ocx_model_core.model.ir import (
+    IrCompositeCurve3D,
+    IrHole2D,
+    IrHoleShapeCatalogue,
     IrLimitedByRef,
     IrLine3D,
+    IrNurbs3D,
     IrPanel,
+    IrParametricHole,
     IrPoint3D,
-    IrSeam,
     IrUnit,
     IrVessel,
+    Quantity,
 )
 from ocx_rules.geometry_context import GeometryContext
 from ocx_rules.packs.best_practice.checks.topology import (
-    boundary_continuity,
-    panel_closed_contour,
-    seam_continuity,
+    composite_curve_continuous,
+    hole_contours_closed,
+    panel_limited_by_closed,
 )
 
 _UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
@@ -31,7 +36,7 @@ def _line(p0: IrPoint3D, p1: IrPoint3D) -> IrLine3D:
     return IrLine3D(curve_length=None, start=p0, end=p1)
 
 
-def _fec(curve: IrLine3D) -> IrLimitedByRef:
+def _fec(curve) -> IrLimitedByRef:
     return IrLimitedByRef(ref_type="FreeEdgeCurve3D", local_ref="", curve=curve)
 
 
@@ -47,11 +52,13 @@ def _square_sides(gap_mm: float = 0.0) -> list[IrLimitedByRef]:
     ]
 
 
-def _vessel(panels: dict[str, IrPanel], seams: dict[str, IrSeam] | None = None) -> IrVessel:
+def _vessel(panels: dict[str, IrPanel] | None = None,
+            catalogue: IrHoleShapeCatalogue | None = None) -> IrVessel:
     v = IrVessel(id="v1", unit_registry={"Umm": _UMM})
-    v.panels.update(panels)
-    if seams:
-        v.seams.update(seams)
+    if panels:
+        v.panels.update(panels)
+    if catalogue is not None:
+        v.hole_shape_catalogue = catalogue
     return v
 
 
@@ -59,16 +66,16 @@ def _ctx(vessel: IrVessel) -> SimpleNamespace:
     return SimpleNamespace(vessel=vessel, geometry=GeometryContext(vessel))
 
 
-class TestPanelClosedContour:
+class TestPanelLimitedByClosed:
     def test_closed_square_panel_passes(self):
         panel = IrPanel(id="p1", limited_by=_square_sides())
         ctx = _ctx(_vessel({"p1": panel}))
-        assert panel_closed_contour(ctx, {"tolerance_mm": 1.0}) == []
+        assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == []
 
     def test_open_contour_fails_with_gap_in_message(self):
         panel = IrPanel(id="p1", guidref="g1", limited_by=_square_sides(gap_mm=5.0))
         ctx = _ctx(_vessel({"p1": panel}))
-        (finding,) = panel_closed_contour(ctx, {"tolerance_mm": 1.0})
+        (finding,) = panel_limited_by_closed(ctx, {"tolerance_mm": 1.0})
         assert finding.element_id == "p1"
         assert finding.guid == "g1"
         assert "gap" in finding.message
@@ -79,45 +86,77 @@ class TestPanelClosedContour:
         sides.append(IrLimitedByRef(ref_type="PanelRef", local_ref="nowhere"))
         panel = IrPanel(id="p1", limited_by=sides)
         ctx = _ctx(_vessel({"p1": panel}))
-        assert panel_closed_contour(ctx, {"tolerance_mm": 1.0}) == []
+        assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == []
 
     def test_no_panels_passes(self):
         ctx = _ctx(_vessel({}))
-        assert panel_closed_contour(ctx, {"tolerance_mm": 1.0}) == []
+        assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == []
 
 
-class TestBoundaryContinuity:
-    def test_continuous_declared_order_passes(self):
-        panel = IrPanel(id="p1", limited_by=_square_sides())
-        ctx = _ctx(_vessel({"p1": panel}))
-        assert boundary_continuity(ctx, {"tolerance_mm": 0.1}) == []
+class TestCompositeCurveContinuous:
+    def _panel_with_composite(self, segments) -> IrPanel:
+        comp = IrCompositeCurve3D(curve_length=None, segments=segments)
+        return IrPanel(id="p1", guidref="g1", limited_by=[_fec(comp)])
+
+    def test_continuous_composite_passes(self):
+        segs = [_line(_pt(0, 0), _pt(1000, 0)),
+                _line(_pt(1000, 0), _pt(1000, 1000))]
+        ctx = _ctx(_vessel({"p1": self._panel_with_composite(segs)}))
+        assert composite_curve_continuous(ctx, {"tolerance_mm": 0.1}) == []
 
     def test_junction_gap_fails(self):
-        panel = IrPanel(id="p1", limited_by=_square_sides(gap_mm=2.0))
-        ctx = _ctx(_vessel({"p1": panel}))
-        (finding,) = boundary_continuity(ctx, {"tolerance_mm": 0.1})
+        # 2 mm gap between the end of segment 1 and the start of segment 2
+        segs = [_line(_pt(0, 0), _pt(1000, 0)),
+                _line(_pt(1002, 0), _pt(1002, 1000))]
+        ctx = _ctx(_vessel({"p1": self._panel_with_composite(segs)}))
+        (finding,) = composite_curve_continuous(ctx, {"tolerance_mm": 0.1})
         assert finding.element_id == "p1"
-        assert "junction" in finding.message
+        assert finding.guid == "g1"
+        assert "gap" in finding.message
+        assert "mm" in finding.message
 
+    def test_unsampleable_segment_skips_curve(self):
+        segs = [_line(_pt(0, 0), _pt(1000, 0)),
+                IrNurbs3D(curve_length=None)]  # no data -> cannot sample
+        ctx = _ctx(_vessel({"p1": self._panel_with_composite(segs)}))
+        assert composite_curve_continuous(ctx, {"tolerance_mm": 0.1}) == []
 
-class TestSeamContinuity:
-    def test_seam_on_panel_passes(self):
-        panel = IrPanel(id="p1", limited_by=_square_sides(), seam_ids=["s1"])
-        seam = IrSeam(id="s1", trace_line=_line(_pt(500, 0), _pt(500, 1000)))
-        ctx = _ctx(_vessel({"p1": panel}, {"s1": seam}))
-        assert seam_continuity(ctx, {"tolerance_mm": 0.1}) == []
-
-    def test_detached_seam_fails(self):
-        panel = IrPanel(id="p1", limited_by=_square_sides(), seam_ids=["s1"])
-        # seam lifted 10 mm above the panel plane -> off every boundary curve
-        seam = IrSeam(id="s1",
-                      trace_line=_line(_pt(500, 0, 10), _pt(500, 1000, 10)))
-        ctx = _ctx(_vessel({"p1": panel}, {"s1": seam}))
-        (finding,) = seam_continuity(ctx, {"tolerance_mm": 0.1})
-        assert finding.element_id == "p1"
-        assert "s1" in finding.message
-
-    def test_missing_seam_skipped(self):
-        panel = IrPanel(id="p1", limited_by=_square_sides(), seam_ids=["ghost"])
+    def test_no_composite_curves_passes(self):
+        panel = IrPanel(id="p1", limited_by=_square_sides())
         ctx = _ctx(_vessel({"p1": panel}))
-        assert seam_continuity(ctx, {"tolerance_mm": 0.1}) == []
+        assert composite_curve_continuous(ctx, {"tolerance_mm": 0.1}) == []
+
+
+class TestHoleContoursClosed:
+    def test_parametric_circular_hole_passes(self):
+        hole = IrHole2D(id="h1", parametric=IrParametricHole(
+            variant="parametric_circle",
+            diameter=Quantity(value=100.0, unit="Umm")))
+        cat = IrHoleShapeCatalogue(id="cat", holes={"h1": hole})
+        ctx = _ctx(_vessel(catalogue=cat))
+        assert hole_contours_closed(ctx, {"tolerance_mm": 0.1}) == []
+
+    def test_open_curve_contour_fails(self):
+        hole = IrHole2D(id="h1", guidref="gh1",
+                        contour=_line(_pt(0, 0), _pt(100, 0)))
+        cat = IrHoleShapeCatalogue(id="cat", holes={"h1": hole})
+        ctx = _ctx(_vessel(catalogue=cat))
+        (finding,) = hole_contours_closed(ctx, {"tolerance_mm": 0.1})
+        assert finding.element_id == "h1"
+        assert finding.guid == "gh1"
+        assert "closed" in finding.message
+
+    def test_empty_catalogue_passes(self):
+        cat = IrHoleShapeCatalogue(id="cat")
+        ctx = _ctx(_vessel(catalogue=cat))
+        assert hole_contours_closed(ctx, {"tolerance_mm": 0.1}) == []
+
+    def test_missing_catalogue_passes(self):
+        ctx = _ctx(_vessel())
+        assert hole_contours_closed(ctx, {"tolerance_mm": 0.1}) == []
+
+    def test_hole_without_representation_skipped(self):
+        hole = IrHole2D(id="h1")
+        cat = IrHoleShapeCatalogue(id="cat", holes={"h1": hole})
+        ctx = _ctx(_vessel(catalogue=cat))
+        assert hole_contours_closed(ctx, {"tolerance_mm": 0.1}) == []
