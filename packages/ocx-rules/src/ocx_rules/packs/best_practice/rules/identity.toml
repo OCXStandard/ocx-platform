@@ -21,7 +21,7 @@ severity    = "error"
 requires    = ["xml"]
 [rule.check]
 primitive          = "unique"
-xpath              = "//*[@ocx:GUIDRef]"
+xpath              = "//*[@ocx:GUIDRef and not(@ocx:refType) and not(@localRef)]"
 key                = "@ocx:GUIDRef"
 normalize          = "guid"
 exclude_tag_suffix = "Ref"

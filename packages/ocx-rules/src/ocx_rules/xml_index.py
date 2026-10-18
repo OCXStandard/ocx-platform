@@ -2,9 +2,10 @@
 
 OCX identity: elements (Panel, Plate, ...) carry an un-namespaced ``id`` and
 a namespaced ``ocx:GUIDRef``. OCX references are *elements* whose localname
-ends in ``Ref`` (GridRef, HoleRef, PlateRef, ...) carrying ``localRef``
+ends in ``Ref`` (GridRef, HoleRef, PlateRef, ...) **or** that carry an
+``ocx:refType``/``localRef`` attribute (e.g. PlateMaterial), with ``localRef``
 (target id), ``ocx:GUIDRef`` (target GUID) and ``ocx:refType``. A GUIDRef on
-a ``*Ref`` element is therefore a pointer, not an identity.
+such a reference element is therefore a pointer, not an identity.
 
 The namespace map is detected from the document root, so rules written with
 the ``ocx:`` prefix work for OCX 3.x and legacy 2.8.6 documents alike.
@@ -45,7 +46,8 @@ class ElementInfo:
 
 @dataclass(frozen=True)
 class RefInfo:
-    """One reference occurrence (an element whose localname ends in 'Ref')."""
+    """One reference occurrence — an element whose localname ends in 'Ref'
+    or that carries ``ocx:refType``/``localRef``."""
 
     tag: str
     local_ref: str | None
@@ -83,7 +85,9 @@ class XmlIndex:
                 continue
             raw_guid = el.get(self.guid_attr)
             guid = normalize_guid(raw_guid) if raw_guid else None
-            if tag.endswith("Ref"):
+            if (tag.endswith("Ref")
+                    or el.get(self.reftype_attr) is not None
+                    or el.get("localRef") is not None):
                 self.refs.append(RefInfo(
                     tag=tag,
                     local_ref=el.get("localRef"),

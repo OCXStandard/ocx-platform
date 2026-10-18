@@ -67,6 +67,17 @@ class TestUnique:
         )
         assert content.unique(ctx, self.PARAMS) == []
 
+    def test_reftype_elements_excluded_by_production_params(self):
+        params = {
+            "xpath": "//*[@ocx:GUIDRef and not(@ocx:refType) and not(@localRef)]",
+            "key": "@ocx:GUIDRef", "normalize": "guid", "exclude_tag_suffix": "Ref",
+        }
+        ctx = context_for(
+            '<ocx:Plate ocx:GUIDRef="aaa"/>'
+            '<ocx:PlateMaterial localRef="m1" ocx:GUIDRef="{AAA}" ocx:refType="ocx:Material"/>'
+        )
+        assert content.unique(ctx, params) == []
+
     def test_plain_id_uniqueness(self):
         params = {"xpath": "//*[@id]", "key": "@id"}
         ctx = context_for('<ocx:Panel id="x"/><ocx:Plate id="x"/>')

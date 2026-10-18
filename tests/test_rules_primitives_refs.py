@@ -35,5 +35,19 @@ class TestRefResolves:
         (finding,) = ref_resolves(ctx, {})
         assert "s2" in finding.message
 
+    def test_reftype_element_without_ref_suffix_resolves(self):
+        ctx = context_for(
+            '<ocx:Material id="m1" ocx:GUIDRef="bbb"/>'
+            '<ocx:PlateMaterial localRef="m1" ocx:GUIDRef="{BBB}" ocx:refType="ocx:Material"/>'
+        )
+        assert ref_resolves(ctx, {}) == []
+
+    def test_dangling_reftype_element_fails(self):
+        ctx = context_for(
+            '<ocx:PlateMaterial localRef="nope" ocx:GUIDRef="zzz" ocx:refType="ocx:Material"/>'
+        )
+        (finding,) = ref_resolves(ctx, {})
+        assert "PlateMaterial" in finding.message
+
     def test_no_references_is_vacuous_pass(self):
         assert ref_resolves(context_for('<ocx:Panel id="p"/>'), {}) == []

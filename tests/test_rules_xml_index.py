@@ -48,6 +48,18 @@ class TestXmlIndex:
         assert (ref.tag, ref.local_ref, ref.guid, ref.ref_type) == (
             "GridRef", "BP", "bbb", "ocx:ReferencePlane")
 
+    def test_reftype_elements_without_ref_suffix_are_refs(self):
+        idx = _index(
+            '<ocx:Material id="m1" ocx:GUIDRef="bbb"/>'
+            '<ocx:PlateMaterial localRef="m1" ocx:GUIDRef="{BBB}" ocx:refType="ocx:Material"/>'
+        )
+        (ref,) = idx.refs
+        assert (ref.tag, ref.local_ref, ref.guid, ref.ref_type) == (
+            "PlateMaterial", "m1", "bbb", "ocx:Material")
+        assert idx.duplicate_guids == {}
+        assert list(idx.by_guid) == ["bbb"]
+        assert idx.by_guid["bbb"].tag == "Material"
+
     def test_xpath_uses_nsmap(self):
         idx = _index('<ocx:Panel id="p1"/>')
         assert len(idx.xpath("//ocx:Panel")) == 1
