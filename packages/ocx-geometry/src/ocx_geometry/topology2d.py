@@ -50,7 +50,7 @@ def point_polyline_distance(point: np.ndarray, polyline: np.ndarray) -> float:
 
     Returns ``inf`` when the polyline is missing or empty.
     """
-    if polyline is None or len(np.atleast_1d(polyline)) == 0:
+    if polyline is None or np.ndim(polyline) != 2 or len(polyline) == 0:
         return float("inf")
     p = np.asarray(point, dtype=float)
     pts = np.asarray(polyline, dtype=float)

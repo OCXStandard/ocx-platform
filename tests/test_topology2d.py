@@ -80,3 +80,7 @@ class TestMalformedInputDegradation:
 
     def test_distance_none_polyline(self):
         assert point_polyline_distance(np.zeros(3), None) == float("inf")
+
+    def test_distance_flat_polyline(self):
+        assert point_polyline_distance(
+            np.zeros(3), np.array([1.0, 2.0, 3.0])) == float("inf")
