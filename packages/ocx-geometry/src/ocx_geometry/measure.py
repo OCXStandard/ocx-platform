@@ -49,3 +49,71 @@ class LengthResolver:
         if q is None:
             return None
         return self.to_m(q.value, q.unit)
+
+
+def chain_polylines(
+    polylines: list[np.ndarray],
+) -> tuple[np.ndarray | None, list[float]]:
+    """Greedily chain 3-D polylines end-to-end into one loop.
+
+    Segments are always attached at their nearest endpoints and every junction
+    gap is recorded. Returns ``(ring, gaps)`` where ``ring`` is the (N, 3)
+    chained polyline (not explicitly closed) and ``gaps`` has one entry per
+    junction plus a final entry for the closure gap ring-end -> ring-start.
+    Returns ``(None, [])`` when no usable polylines are given. Never raises.
+    """
+    parts = [np.asarray(p, dtype=float) for p in polylines
+             if p is not None and len(p) >= 2]
+    if not parts:
+        return None, []
+    out = parts[0]
+    remaining = parts[1:]
+    gaps: list[float] = []
+    while remaining:
+        tail = out[-1]
+        best_i, best_d, best_rev = 0, np.inf, False
+        for i, pts in enumerate(remaining):
+            d0 = float(np.linalg.norm(pts[0] - tail))
+            d1 = float(np.linalg.norm(pts[-1] - tail))
+            if d0 < best_d:
+                best_i, best_d, best_rev = i, d0, False
+            if d1 < best_d:
+                best_i, best_d, best_rev = i, d1, True
+        pts = remaining.pop(best_i)
+        if best_rev:
+            pts = pts[::-1]
+        gaps.append(best_d)
+        out = np.vstack([out, pts])
+    gaps.append(float(np.linalg.norm(out[-1] - out[0])))
+    return out, gaps
+
+
+def ordered_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
+    """Junction gaps between consecutive polylines in their declared order.
+
+    Each segment may be used reversed; the orientation minimising the gap to
+    the current chain end is chosen. Returns one gap per junction (no closure
+    gap).
+    """
+    parts = [np.asarray(p, dtype=float) for p in polylines
+             if p is not None and len(p) >= 2]
+    if len(parts) < 2:
+        return []
+    # orient the first segment so its far end best meets segment 2
+    first, second = parts[0], parts[1]
+    ends_fwd = min(float(np.linalg.norm(first[-1] - second[0])),
+                   float(np.linalg.norm(first[-1] - second[-1])))
+    ends_rev = min(float(np.linalg.norm(first[0] - second[0])),
+                   float(np.linalg.norm(first[0] - second[-1])))
+    tail = first[0] if ends_rev < ends_fwd else first[-1]
+    gaps: list[float] = []
+    for pts in parts[1:]:
+        d0 = float(np.linalg.norm(pts[0] - tail))
+        d1 = float(np.linalg.norm(pts[-1] - tail))
+        if d1 < d0:
+            gaps.append(d1)
+            tail = pts[0]
+        else:
+            gaps.append(d0)
+            tail = pts[-1]
+    return gaps
