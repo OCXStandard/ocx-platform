@@ -1,0 +1,60 @@
+# GUID / local-id rules — source wiki page: guidsidsandnames
+
+[[rule]]
+id          = "OCX-ID-001"
+title       = "Structural objects carry GUIDRef and id"
+description = "Every EntityBase-derived object (Vessel, Panel, Plate, Stiffener, Bracket, ...) must carry both a GUIDRef and a local id."
+source      = "guidsidsandnames"
+category    = "identity"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:entitybase_has_guid_and_id"
+
+[[rule]]
+id          = "OCX-ID-002"
+title       = "GUIDs are unique"
+description = "Duplicate GUIDRef values must not identify different objects within the document."
+source      = "guidsidsandnames"
+category    = "identity"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+primitive = "unique"
+xpath     = "//*[@ocx:GUIDRef]"
+key       = "@ocx:GUIDRef"
+
+[[rule]]
+id          = "OCX-ID-003"
+title       = "Local ids are unique"
+description = "Local id attribute values must be unique within the exchange document."
+source      = "guidsidsandnames"
+category    = "identity"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+primitive = "unique"
+xpath     = "//*[@id]"
+key       = "@id"
+
+[[rule]]
+id          = "OCX-ID-004"
+title       = "Geometry objects carry a local id"
+description = "Geometry objects derived from IDBase (curves, surfaces) must carry a local id."
+source      = "guidsidsandnames"
+category    = "identity"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:idbase_has_id"
+
+[[rule]]
+id          = "OCX-ID-005"
+title       = "Names are not identifiers"
+description = "Names are optional, need not be unique and must never be used as identifiers."
+source      = "guidsidsandnames"
+category    = "identity"
+severity    = "info"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:names_not_identifiers"

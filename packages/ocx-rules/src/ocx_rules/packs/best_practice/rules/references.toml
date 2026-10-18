@@ -1,0 +1,98 @@
+# Cross-reference and connectivity rules
+
+[[rule]]
+id          = "OCX-REF-001"
+title       = "All references resolve"
+description = "Every *Ref attribute must resolve to an existing object in the document."
+source      = "topology"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+primitive     = "ref_resolves"
+ref_attribute = "*Ref"
+target_xpath  = "//*[@id or @ocx:GUIDRef]"
+
+[[rule]]
+id          = "OCX-REF-002"
+title       = "Panel contains at least one plate"
+description = "Every valid Panel must contain at least one Plate through ComposedOf."
+source      = "panel"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+primitive = "cardinality"
+xpath     = "//ocx:Panel"
+child     = "ocx:ComposedOf"
+min       = 1
+
+[[rule]]
+id          = "OCX-REF-003"
+title       = "Stiffener has one end configuration per end"
+description = "Each Stiffener may have at most two end configurations, one at each end."
+source      = "endconfiguration"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:stiffener_end_configurations"
+
+[[rule]]
+id          = "OCX-REF-004"
+title       = "Two-lug slot has two LugPlateRef"
+description = "A slot with two attached lug plates must contain exactly two LugPlateRef references, one per lug plate."
+source      = "slots"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:slot_lug_plate_refs"
+
+[[rule]]
+id          = "OCX-REF-005"
+title       = "Connectivity is explicit"
+description = "Structural connectivity must be encoded explicitly via references, never left to proximity inference."
+source      = "structural_connectivity"
+category    = "references"
+severity    = "error"
+requires    = ["xml", "ir"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:explicit_connectivity"
+
+[[rule]]
+id          = "OCX-REF-006"
+title       = "Exactly one root coordinate system"
+description = "The model must contain exactly one global/root CoordinateSystem; local systems may be nested beneath it."
+source      = "coordinatesystem"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+primitive = "cardinality"
+xpath     = "//ocx:Vessel"
+child     = "ocx:CoordinateSystem"
+min       = 1
+max       = 1
+
+[[rule]]
+id          = "OCX-REF-007"
+title       = "Panel represented as OccurrenceGroup"
+description = "A Panel must be represented as an OccurrenceGroup in a DesignView, never referenced directly as an Occurrence."
+source      = "designview"
+category    = "references"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:panel_as_occurrence_group"
+
+[[rule]]
+id          = "OCX-REF-008"
+title       = "Single hole representation"
+description = "A plate hole or slot should appear in only one representation: either CutBy or embedded in OuterContour, not both."
+source      = "holeshapecatalogue"
+category    = "references"
+severity    = "warning"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:hole_single_representation"

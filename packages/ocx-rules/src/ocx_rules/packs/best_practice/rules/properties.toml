@@ -1,0 +1,47 @@
+# Mass/property consistency rules
+
+[[rule]]
+id          = "OCX-PROP-001"
+title       = "Plate weight consistent"
+description = "Plate weight must equal surface area x thickness x material density within tolerance, after all cuts and splits."
+source      = "property_validation"
+category    = "properties"
+severity    = "warning"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom             = "ocx_rules.packs.best_practice.checks:plate_weight_consistent"
+relative_tolerance = 0.02
+
+[[rule]]
+id          = "OCX-PROP-002"
+title       = "Panel weight/CoG consistent"
+description = "Panel weight and centre of gravity must be consistent with all composed plates, stiffeners, pillars and brackets."
+source      = "property_validation"
+category    = "properties"
+severity    = "warning"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom             = "ocx_rules.packs.best_practice.checks:panel_weight_cog_consistent"
+relative_tolerance = 0.02
+
+[[rule]]
+id          = "OCX-PROP-003"
+title       = "Profile parameters close"
+description = "Profile parameters (e.g. bulb flat) must reproduce a closed cross-section contour."
+source      = "bulbflatparameters"
+category    = "properties"
+severity    = "error"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:profile_closed_section"
+
+[[rule]]
+id          = "OCX-PROP-004"
+title       = "Renewal thickness on instance"
+description = "Renewal thickness must be assigned to the individual part instance, not only to a shared definition."
+source      = "renewal_thickness"
+category    = "properties"
+severity    = "error"
+requires    = ["ir"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:renewal_thickness_on_instance"

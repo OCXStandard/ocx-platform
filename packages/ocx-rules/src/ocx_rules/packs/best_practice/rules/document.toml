@@ -1,0 +1,56 @@
+# Root-element and units rules — source wiki pages: schema_root_element, units
+
+[[rule]]
+id          = "OCX-DOC-001"
+title       = "schemaLocation names the namespace/XSD tuple"
+description = "The root xsi:schemaLocation must contain the (NAMESPACE, XSD_LOCATION) tuple; for OCX export both entries must be identical."
+source      = "schema_root_element"
+category    = "document"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:schema_location_tuple"
+
+[[rule]]
+id          = "OCX-DOC-002"
+title       = "Root declarations present"
+description = "schemaVersion, xmlns:ocx and xmlns:xsi must be present on the OCX root element."
+source      = "schema_root_element"
+category    = "document"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:root_declarations"
+
+[[rule]]
+id          = "OCX-DOC-003"
+title       = "Units fully declared"
+description = "Every Unit must have a unique mandatory id and a UnitName; a missing UnitSymbol is reported as a warning-level finding."
+source      = "units"
+category    = "document"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:unit_definitions"
+
+[[rule]]
+id          = "OCX-DOC-004"
+title       = "Unit and dimension references resolve"
+description = "All unit and dimension references must resolve to declared UnitsML definitions."
+source      = "units"
+category    = "document"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:unit_refs_resolve"
+
+[[rule]]
+id          = "OCX-DOC-005"
+title       = "Enumerated root units preferred"
+description = "Enumerated UnitsML root units should be used whenever the unit exists in the UnitsML enumeration."
+source      = "units"
+category    = "document"
+severity    = "warning"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:enumerated_root_units"

@@ -1,0 +1,58 @@
+# Curve/surface well-formedness rules
+
+[[rule]]
+id          = "OCX-GEO-001"
+title       = "NURBS control-point count"
+description = "The number of NURBS control points must be at least degree + 1."
+source      = "nurbs"
+category    = "curves_surfaces"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:nurbs_control_points"
+
+[[rule]]
+id          = "OCX-GEO-002"
+title       = "NURBS knots non-decreasing"
+description = "NURBS knot vector values must be non-decreasing."
+source      = "nurbs"
+category    = "curves_surfaces"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:nurbs_knots_non_decreasing"
+
+[[rule]]
+id          = "OCX-GEO-003"
+title       = "NURBS knot multiplicity"
+description = "NURBS knot multiplicity must not exceed the degree."
+source      = "nurbs"
+category    = "curves_surfaces"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom = "ocx_rules.packs.best_practice.checks:nurbs_knot_multiplicity"
+
+[[rule]]
+id          = "OCX-GEO-004"
+title       = "Closed polylines well-formed"
+description = "A closed Polyline3D must repeat its first position at the end and adjacent segment endpoints must coincide."
+source      = "polyline3d"
+category    = "curves_surfaces"
+severity    = "error"
+requires    = ["xml"]
+[rule.check]
+custom       = "ocx_rules.packs.best_practice.checks:polyline_closed"
+tolerance_mm = 0.1
+
+[[rule]]
+id          = "OCX-GEO-005"
+title       = "Catalogue hole contours planar and centered"
+description = "Parametric catalogue hole contours should be two-dimensional (Z = 0) and centered at the catalogue origin."
+source      = "pararmetricholesandholeshapecatalogue"
+category    = "curves_surfaces"
+severity    = "warning"
+requires    = ["xml"]
+[rule.check]
+custom       = "ocx_rules.packs.best_practice.checks:catalogue_holes_planar"
+tolerance_mm = 0.1
