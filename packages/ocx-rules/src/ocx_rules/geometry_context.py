@@ -17,6 +17,7 @@ from ocx_geometry.surfaces import SurfaceParam, make_param
 if TYPE_CHECKING:
     from ocx_model_core.model.ir import (
         IrCurve3D,
+        IrLimitedByRef,
         IrPanel,
         IrSurface3D,
         IrVessel,
@@ -93,6 +94,25 @@ class GeometryContext:
                 return rp.reference_plane
         return None
 
+    def boundary_curve_for_ref(self,
+                               ref: "IrLimitedByRef") -> "IrCurve3D | None":
+        """Resolve one LimitedBy ref to an explicit boundary curve, or None.
+
+        FreeEdgeCurve3D -> inline curve; SeamRef -> seam trace_line;
+        StiffenerRef -> stiffener trace. Other ref types carry no explicit
+        curve.
+        """
+        v = self.vessel
+        if ref.ref_type == "FreeEdgeCurve3D":
+            return ref.curve
+        if ref.ref_type == "SeamRef":
+            seam = v.seams.get(ref.local_ref)
+            return seam.trace_line if seam else None
+        if ref.ref_type == "StiffenerRef":
+            stf = v.stiffeners.get(ref.local_ref)
+            return stf.trace if stf else None
+        return None
+
     def boundary_curves(self, panel: "IrPanel") -> tuple[list, int]:
         """Explicit boundary curves of a panel + count of unresolvable refs.
 
@@ -100,19 +120,10 @@ class GeometryContext:
         StiffenerRef -> stiffener trace. Other ref types carry no explicit
         curve -> unresolvable.
         """
-        v = self.vessel
         curves = []
         unresolved = 0
         for ref in panel.limited_by:
-            curve = None
-            if ref.ref_type == "FreeEdgeCurve3D":
-                curve = ref.curve
-            elif ref.ref_type == "SeamRef":
-                seam = v.seams.get(ref.local_ref)
-                curve = seam.trace_line if seam else None
-            elif ref.ref_type == "StiffenerRef":
-                stf = v.stiffeners.get(ref.local_ref)
-                curve = stf.trace if stf else None
+            curve = self.boundary_curve_for_ref(ref)
             if curve is not None:
                 curves.append(curve)
             else:
