@@ -85,6 +85,8 @@ def top001(
 ) -> None:
     """Diagnose OCX-TOP-001 (panel LimitedBy closure) with 3D contour plots.
 
+    By default selects panels whose boundary does not close OR that have
+    unresolvable LimitedBy refs (a superset of the validator's findings).
     Exit codes: 0 all plotted panels close, 1 at least one does not,
     2 cannot parse/build/diagnose the model, 3 cannot write the output.
     """

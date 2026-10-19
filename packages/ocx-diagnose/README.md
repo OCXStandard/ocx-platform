@@ -19,6 +19,10 @@ best-practice rule (panel boundary must close):
 
     ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
 
+Note: panels with unresolvable LimitedBy refs are also selected (and cause
+exit 1), even though the validator rule skips them — the default selection
+is a superset of the validator's TOP-001 findings.
+
 Each failing panel gets an interactive 3D figure: LimitedBy segments in
 document order (coloured, sequence-labelled), ContourBounds markers
 (Start ◆ / Mid ● / End ■), red dashed gap connectors annotated in mm, and
