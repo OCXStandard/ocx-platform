@@ -173,6 +173,7 @@ def limitedby_fig(diag):
                     x=[c[0]], y=[c[1]], z=[c[2]], mode="markers+text",
                     marker=dict(size=5, color="#888888"),
                     text=[str(seg.seq)],
+                    textfont=dict(color="#888888"),
                     name=f"{label} (unresolved)"))
         marks = _seg_marker_trace(seg, colour)
         if marks is not None:

@@ -155,9 +155,11 @@ def write_top001_report(diags: list[PanelTop001Diagnosis], path,
         limitedby_fig(d).to_html(full_html=False, include_plotlyjs=False,
                                  default_height="650px")
         for d in diags)
+    # plotly.js only needed when there are figures to render
+    js = (f"<script>{plotly.offline.get_plotlyjs()}</script>" if diags else "")
     page = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
             f"<title>{_html.escape(title)} — TOP-001</title>"
-            f"<script>{plotly.offline.get_plotlyjs()}</script></head><body>"
+            f"{js}</head><body>"
             f"<h1>TOP-001 LimitedBy diagnosis — {_html.escape(title)}</h1>"
             f"{summary}{figs}</body></html>")
     Path(path).write_text(page, encoding="utf-8")
