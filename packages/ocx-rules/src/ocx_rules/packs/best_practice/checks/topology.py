@@ -9,6 +9,7 @@ from ocx_geometry.holes import parametric_profile, place_hole
 from ocx_geometry.measure import chain_polylines, ordered_junction_gaps
 from ocx_geometry.topology2d import (
     point_polyline_distance,
+    points_polyline_distances,
     polygon_ok,
     region_count,
 )
@@ -359,23 +360,30 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                 logger.debug("TOP-008: member {} of collection {} skipped "
                              "(no buildable surface or boundary)", surf.id, cid)
                 continue
-            members.append((surf, param, boundary))
+            bnd = np.asarray(boundary, dtype=float)
+            members.append((surf, param, bnd,
+                            bnd.min(axis=0), bnd.max(axis=0)))
         if len(members) < 2:
             logger.debug("TOP-008: collection {} skipped "
                          "(fewer than 2 buildable members)", cid)
             continue
         for i in range(len(members)):
-            surf_a, param_a, bnd_a = members[i]
-            for surf_b, param_b, bnd_b in members[i + 1:]:
+            surf_a, param_a, bnd_a, lo_a, hi_a = members[i]
+            for surf_b, param_b, bnd_b, lo_b, hi_b in members[i + 1:]:
+                # AABB prefilter: boundaries farther apart than the
+                # adjacency tolerance cannot share a boundary.
+                if (np.any(lo_a - hi_b > _ADJACENCY_TOL_M)
+                        or np.any(lo_b - hi_a > _ADJACENCY_TOL_M)):
+                    continue
                 try:
                     # Symmetric point-to-segment proximity: vertices of one
                     # boundary may lie on the interior of the other's
                     # segments (e.g. T-configurations without shared
                     # corners), so check both directions.
-                    cand = (
-                        [(point_polyline_distance(p, bnd_b), p) for p in bnd_a]
-                        + [(point_polyline_distance(p, bnd_a), p) for p in bnd_b]
-                    )
+                    d_ab = points_polyline_distances(bnd_a, bnd_b)
+                    d_ba = points_polyline_distances(bnd_b, bnd_a)
+                    cand = (list(zip(d_ab, bnd_a))
+                            + list(zip(d_ba, bnd_b)))
                 except Exception as exc:  # noqa: BLE001 — lean-pass per pair
                     logger.debug("TOP-008: pair {}/{} skipped ({})",
                                  surf_a.id, surf_b.id, exc)

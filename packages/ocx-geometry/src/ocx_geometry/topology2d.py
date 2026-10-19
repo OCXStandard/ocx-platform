@@ -65,3 +65,27 @@ def point_polyline_distance(point: np.ndarray, polyline: np.ndarray) -> float:
     t = np.clip(t, 0.0, 1.0)
     closest = a + t[:, None] * ab
     return float(np.min(np.linalg.norm(closest - p, axis=1)))
+
+
+def points_polyline_distances(points: np.ndarray,
+                              polyline: np.ndarray) -> np.ndarray:
+    """Min distance from each 3-D point to a 3-D polyline (vectorised).
+
+    Returns an (N,) array; all ``inf`` when the polyline is missing or empty.
+    """
+    pts_in = np.asarray(points, dtype=float)
+    if polyline is None or np.ndim(polyline) != 2 or len(polyline) == 0:
+        return np.full(len(pts_in), np.inf)
+    poly = np.asarray(polyline, dtype=float)
+    if len(poly) == 1:
+        return np.linalg.norm(pts_in - poly[0], axis=1)
+    a, b = poly[:-1], poly[1:]
+    ab = b - a                                       # (M, 3)
+    denom = np.einsum("ij,ij->i", ab, ab)            # (M,)
+    ap = pts_in[:, None, :] - a[None, :, :]          # (N, M, 3)
+    t = np.zeros((len(pts_in), len(a)))
+    nz = denom > 0
+    t[:, nz] = np.einsum("nmj,mj->nm", ap[:, nz], ab[nz]) / denom[nz]
+    t = np.clip(t, 0.0, 1.0)
+    closest = a[None, :, :] + t[:, :, None] * ab[None, :, :]
+    return np.min(np.linalg.norm(closest - pts_in[:, None, :], axis=2), axis=1)
