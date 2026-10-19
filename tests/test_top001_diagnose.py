@@ -84,6 +84,13 @@ def test_closed_panel_has_no_gaps():
 
 def test_select_panels_failing_by_default():
     v, _ = _open_square_panel()
+    # add a closed, fully resolved panel — must be excluded by default
+    _seam(v, "s4", (0, 1, 0), (0, 0, 0))
+    v.panels["p2"] = IrPanel(id="p2", limited_by=[
+        IrLimitedByRef(ref_type="SeamRef", local_ref=s)
+        for s in ("s1", "s2", "s3", "s4")])
+    # and a panel without LimitedBy — must be skipped
+    v.panels["p3"] = IrPanel(id="p3")
     geo = GeometryContext(v)
     selected = select_panels(geo, panel_ids=None, tol_m=0.001)
     assert [p.panel_id for p in selected] == ["p1"]

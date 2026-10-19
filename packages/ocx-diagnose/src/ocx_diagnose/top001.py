@@ -110,6 +110,8 @@ def select_panels(geo: "GeometryContext", panel_ids: list[str] | None,
 
     A panel "fails" when its worst gap exceeds *tol_m* or it has
     unresolvable LimitedBy refs. Panels without LimitedBy are skipped.
+    Note: this is a superset of the validator's TOP-001 findings — the
+    rule skips panels with unresolved refs, this diagnostic includes them.
     """
     vessel = geo.vessel
     out: list[PanelTop001Diagnosis] = []
