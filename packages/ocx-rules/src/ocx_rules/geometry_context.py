@@ -116,9 +116,8 @@ class GeometryContext:
     def boundary_curves(self, panel: "IrPanel") -> tuple[list, int]:
         """Explicit boundary curves of a panel + count of unresolvable refs.
 
-        FreeEdgeCurve3D -> inline curve; SeamRef -> seam trace_line;
-        StiffenerRef -> stiffener trace. Other ref types carry no explicit
-        curve -> unresolvable.
+        Resolution per ref is delegated to :meth:`boundary_curve_for_ref`;
+        refs it cannot resolve are counted as unresolvable.
         """
         curves = []
         unresolved = 0

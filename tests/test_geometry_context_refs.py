@@ -1,5 +1,13 @@
 """GeometryContext.boundary_curve_for_ref resolution per LimitedBy ref type."""
-from ocx_model_core.model.ir import IrLimitedByRef, IrPanel, IrSeam, IrVessel
+from ocx_model_core.model.ir import (
+    IrLimitedByRef,
+    IrPanel,
+    IrSeam,
+    IrStiffener,
+    IrVessel,
+    ParentKind,
+    ParentRef,
+)
 from ocx_rules.geometry_context import GeometryContext
 
 
@@ -21,6 +29,16 @@ def test_free_edge_curve_returns_inline_curve():
     ref = IrLimitedByRef(ref_type="FreeEdgeCurve3D", local_ref="",
                          curve="INLINE-CURVE")
     assert geo.boundary_curve_for_ref(ref) == "INLINE-CURVE"
+
+
+def test_stiffener_ref_resolves_to_trace():
+    v = IrVessel(id="V1")
+    v.stiffeners["st1"] = IrStiffener(
+        id="st1", parent_ref=ParentRef(kind=ParentKind.PANEL, id="p1"),
+        trace="STIFF-CURVE")
+    geo = GeometryContext(v)
+    ref = IrLimitedByRef(ref_type="StiffenerRef", local_ref="st1")
+    assert geo.boundary_curve_for_ref(ref) == "STIFF-CURVE"
 
 
 def test_unresolvable_ref_types_return_none():
