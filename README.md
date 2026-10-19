@@ -222,6 +222,12 @@ validator validate rules model.3docx
 validator validate rules model.3docx --config ocx-rules.toml --category identity
 validator validate rules model.3docx --rule OCX-ID-002 --destination rules.md
 
+# a full model validation is both commands: schema AND rules. Downstream
+# agents read the JSON sidecars (model.validation.json + model.rules.json)
+# and summarize them into a single two-part <model>_validation.md beside the
+# model: Part 1 — XSD errors grouped into root causes with proposed
+# improvements; Part 2 — per-rule findings summary with proposed changes
+
 # tessellate to GLB + HTML viewer (DEBUG log shows timing per stage)
 ocx-render model.3docx --destination out.glb --log-level DEBUG [--tolerance MM] [--no-html]
 
