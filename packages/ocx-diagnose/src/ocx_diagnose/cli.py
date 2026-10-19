@@ -23,7 +23,7 @@ def _parse_sweep(text: str | None) -> list[float]:
     return vals
 
 
-@app.command()
+@app.command("diagnose")
 def diagnose(
     model: Path = typer.Argument(..., exists=True, readable=True, dir_okay=False,
                                  help="Path to the .3docx model."),
@@ -68,6 +68,49 @@ def diagnose(
     except OSError as exc:
         logger.error("Cannot write output for {}: {}", model, exc)
         raise typer.Exit(code=3) from exc
+
+
+@app.command("top-001")
+def top001(
+    model: Path = typer.Argument(..., exists=True, readable=True, dir_okay=False,
+                                 help="Path to the .3docx model."),
+    panel: list[str] = typer.Option(
+        [], "--panel",
+        help="Panel id to plot (repeatable; default: panels failing TOP-001)."),
+    tolerance_mm: float = typer.Option(
+        1.0, "--tolerance", help="Closure tolerance in millimetres."),
+    report: Path | None = typer.Option(
+        None, "--report", help="Output HTML report (default: <model>.top001.html)."),
+    log_level: str = typer.Option("INFO", "--log-level", "-l", help="Log level."),
+) -> None:
+    """Diagnose OCX-TOP-001 (panel LimitedBy closure) with 3D contour plots.
+
+    Exit codes: 0 all plotted panels close, 1 at least one does not,
+    2 cannot parse/build the model, 3 cannot write the output.
+    """
+    configure_logging(log_level.upper())
+    try:
+        vessel = _load_vessel(model)
+    except Exception as exc:  # noqa: BLE001 — any parse/build failure is exit 2
+        logger.error("Cannot parse/build {}: {}", model, exc)
+        raise typer.Exit(code=2) from exc
+
+    from ocx_rules.geometry_context import GeometryContext
+
+    from ocx_diagnose.top001 import select_panels, write_top001_report
+
+    tol_m = tolerance_mm / 1000.0
+    geo = GeometryContext(vessel)
+    diags = select_panels(geo, list(panel) or None, tol_m)
+    out = report if report is not None else model.with_suffix(".top001.html")
+    try:
+        write_top001_report(diags, out, title=model.name)
+    except OSError as exc:
+        logger.error("Cannot write output for {}: {}", model, exc)
+        raise typer.Exit(code=3) from exc
+    typer.echo(f"Report written to {out} ({len(diags)} panel(s))")
+    if any(d.gaps or d.unresolved_count for d in diags):
+        raise typer.Exit(code=1)
 
 
 def entrypoint() -> None:
