@@ -1,7 +1,7 @@
 """TOP-001 diagnosis assembly (ocx_diagnose.top001)."""
 import numpy as np
 from ocx_diagnose.figures import limitedby_fig
-from ocx_diagnose.top001 import diagnose_panel, select_panels
+from ocx_diagnose.top001 import diagnose_panel, select_panels, write_top001_report
 from ocx_model_core.model.ir import (
     IrLimitedByRef,
     IrLine3D,
@@ -113,3 +113,19 @@ def test_limitedby_fig_traces():
     assert any(n.startswith("gap ") for n in names)
     # equal aspect
     assert fig.layout.scene.aspectmode == "data"
+
+
+def test_write_top001_report(tmp_path):
+    v, panel = _open_square_panel()
+    diags = select_panels(GeometryContext(v), None, tol_m=0.001)
+    out = tmp_path / "r.html"
+    write_top001_report(diags, out, title="model.3docx")
+    text = out.read_text(encoding="utf-8")
+    assert "p1" in text and "LimitedBy closure" in text
+    assert "plotly" in text.lower()
+
+
+def test_write_top001_report_empty(tmp_path):
+    out = tmp_path / "r.html"
+    write_top001_report([], out, title="model.3docx")
+    assert "No panels" in out.read_text(encoding="utf-8")

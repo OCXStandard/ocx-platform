@@ -130,3 +130,35 @@ def select_panels(geo: "GeometryContext", panel_ids: list[str] | None,
         if diag.worst_gap_m > tol_m or diag.unresolved_count:
             out.append(diag)
     return out
+
+
+def write_top001_report(diags: list[PanelTop001Diagnosis], path,
+                        title: str) -> None:
+    """Write one self-contained HTML report (plotly.js embedded once)."""
+    import html as _html
+    from pathlib import Path
+
+    import plotly.offline
+
+    from ocx_diagnose.figures import limitedby_fig
+
+    rows = "".join(
+        f"<tr><td>{_html.escape(d.panel_id)}</td><td>{len(d.segments)}</td>"
+        f"<td>{d.unresolved_count}</td><td>{d.worst_gap_m * 1000:.2f}</td>"
+        f"<td>{'no' if d.gaps or d.unresolved_count else 'yes'}</td></tr>"
+        for d in diags)
+    summary = ("<table border='1' cellpadding='4' cellspacing='0'>"
+               "<tr><th>panel</th><th>segments</th><th>unresolved</th>"
+               "<th>worst gap mm</th><th>closed</th></tr>"
+               f"{rows}</table>") if diags else "<p>No panels to diagnose.</p>"
+    figs = "".join(
+        limitedby_fig(d).to_html(full_html=False, include_plotlyjs=False,
+                                 default_height="650px")
+        for d in diags)
+    page = (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
+            f"<title>{_html.escape(title)} — TOP-001</title>"
+            f"<script>{plotly.offline.get_plotlyjs()}</script></head><body>"
+            f"<h1>TOP-001 LimitedBy diagnosis — {_html.escape(title)}</h1>"
+            f"{summary}{figs}</body></html>")
+    Path(path).write_text(page, encoding="utf-8")
+    logger.info("Wrote TOP-001 report {} ({:.1f} MB)", path, len(page) / 1e6)
