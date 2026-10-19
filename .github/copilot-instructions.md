@@ -67,6 +67,15 @@ ocx-platform/                  ← repo / workspace root
 │   │                              (34 of 36 rules implemented — 24 content +
 │   │                              10 geometry; OCX-TOP-006/007 compartment
 │   │                              rules are deferred stubs in geometry_stubs.py)
+│   ├── ocx-diagnose/           ← render-pipeline + rule diagnostics CLI
+│   │   └── src/ocx_diagnose/
+│   │       ├── cli.py           ← ocx-diagnose entrypoint — two subcommands:
+│   │       │                      `diagnose` (tolerance sweeps) and `top-001`
+│   │       ├── top001.py        ← TOP-001 LimitedBy closure diagnostics
+│   │       │                      (diagnose_panel, select_panels, write_top001_report)
+│   │       ├── sweep.py / analyse.py / checks.py / probes.py / advice.py
+│   │       ├── figures.py       ← plotly figures (incl. limitedby_fig)
+│   │       └── report.py        ← self-contained HTML report
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
@@ -128,6 +137,12 @@ validator validate rules model.3docx [--config FILE] [--category CAT] [--rule ID
 
 # Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse / 3 cannot write output)
 ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
+
+# Render-pipeline tolerance-sweep diagnostics with HTML report
+ocx-diagnose diagnose model.3docx
+
+# TOP-001 LimitedBy closure diagnostics (exit 0 all plotted panels close / 1 at least one does not / 2 cannot parse/build/diagnose incl. unknown --panel ids / 3 cannot write output)
+ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs
