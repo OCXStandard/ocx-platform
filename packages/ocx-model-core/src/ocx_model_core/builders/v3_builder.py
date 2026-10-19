@@ -1531,8 +1531,8 @@ class OcxV3Builder(IOcxBuilder):
 
         seam_ids = self._build_seams_for_panel(raw, ir)
 
-        # outer_contour is a list where bindings allow maxOccurs unbounded,
-        # but a scalar in bindings that cap it at 1 — normalise to a list.
+        # The xsdata bindings expose outer_contour as a scalar even though the
+        # schema allows maxOccurs unbounded — normalise scalar-or-list to a list.
         raw_ocs = getattr(raw, "outer_contour", None) or []
         if not isinstance(raw_ocs, (list, tuple)):
             raw_ocs = [raw_ocs]
