@@ -97,6 +97,43 @@ def chain_polylines(
     return out, gaps
 
 
+def chain_gap_details(
+    polylines: list[np.ndarray],
+) -> list[tuple[np.ndarray, np.ndarray, float]]:
+    """Gap endpoints for the same greedy chaining as :func:`chain_polylines`.
+
+    Returns one ``(point_a, point_b, gap)`` tuple per junction in attachment
+    order plus a final tuple for the closure gap chain-end -> chain-start.
+    ``point_a`` is the current chain tail, ``point_b`` the attached segment's
+    chosen endpoint. Returns ``[]`` when no usable polylines are given.
+    """
+    parts = [np.asarray(p, dtype=float) for p in polylines
+             if p is not None and len(p) >= 2]
+    if not parts:
+        return []
+    out = parts[0]
+    remaining = parts[1:]
+    details: list[tuple[np.ndarray, np.ndarray, float]] = []
+    while remaining:
+        tail = out[-1]
+        best_i, best_d, best_rev = 0, np.inf, False
+        for i, pts in enumerate(remaining):
+            d0 = float(np.linalg.norm(pts[0] - tail))
+            d1 = float(np.linalg.norm(pts[-1] - tail))
+            if d0 < best_d:
+                best_i, best_d, best_rev = i, d0, False
+            if d1 < best_d:
+                best_i, best_d, best_rev = i, d1, True
+        pts = remaining.pop(best_i)
+        if best_rev:
+            pts = pts[::-1]
+        details.append((tail.copy(), pts[0].copy(), best_d))
+        out = np.vstack([out, pts])
+    details.append((out[-1].copy(), out[0].copy(),
+                    float(np.linalg.norm(out[-1] - out[0]))))
+    return details
+
+
 def ordered_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
     """Junction gaps between consecutive polylines in their declared order.
 
