@@ -347,3 +347,22 @@ def test_limited_by_contour_bounds_absent_degrades_to_none():
     ref = panel.limited_by[0]
     assert ref.contour_start is None and ref.contour_end is None
     assert ref.contour_mid_point is None
+
+
+class _StubOuterContour:
+    def __init__(self):
+        self.line3_d = _Line3D([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+
+
+def test_panel_outer_contours_built():
+    builder = OcxV3Builder()
+    raw = _StubPanelWithBounds(None)
+    raw.outer_contour = [_StubOuterContour()]
+    panel = builder._build_panel(raw, IrVessel(id="V1"), "V1")
+    assert len(panel.outer_contours) == 1
+
+
+def test_panel_without_outer_contour_is_empty_list():
+    builder = OcxV3Builder()
+    panel = builder._build_panel(_StubPanelWithBounds(None), IrVessel(id="V1"), "V1")
+    assert panel.outer_contours == []

@@ -305,6 +305,9 @@ class IrPanel:
 
     For ``FreeEdgeCurve3D`` entries ``local_ref`` holds the curve ``name``
     (may be empty) and ``guidref`` holds its GUIDRef.
+
+    ``outer_contours`` holds the built curves from the panel's optional
+    ``OuterContour`` elements (0..unbounded).
     """
     id: str
     name: str | None = None
@@ -325,6 +328,7 @@ class IrPanel:
     # All boundary references, each tagged with ref_type
     limited_by: list[IrLimitedByRef] = field(default_factory=list)
     unbounded_geometry: IrUnboundedGeometry | None = None
+    outer_contours: list[IrCurve3D] = field(default_factory=list)
     cut_by_holes: list[IrHole2DContour] = field(default_factory=list)
     cut_by_contours: list[IrCurve3D] = field(default_factory=list)
 

@@ -1531,6 +1531,16 @@ class OcxV3Builder(IOcxBuilder):
 
         seam_ids = self._build_seams_for_panel(raw, ir)
 
+        # outer_contour is a list where bindings allow maxOccurs unbounded,
+        # but a scalar in bindings that cap it at 1 — normalise to a list.
+        raw_ocs = getattr(raw, "outer_contour", None) or []
+        if not isinstance(raw_ocs, (list, tuple)):
+            raw_ocs = [raw_ocs]
+        outer_contours = [
+            c for c in (self._build_contour(oc) for oc in raw_ocs)
+            if c is not None
+        ]
+
         return IrPanel(
             id=pid,
             name=getattr(raw, "name", None),
@@ -1547,6 +1557,7 @@ class OcxV3Builder(IOcxBuilder):
             seam_ids=seam_ids,
             limited_by=limited_by_refs,
             unbounded_geometry=self._build_unbounded(getattr(raw, "unbounded_geometry", None)),
+            outer_contours=outer_contours,
             cut_by_holes=self._build_hole2d_contours(getattr(raw, "cut_by", None)),
             cut_by_contours=self._cut_by_contours(getattr(raw, "cut_by", None)),
         )
