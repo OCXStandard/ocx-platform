@@ -70,6 +70,8 @@ def chain_polylines(
     Intended for inputs that form a closed loop: segments attach only at the
     growing chain tail, so open chains whose first segment is interior will
     report inflated gaps.
+
+    Mirrored by :func:`chain_gap_details`; keep the walks in sync.
     """
     parts = [np.asarray(p, dtype=float) for p in polylines
              if p is not None and len(p) >= 2]
