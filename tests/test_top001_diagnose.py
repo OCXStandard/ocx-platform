@@ -1,5 +1,6 @@
 """TOP-001 diagnosis assembly (ocx_diagnose.top001)."""
 import numpy as np
+from ocx_diagnose.figures import limitedby_fig
 from ocx_diagnose.top001 import diagnose_panel, select_panels
 from ocx_model_core.model.ir import (
     IrLimitedByRef,
@@ -96,3 +97,19 @@ def test_select_panels_failing_by_default():
     assert [p.panel_id for p in selected] == ["p1"]
     forced = select_panels(geo, panel_ids=["p1"], tol_m=0.001)
     assert [p.panel_id for p in forced] == ["p1"]
+
+
+def test_limitedby_fig_traces():
+    v, panel = _open_square_panel()
+    diag = diagnose_panel(GeometryContext(v), panel, tol_m=0.001)
+    fig = limitedby_fig(diag)
+    names = [t.name for t in fig.data if t.name]
+    # one solid trace per resolvable segment, labelled with sequence + ref
+    assert any(n.startswith("1: SeamRef") for n in names)
+    assert any(n.startswith("3: SeamRef") for n in names)
+    # the unresolvable segment appears as a dashed ContourBounds trace
+    assert any(n.startswith("4: GridRef") and "unresolved" in n for n in names)
+    # one gap connector
+    assert any(n.startswith("gap ") for n in names)
+    # equal aspect
+    assert fig.layout.scene.aspectmode == "data"

@@ -112,3 +112,93 @@ def sweep_fig(tol_mm, dev_max_m, triangles):
                       yaxis2=dict(title="triangles", overlaying="y", side="right"),
                       margin=_MARGIN)
     return fig
+
+
+_TOP001_PALETTE = (
+    "#4c78a8", "#f58518", "#54a24b", "#b279a2", "#e45756",
+    "#72b7b2", "#ff9da6", "#9d755d", "#eeca3b", "#bab0ac",
+)
+
+# plotly Scatter3d has no triangle symbol; use diamond/circle/square.
+_BOUND_MARKS = (("start", "diamond"), ("mid", "circle"), ("end", "square"))
+
+
+def _seg_marker_trace(seg, colour):
+    """ContourBounds markers of one segment as a single Scatter3d, or None."""
+    pts, syms, labels = [], [], []
+    for attr, sym in _BOUND_MARKS:
+        p = getattr(seg, attr)
+        if p is not None:
+            pts.append(p)
+            syms.append(sym)
+            labels.append(f"Contour{attr.capitalize()} seg {seg.seq}")
+    if not pts:
+        return None
+    arr = np.asarray(pts)
+    return go.Scatter3d(
+        x=arr[:, 0], y=arr[:, 1], z=arr[:, 2], mode="markers",
+        marker=dict(size=5, symbol=syms, color=colour),
+        text=labels, hoverinfo="text", showlegend=False)
+
+
+def limitedby_fig(diag):
+    """TOP-001 figure: LimitedBy segments, bounds markers, gaps, OuterContour."""
+    fig = go.Figure()
+    for seg in diag.segments:
+        colour = _TOP001_PALETTE[(seg.seq - 1) % len(_TOP001_PALETTE)]
+        label = f"{seg.seq}: {seg.ref_type} {seg.target}".rstrip()
+        if seg.polyline is not None:
+            p = seg.polyline
+            fig.add_trace(go.Scatter3d(
+                x=p[:, 0], y=p[:, 1], z=p[:, 2], mode="lines",
+                line=dict(color=colour, width=5), name=label))
+            m = p[len(p) // 2]
+            fig.add_trace(go.Scatter3d(
+                x=[m[0]], y=[m[1]], z=[m[2]], mode="text",
+                text=[str(seg.seq)], textfont=dict(size=14, color=colour),
+                showlegend=False, hoverinfo="skip"))
+        else:
+            # dashed grey polyline through the declared bounds
+            chain = [p for p in (seg.start, seg.mid, seg.end) if p is not None]
+            if len(chain) >= 2:
+                c = np.asarray(chain)
+                fig.add_trace(go.Scatter3d(
+                    x=c[:, 0], y=c[:, 1], z=c[:, 2], mode="lines+text",
+                    line=dict(color="#888888", width=3, dash="dash"),
+                    text=[str(seg.seq)] + [""] * (len(c) - 1),
+                    name=f"{label} (unresolved)"))
+            elif len(chain) == 1:
+                c = chain[0]
+                fig.add_trace(go.Scatter3d(
+                    x=[c[0]], y=[c[1]], z=[c[2]], mode="markers+text",
+                    marker=dict(size=5, color="#888888"),
+                    text=[str(seg.seq)],
+                    name=f"{label} (unresolved)"))
+        marks = _seg_marker_trace(seg, colour)
+        if marks is not None:
+            fig.add_trace(marks)
+    for i, oc in enumerate(diag.outer_contours):
+        fig.add_trace(go.Scatter3d(
+            x=oc[:, 0], y=oc[:, 1], z=oc[:, 2], mode="lines",
+            line=dict(color="rgba(0,0,0,0.45)", width=2),
+            name="OuterContour" if i == 0 else f"OuterContour {i + 1}",
+            showlegend=i == 0))
+    for gap in diag.gaps:
+        g = np.asarray([gap.point_a, gap.point_b])
+        mm = gap.distance_m * 1000.0
+        fig.add_trace(go.Scatter3d(
+            x=g[:, 0], y=g[:, 1], z=g[:, 2], mode="lines+text",
+            line=dict(color="red", width=4, dash="dash"),
+            text=[f"gap {mm:.1f} mm", ""],
+            textfont=dict(color="red"),
+            name=f"gap {mm:.1f} mm"))
+    fig.update_layout(
+        title=f"{diag.panel_id} — LimitedBy closure "
+              f"(worst gap {diag.worst_gap_m * 1000:.1f} mm, "
+              f"{diag.unresolved_count} unresolved)",
+        scene=dict(aspectmode="data",
+                   xaxis_title="x [m]", yaxis_title="y [m]",
+                   zaxis_title="z [m]"),
+        legend=dict(itemsizing="constant"),
+        margin=_MARGIN)
+    return fig
