@@ -86,7 +86,7 @@ def top001(
     """Diagnose OCX-TOP-001 (panel LimitedBy closure) with 3D contour plots.
 
     Exit codes: 0 all plotted panels close, 1 at least one does not,
-    2 cannot parse/build the model, 3 cannot write the output.
+    2 cannot parse/build/diagnose the model, 3 cannot write the output.
     """
     configure_logging(log_level.upper())
     try:
@@ -100,14 +100,26 @@ def top001(
     from ocx_diagnose.top001 import select_panels, write_top001_report
 
     tol_m = tolerance_mm / 1000.0
-    geo = GeometryContext(vessel)
-    diags = select_panels(geo, list(panel) or None, tol_m)
+    try:
+        geo = GeometryContext(vessel)
+        diags = select_panels(geo, list(panel) or None, tol_m)
+    except Exception as exc:  # noqa: BLE001 — diagnosis failure is exit 2,
+        # keeping exit 1 reserved for the closure verdict
+        logger.error("Cannot diagnose {}: {}", model, exc)
+        raise typer.Exit(code=2) from exc
+    if panel and len(diags) < len(panel):
+        logger.error("{} of {} requested panel id(s) not found",
+                     len(panel) - len(diags), len(panel))
+        raise typer.Exit(code=2)
     out = report if report is not None else model.with_suffix(".top001.html")
     try:
         write_top001_report(diags, out, title=model.name)
     except OSError as exc:
         logger.error("Cannot write output for {}: {}", model, exc)
         raise typer.Exit(code=3) from exc
+    except Exception as exc:  # noqa: BLE001 — figure/render failure is exit 2
+        logger.error("Cannot render report for {}: {}", model, exc)
+        raise typer.Exit(code=2) from exc
     typer.echo(f"Report written to {out} ({len(diags)} panel(s))")
     if any(d.gaps or d.unresolved_count for d in diags):
         raise typer.Exit(code=1)

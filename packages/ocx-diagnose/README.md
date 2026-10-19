@@ -24,4 +24,4 @@ document order (coloured, sequence-labelled), ContourBounds markers
 (Start ◆ / Mid ● / End ■), red dashed gap connectors annotated in mm, and
 the Panel OuterContour (when present) as a grey reference curve.
 Exit codes: 0 all plotted panels close, 1 at least one does not close,
-2 cannot parse/build, 3 cannot write output.
+2 cannot parse/build/diagnose (incl. unknown --panel ids), 3 cannot write output.
