@@ -302,3 +302,48 @@ def test_build_pillar_extracts_dry_weight():
     p = builder._build_pillar(_StubPillar(), parent)
     assert p.mass_properties.moulded_dry_weight.value == 300.0
     assert p.mass_properties.moulded_dry_weight.unit == "UKg"
+
+
+class _StubContourBounds:
+    def __init__(self):
+        self.contour_start = _StubPoint3D([0.0, 0.0, 0.0])
+        self.contour_end = _StubPoint3D([5.0, 0.0, 0.0])
+        self.contour_mid_point = _StubPoint3D([2.5, 0.0, 0.0])
+
+
+class _StubSeamRefWithBounds:
+    def __init__(self, bounds):
+        self.local_ref = "seam1"
+        self.guidref = "g-seam1"
+        self.ref_type = "ocx:SeamRef"
+        self.contour_bounds = bounds
+
+
+class _StubLimitedBy:
+    def __init__(self, seam_refs):
+        self.seam_ref = seam_refs
+
+
+class _StubPanelWithBounds:
+    def __init__(self, bounds):
+        self.id = "p1"
+        self.name = "P1"
+        self.limited_by = _StubLimitedBy([_StubSeamRefWithBounds(bounds)])
+
+
+def test_limited_by_contour_bounds_start_end_extracted():
+    builder = OcxV3Builder()
+    panel = builder._build_panel(
+        _StubPanelWithBounds(_StubContourBounds()), IrVessel(id="V1"), "V1")
+    ref = panel.limited_by[0]
+    assert ref.contour_start is not None and ref.contour_start.x == 0.0
+    assert ref.contour_end is not None and ref.contour_end.x == 5.0
+    assert ref.contour_mid_point is not None and ref.contour_mid_point.x == 2.5
+
+
+def test_limited_by_contour_bounds_absent_degrades_to_none():
+    builder = OcxV3Builder()
+    panel = builder._build_panel(_StubPanelWithBounds(None), IrVessel(id="V1"), "V1")
+    ref = panel.limited_by[0]
+    assert ref.contour_start is None and ref.contour_end is None
+    assert ref.contour_mid_point is None

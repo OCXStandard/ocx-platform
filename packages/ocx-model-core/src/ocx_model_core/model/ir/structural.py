@@ -257,6 +257,9 @@ class IrLimitedByRef:
     ``ocx_ref_type`` is the raw ``refType`` attribute from the OCX schema
         element itself (e.g. ``"ocx:PanelRef"``), preserved for look-up
         and round-trip fidelity.  ``None`` when not present (FreeEdgeCurve3D).
+    ``contour_start`` / ``contour_end`` / ``contour_mid_point`` come from the
+        optional ``ContourBounds`` child element (``ContourStart``,
+        ``ContourEnd``, ``ContourMidPoint``).
     """
     ref_type: str          # normalised element name, e.g. "PanelRef"
     local_ref: str         # XML IDREF value (may be empty string)
@@ -265,6 +268,8 @@ class IrLimitedByRef:
     offset: Quantity | None = None
     offset_direction: IrVector3D | None = None
     contour_mid_point: IrPoint3D | None = None
+    contour_start: IrPoint3D | None = None   # ContourBounds/ContourStart
+    contour_end: IrPoint3D | None = None     # ContourBounds/ContourEnd
     curve: IrCurve3D | None = None  # inline FreeEdgeCurve3D geometry only
 
     def as_ref(self) -> "Ref":

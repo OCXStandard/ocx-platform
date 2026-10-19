@@ -1496,6 +1496,7 @@ class OcxV3Builder(IOcxBuilder):
                     guid  = getattr(ref_raw, "guidref", None)
                     # ref_type attr on the OCX element itself (e.g. "ocx:PanelRef")
                     ocx_rt = getattr(ref_raw, "ref_type", None)
+                    bounds = getattr(ref_raw, "contour_bounds", None)
                     limited_by_refs.append(
                         IrLimitedByRef(
                             ref_type=ref_type,
@@ -1505,12 +1506,11 @@ class OcxV3Builder(IOcxBuilder):
                             offset=self._qty(getattr(ref_raw, "offset", None)),
                             offset_direction=self._vec(getattr(ref_raw, "offset_direction", None)),
                             contour_mid_point=self._pt(
-                                getattr(
-                                    getattr(ref_raw, "contour_bounds", None),
-                                    "contour_mid_point",
-                                    None,
-                                )
-                            ),
+                                getattr(bounds, "contour_mid_point", None)),
+                            contour_start=self._pt(
+                                getattr(bounds, "contour_start", None)),
+                            contour_end=self._pt(
+                                getattr(bounds, "contour_end", None)),
                         )
                     )
 
