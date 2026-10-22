@@ -118,8 +118,11 @@ def _sample_nurbs(
             c.weights = list(curve.weights)
         c.knotvector = list(curve.knot_vector)
         lo, hi = c.knotvector[c.degree], c.knotvector[-c.degree - 1]
-        # start with 32 samples, adaptively bisect while chord sagitta > tol
-        us = list(np.linspace(lo, hi, 33))
+        # start with 32 samples, adaptively bisect while chord sagitta > tol;
+        # seed with the distinct interior knots so C0 corners (full-
+        # multiplicity knots at plate-contour corners) are sampled exactly
+        interior = {float(u) for u in c.knotvector if lo < u < hi}
+        us = sorted(set(np.linspace(lo, hi, 33)) | interior)
         for _ in range(6):
             pts = np.array(c.evaluate_list(us))
             mids = [(us[i] + us[i + 1]) / 2.0 for i in range(len(us) - 1)]

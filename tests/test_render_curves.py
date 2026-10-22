@@ -220,3 +220,29 @@ class TestBadNurbs:
         result = sample_curve(bad, LR, tol_m=0.01)
         assert result is None
 
+
+class TestNurbsCornerSampling:
+
+    def test_bezier_segmented_corners_are_sampled_exactly(self):
+        """A rectangle encoded as one closed cubic NURBS (full-multiplicity
+        interior knots at the corners, as exported by CAD) must include the
+        exact corner points in the sampled polyline; uniform seeding cuts
+        the corners by up to the sag tolerance, which chamfers every plate
+        corner and opens visible holes where plates meet."""
+        corners = np.array([[0.0, 0.0, 0.0], [18.0, 0.0, 0.0],
+                            [18.0, 4.4, 0.0], [0.0, 4.4, 0.0]])
+        cps = []
+        for i, a in enumerate(corners):
+            b = corners[(i + 1) % 4]
+            cps += [a, a + (b - a) / 3.0, a + 2.0 * (b - a) / 3.0]
+        cps.append(corners[0])
+        knots = [0.0] * 4 + [1.7] * 3 + [2.3] * 3 + [3.9] * 3 + [5.1] * 4
+        c = IrNurbs3D(
+            None, degree=3,
+            control_points=[pt(*q) for q in cps],
+            knot_vector=knots)
+        out = sample_curve(c, LR, tol_m=0.05)
+        assert out is not None
+        for q in corners:
+            gap = float(np.linalg.norm(out - q, axis=1).min())
+            assert gap < 1e-6, f"corner {q[:2]} missed by {gap:.3f} m"

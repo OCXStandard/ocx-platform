@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- NURBS curve sampling (`curves._sample_nurbs`): the adaptive sampler now
+  seeds its parameter set with every distinct interior knot, so C0 corners
+  (full-multiplicity knots, as CAD exports use for plate-contour corners)
+  are sampled exactly. Previously the uniform 33-point seed could straddle
+  a corner and the sag refinement stop below tolerance, chamfering plate
+  corners by up to ~tol (≈7 cm) and opening visible holes where plates meet.
 - LSCM chart building (`make_lscm_chart` / `make_lscm`): hint points may
   now be passed as per-plate contour loops; each plane member's trim is
   then bounded by the union of the concave hull and the loop polygons.
