@@ -1,5 +1,25 @@
 # Changelog — ocx-rules
 
+## Unreleased
+
+### Fixed
+
+- `OCX-TOP-002`: composite-curve continuity is now order-invariant —
+  junction gaps are measured on the best end-to-end chain
+  (`chained_junction_gaps`) instead of declared segment order, which
+  false-flagged exporters emitting segments out of order.
+- `OCX-PROP-002`: panel weight/CoG reconciliation now sums **all**
+  children parented to the panel (plates, stiffeners, edge
+  reinforcements, brackets, pillars) instead of plates only.
+- `OCX-TOP-008`: the fixed 90° normal-angle threshold is replaced by a
+  shared-edge handedness test (`sign((t × d) · n)` with strict-majority
+  voting; ties pass), so consistently oriented sharp knuckles no longer
+  produce findings while flipped faces still do. The
+  `angle_tolerance_deg` parameter is removed; the median normal angle is
+  kept in the finding message for diagnosability. Shared-edge sampling
+  hardened for curved seams (nearest-neighbour point chaining, evenly
+  spread sample stations, bounded dedup).
+
 ## 0.1.0 — 2026-10-20
 
 Initial release.

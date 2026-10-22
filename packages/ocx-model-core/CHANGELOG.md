@@ -1,5 +1,17 @@
 # Changelog — ocx-model-core
 
+## Unreleased
+
+### Fixed
+
+- `UnboundedGeometry` surface/grid references are list-valued in the
+  3.0.x/3.1.x bindings and were read as raw lists, leaving panel surfaces
+  unresolved (all plates skipped when rendering such models); the builder
+  now unwraps the first element.
+- `CutBy`/`PlateCutBy` `SlotContour` entries are now read into
+  `cut_by_holes` alongside `Hole2DContour` (identical shape), so slot
+  cut-outs are subtracted in downstream area checks.
+
 ## 0.5.0 — 2026-10-20
 
 Initial release as a standalone workspace package, split out of the former

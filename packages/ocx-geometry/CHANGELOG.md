@@ -1,5 +1,18 @@
 # Changelog — ocx-geometry
 
+## Unreleased
+
+### Added
+
+- `measure.chained_junction_gaps`: order-invariant junction-gap measure —
+  segments may attach at either end of the growing chain and may be
+  reversed, so declared segment order carries no meaning.
+
+### Removed
+
+- `measure.ordered_junction_gaps` (declared-order junction gaps) —
+  superseded by `chained_junction_gaps`.
+
 ## 0.1.0 — 2026-10-20
 
 Initial release.
