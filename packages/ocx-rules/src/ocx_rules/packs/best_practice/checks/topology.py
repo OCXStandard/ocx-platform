@@ -345,9 +345,19 @@ def _normal_at(param, point: np.ndarray) -> np.ndarray | None:
     return n / norm
 
 
+def _probe_into(p: np.ndarray, centroid: np.ndarray,
+                normal: np.ndarray) -> np.ndarray | None:
+    """Unit in-plane direction at ``p`` toward the face interior."""
+    d = centroid - p
+    d = d - (d @ normal) * normal
+    norm = float(np.linalg.norm(d))
+    if not np.isfinite(norm) or norm < 1e-9:
+        return None
+    return d / norm
+
+
 def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Finding]:
-    """OCX-TOP-008: normals must be consistent across a surface collection."""
-    tol_deg = float(params.get("angle_tolerance_deg", 90.0))
+    """OCX-TOP-008: face orientation must not reverse across shared boundaries."""
     findings: list[Finding] = []
     geo = context.geometry
     for cid, coll in context.vessel.surface_collections.items():
@@ -361,15 +371,15 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                              "(no buildable surface or boundary)", surf.id, cid)
                 continue
             bnd = np.asarray(boundary, dtype=float)
-            members.append((surf, param, bnd,
+            members.append((surf, param, bnd, bnd.mean(axis=0),
                             bnd.min(axis=0), bnd.max(axis=0)))
         if len(members) < 2:
             logger.debug("TOP-008: collection {} skipped "
                          "(fewer than 2 buildable members)", cid)
             continue
         for i in range(len(members)):
-            surf_a, param_a, bnd_a, lo_a, hi_a = members[i]
-            for surf_b, param_b, bnd_b, lo_b, hi_b in members[i + 1:]:
+            surf_a, param_a, bnd_a, cen_a, lo_a, hi_a = members[i]
+            for surf_b, param_b, bnd_b, cen_b, lo_b, hi_b in members[i + 1:]:
                 # AABB prefilter: boundaries farther apart than the
                 # adjacency tolerance cannot share a boundary.
                 if (np.any(lo_a - hi_b > _ADJACENCY_TOL_M)
@@ -392,8 +402,32 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                                key=lambda c: c[0])
                 if not close:
                     continue  # not adjacent
-                angles = []
-                for _, p in close[:_MAX_SHARED_SAMPLES]:
+                # The handedness test needs stations on the shared-edge
+                # interior with the shared-edge tangent: corner samples have
+                # ill-defined tangents, so sample at midpoints between
+                # consecutive distinct shared boundary points instead.
+                uniq: list[np.ndarray] = []
+                for _, p in close:
+                    if all(float(np.linalg.norm(p - q)) > _ADJACENCY_TOL_M
+                           for q in uniq):
+                        uniq.append(p)
+                if len(uniq) < 2:
+                    logger.debug("TOP-008: pair {}/{} skipped (point contact "
+                                 "only)", surf_a.id, surf_b.id)
+                    continue
+                arr = np.asarray(uniq, dtype=float)
+                span = arr.max(axis=0) - arr.min(axis=0)
+                arr = arr[np.argsort(arr @ span)]
+                stations: list[tuple[np.ndarray, np.ndarray]] = []
+                for q1, q2 in zip(arr[:-1], arr[1:]):
+                    t = q2 - q1
+                    norm = float(np.linalg.norm(t))
+                    if norm < 1e-9:
+                        continue
+                    stations.append(((q1 + q2) / 2.0, t / norm))
+                votes: list[bool] = []
+                angles: list[float] = []
+                for p, t in stations[:_MAX_SHARED_SAMPLES]:
                     try:
                         na = _normal_at(param_a, p)
                         nb = _normal_at(param_b, p)
@@ -403,19 +437,31 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                         continue
                     if na is None or nb is None:
                         continue
+                    da = _probe_into(p, cen_a, na)
+                    db = _probe_into(p, cen_b, nb)
+                    if da is None or db is None:
+                        continue
+                    sa = float(np.cross(t, da) @ na)
+                    sb = float(np.cross(t, db) @ nb)
+                    if abs(sa) < 1e-9 or abs(sb) < 1e-9:
+                        continue  # degenerate handedness sample
+                    votes.append(sa * sb > 0.0)
                     dot = float(np.clip(na @ nb, -1.0, 1.0))
                     angles.append(np.degrees(np.arccos(dot)))
-                if not angles:
+                if not votes:
                     logger.debug("TOP-008: pair {}/{} skipped (no evaluable "
-                                 "shared boundary samples)", surf_a.id, surf_b.id)
+                                 "shared boundary samples)", surf_a.id,
+                                 surf_b.id)
                     continue
-                angle = float(np.median(angles))
-                if angle > tol_deg:
+                flipped = sum(votes)
+                # strict majority of flipped samples; ties pass
+                if flipped > len(votes) - flipped:
+                    angle = float(np.median(angles))
                     findings.append(Finding(
-                        message=(f"Surface normals deviate across the shared "
-                                 f"boundary with member {surf_b.id} in "
-                                 f"collection {cid}: {angle:.1f} deg exceeds "
-                                 f"{tol_deg:.1f} deg"),
+                        message=(f"Surface orientation reverses across the "
+                                 f"shared boundary with member {surf_b.id} "
+                                 f"in collection {cid} (normals "
+                                 f"{angle:.1f} deg apart)"),
                         element_id=surf_a.id, guid=surf_a.guidref))
     return findings
 

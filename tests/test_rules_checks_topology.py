@@ -359,7 +359,7 @@ def _coll_ctx(*members: IrSurface) -> SimpleNamespace:
 
 
 class TestSurfaceNormalsAndBoundaries:
-    PARAMS = {"angle_tolerance_deg": 90.0}
+    PARAMS: dict = {}
 
     def test_coplanar_adjacent_members_pass(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
@@ -372,7 +372,7 @@ class TestSurfaceNormalsAndBoundaries:
         (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
         assert finding.element_id == "sa"
         assert finding.guid == "ga"
-        assert "normals deviate" in finding.message
+        assert "orientation reverses" in finding.message
         assert "sb" in finding.message
 
     def test_unbuildable_member_skipped(self):
@@ -401,6 +401,21 @@ class TestSurfaceNormalsAndBoundaries:
         (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
         assert finding.element_id == "sa"
         assert "sb" in finding.message
+
+    def test_sharp_knuckle_consistently_oriented_passes(self):
+        # Face A in z=0; face B folds up steeply from the shared edge
+        # x=1000: normals ~143 deg apart, but orientation is consistent
+        # (both probes obey the opposite-handedness relation).
+        boundary_b = IrPolyLine3D(curve_length=None, vertices=[
+            _pt(1000, 0, 0), _pt(200, 0, 600), _pt(200, 1000, 600),
+            _pt(1000, 1000, 0), _pt(1000, 0, 0)], is_closed=True)
+        geom_b = IrExtrudedSurface(
+            base_curve=_line(_pt(1000, 0, 0), _pt(200, 0, 600)),
+            sweep=IrVector3D(0.0, 1.0, 0.0),
+            face_boundary_curve=boundary_b)
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000),
+                        IrSurface(id="sb", geometry=geom_b))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
 
     def test_no_collections_passes(self):
         ctx = _ctx(_vessel({}))
