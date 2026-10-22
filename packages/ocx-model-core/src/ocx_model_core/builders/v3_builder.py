@@ -665,8 +665,8 @@ class OcxV3Builder(IOcxBuilder):
                     break
             if surface is not None:
                 break
-        grid = _first(getattr(ug, "unbounded_grid_ref", None)) or getattr(ug, "grid_ref", None)
-        sref = _first(getattr(ug, "unbounded_surface_ref", None)) or getattr(ug, "surface_ref", None)
+        grid = _first(getattr(ug, "unbounded_grid_ref", None)) or _first(getattr(ug, "grid_ref", None))
+        sref = _first(getattr(ug, "unbounded_surface_ref", None)) or _first(getattr(ug, "surface_ref", None))
         return IrUnboundedGeometry(
             surface=surface,
             surface_ref=(getattr(sref, "local_ref", None) or None) if sref else None,

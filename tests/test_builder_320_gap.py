@@ -384,6 +384,17 @@ def test_unbounded_geometry_320_ref_names():
     assert ir_ug.surface_ref == "SR1"
 
 
+def test_unbounded_geometry_310_list_valued_refs():
+    """3.0.0/3.1.0 bindings declare grid_ref/surface_ref as lists too."""
+    ug = NS(plane3_d=None, nurbssurface=None, extruded_surface=None,
+            sphere3_d=None, cone3_d=None, cylinder3_d=None,
+            grid_ref=[NS(local_ref="GR1", guidref=None)],
+            surface_ref=[NS(local_ref="SR1", guidref=None)])
+    ir_ug = _b()._build_unbounded(ug)
+    assert ir_ug.grid_ref == "GR1"
+    assert ir_ug.surface_ref == "SR1"
+
+
 def test_occurrence_320_str_refs_and_lists():
     occ = NS(id="O1", name="occ", type_value=None,
              plate_ref=[NS(local_ref="PL1", guidref=None)],
