@@ -134,6 +134,24 @@ class TestCutByParsing:
         assert hc.transformation.primary_axis.z == -1.0
         assert hc.transformation.secondary_axis.x == 1.0
 
+    def test_cut_by_slot_contours_are_read(self):
+        """SlotContour entries have the same shape as Hole2DContour and
+        must land in cut_by_holes alongside them."""
+        raw = NS(id="pan1", name="P", guidref=None, function_type=None,
+                 tightness=None, point_on_surface=None,
+                 composed_of=None, stiffened_by=None, limited_by=None,
+                 unbounded_geometry=None,
+                 cut_by=NS(hole2_dcontour=[_hole2d_contour("hc1", "H1")],
+                           slot_contour=[_hole2d_contour("sc1", "H2"),
+                                         _hole2d_contour("sc2", "H3")],
+                           inner_contour=[]))
+        ir = IrVessel(id="v1")
+        panel = _b()._build_panel(raw, ir, "v1")
+        assert len(panel.cut_by_holes) == 3
+        assert {h.id for h in panel.cut_by_holes} == {"hc1", "sc1", "sc2"}
+        assert panel.cut_by_holes[1].hole_ref.local_ref == "H2"
+        assert panel.cut_by_holes[1].transformation is not None
+
     def test_panel_without_cut_by_is_empty(self):
         raw = NS(id="pan2", name=None, guidref=None, function_type=None,
                  tightness=None, point_on_surface=None, composed_of=None,

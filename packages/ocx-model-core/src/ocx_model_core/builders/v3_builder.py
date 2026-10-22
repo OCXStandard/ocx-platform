@@ -552,7 +552,10 @@ class OcxV3Builder(IOcxBuilder):
         out: list[IrHole2DContour] = []
         if cut_by is None:
             return out
-        for hc in _children(getattr(cut_by, "hole2_dcontour", None)):
+        # SlotContour has the identical shape (hole_ref + transformation)
+        # and is a cut-out exactly like Hole2DContour.
+        for hc in (*_children(getattr(cut_by, "hole2_dcontour", None)),
+                   *_children(getattr(cut_by, "slot_contour", None))):
             tr = getattr(hc, "transformation", None)
             transformation = None
             if tr is not None:
