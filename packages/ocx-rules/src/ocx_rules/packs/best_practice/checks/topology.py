@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 from loguru import logger
 from ocx_geometry.holes import parametric_profile, place_hole
-from ocx_geometry.measure import chain_polylines, ordered_junction_gaps
+from ocx_geometry.measure import chain_polylines, chained_junction_gaps
 from ocx_geometry.topology2d import (
     point_polyline_distance,
     points_polyline_distances,
@@ -118,7 +118,7 @@ def composite_curve_continuous(context, params: dict[str, Any]) -> list[Finding]
             samples.append(pts)
         if samples is None or len(samples) < 2:
             continue
-        gaps = ordered_junction_gaps(samples)
+        gaps = chained_junction_gaps(samples)
         bad = [g for g in gaps if g > tol_m]
         if bad:
             findings.append(Finding(

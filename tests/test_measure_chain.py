@@ -6,7 +6,6 @@ from ocx_geometry.measure import (
     chain_gap_details,
     chain_polylines,
     chained_junction_gaps,
-    ordered_junction_gaps,
 )
 
 
@@ -47,30 +46,6 @@ class TestChainPolylines:
     def test_empty_input_returns_none(self):
         ring, gaps = chain_polylines([])
         assert ring is None and gaps == []
-
-
-class TestOrderedJunctionGaps:
-    def test_continuous_in_declared_order(self):
-        segs = [_seg([0, 0, 0], [1, 0, 0]),
-                _seg([1, 0, 0], [1, 1, 0]),
-                _seg([1, 1, 0], [0, 1, 0])]
-        gaps = ordered_junction_gaps(segs)
-        assert len(gaps) == 2 and max(gaps) < 1e-12
-
-    def test_reversed_segment_still_continuous(self):
-        segs = [_seg([0, 0, 0], [1, 0, 0]),
-                _seg([1, 1, 0], [1, 0, 0])]     # reversed second segment
-        gaps = ordered_junction_gaps(segs)
-        assert len(gaps) == 1 and gaps[0] < 1e-12
-
-    def test_gap_reported(self):
-        segs = [_seg([0, 0, 0], [1, 0, 0]),
-                _seg([1.002, 0, 0], [2, 0, 0])]
-        gaps = ordered_junction_gaps(segs)
-        assert abs(gaps[0] - 0.002) < 1e-9
-
-    def test_fewer_than_two_segments(self):
-        assert ordered_junction_gaps([_seg([0, 0, 0], [1, 0, 0])]) == []
 
 
 class TestChainGapDetails:

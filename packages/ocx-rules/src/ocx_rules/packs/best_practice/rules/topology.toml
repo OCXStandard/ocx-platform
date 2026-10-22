@@ -15,7 +15,7 @@ tolerance_mm = 1.0
 [[rule]]
 id          = "OCX-TOP-002"
 title       = "Composite curves continuous"
-description = "CompositeCurve3D segments must be ordered end-to-end and continuous at every junction."
+description = "CompositeCurve3D segments must form one continuous chain: joinable end-to-end within tolerance, independent of declared order and orientation."
 source      = "compositecurve3d"
 category    = "topology"
 severity    = "error"

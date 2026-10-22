@@ -136,37 +136,6 @@ def chain_gap_details(
     return details
 
 
-def ordered_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
-    """Junction gaps between consecutive polylines in their declared order.
-
-    Each segment may be used reversed; the orientation minimising the gap to
-    the current chain end is chosen. Returns one gap per junction (no closure
-    gap).
-    """
-    parts = [np.asarray(p, dtype=float) for p in polylines
-             if p is not None and len(p) >= 2]
-    if len(parts) < 2:
-        return []
-    # orient the first segment so its far end best meets segment 2
-    first, second = parts[0], parts[1]
-    ends_fwd = min(float(np.linalg.norm(first[-1] - second[0])),
-                   float(np.linalg.norm(first[-1] - second[-1])))
-    ends_rev = min(float(np.linalg.norm(first[0] - second[0])),
-                   float(np.linalg.norm(first[0] - second[-1])))
-    tail = first[0] if ends_rev < ends_fwd else first[-1]
-    gaps: list[float] = []
-    for pts in parts[1:]:
-        d0 = float(np.linalg.norm(pts[0] - tail))
-        d1 = float(np.linalg.norm(pts[-1] - tail))
-        if d1 < d0:
-            gaps.append(d1)
-            tail = pts[0]
-        else:
-            gaps.append(d0)
-            tail = pts[-1]
-    return gaps
-
-
 def chained_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
     """Junction gaps of the best greedy end-to-end chain of ``polylines``.
 

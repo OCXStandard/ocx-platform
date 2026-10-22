@@ -154,6 +154,15 @@ class TestCompositeCurveContinuous:
         assert "gap" in finding.message
         assert "mm" in finding.message
 
+    def test_out_of_order_but_chainable_passes(self):
+        # Three sides of a square declared out of order and one reversed:
+        # continuous geometrically, discontinuous in declared order.
+        segs = [_line(_pt(0, 0), _pt(1000, 0)),
+                _line(_pt(0, 1000), _pt(1000, 1000)),     # out of order
+                _line(_pt(1000, 1000), _pt(1000, 0))]     # reversed
+        ctx = _ctx(_vessel({"p1": self._panel_with_composite(segs)}))
+        assert composite_curve_continuous(ctx, {"tolerance_mm": 0.1}) == []
+
     def test_unsampleable_segment_skips_curve(self):
         segs = [_line(_pt(0, 0), _pt(1000, 0)),
                 IrNurbs3D(curve_length=None)]  # no data -> cannot sample
