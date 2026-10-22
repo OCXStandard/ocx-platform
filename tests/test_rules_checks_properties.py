@@ -16,6 +16,7 @@ from ocx_model_core.model.ir import (
     IrPlane3D,
     IrPlate,
     IrPoint3D,
+    IrStiffener,
     IrUnboundedGeometry,
     IrUnit,
     IrVector3D,
@@ -254,6 +255,42 @@ class TestPanelWeightCogConsistent:
         assert finding.guid == "gpan1"
         assert "centre of gravity" in finding.message
         assert "100.0 mm" in finding.message
+
+    def test_mass_including_stiffener_children_passes(self):
+        # Panel declares the complete panel: 78.5 kg plate + 78.5 kg
+        # stiffener. Plates-only summation would flag this.
+        ctx = self._ctx_with_panel(
+            _mass_props(weight_kg=157.0),
+            [_mass_props(weight_kg=78.5)])
+        ctx.vessel.stiffeners["st1"] = IrStiffener(
+            id="st1",
+            parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
+            mass_properties=_mass_props(weight_kg=78.5))
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+
+    def test_cog_weighted_across_child_kinds(self):
+        # plate at x=250, stiffener at x=750, equal masses -> CoG x=500.
+        ctx = self._ctx_with_panel(
+            _mass_props(weight_kg=157.0, cog_mm=(500, 500, 0)),
+            [_mass_props(weight_kg=78.5, cog_mm=(250, 500, 0))])
+        ctx.vessel.stiffeners["st1"] = IrStiffener(
+            id="st1",
+            parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
+            mass_properties=_mass_props(weight_kg=78.5, cog_mm=(750, 500, 0)))
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+
+    def test_total_including_children_still_deviating_fails(self):
+        ctx = self._ctx_with_panel(
+            _mass_props(weight_kg=300.0),
+            [_mass_props(weight_kg=78.5)])
+        ctx.vessel.stiffeners["st1"] = IrStiffener(
+            id="st1",
+            parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
+            mass_properties=_mass_props(weight_kg=78.5))
+        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS)
+        assert finding.element_id == "pan1"
+        assert "300.00" in finding.message
+        assert "157.00" in finding.message
 
     def test_panel_without_declared_mass_props_skipped(self):
         ctx = self._ctx_with_panel(None, [_mass_props(weight_kg=78.5)])

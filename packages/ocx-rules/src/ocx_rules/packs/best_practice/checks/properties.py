@@ -118,7 +118,7 @@ def plate_weight_consistent(context, params: dict[str, Any]) -> list[Finding]:
 
 def panel_weight_cog_consistent(context,
                                 params: dict[str, Any]) -> list[Finding]:
-    """OCX-PROP-002: panel weight/CoG consistent with its child plates."""
+    """OCX-PROP-002: panel weight/CoG consistent with all its children."""
     tol = float(params.get("relative_tolerance", 0.02))
     cog_tol_m = float(params.get("cog_tolerance_mm", 50.0)) / 1000.0
     findings: list[Finding] = []
@@ -131,17 +131,22 @@ def panel_weight_cog_consistent(context,
             logger.debug("PROP-002: panel {} skipped (no declared mass "
                          "properties)", pid)
             continue
+        # A panel's declared mass covers the complete panel: all children
+        # parented to it (plates, stiffeners, edge reinforcements,
+        # brackets, pillars).
         children: list[tuple[float, Any]] = []
-        for plate in vessel.plates.values():
-            pr = plate.parent_ref
+        for part in (*vessel.plates.values(), *vessel.stiffeners.values(),
+                     *vessel.edge_reinforcements.values(),
+                     *vessel.brackets.values(), *vessel.pillars.values()):
+            pr = part.parent_ref
             if pr is None or pr.kind != ParentKind.PANEL or pr.id != pid:
                 continue
-            mass = _declared_weight_kg(geo, plate.mass_properties)
+            mass = _declared_weight_kg(geo, part.mass_properties)
             if mass is None:
                 continue
-            children.append((mass, _declared_cog(plate.mass_properties)))
+            children.append((mass, _declared_cog(part.mass_properties)))
         if not children:
-            logger.debug("PROP-002: panel {} skipped (no child plates with "
+            logger.debug("PROP-002: panel {} skipped (no children with "
                          "declared mass)", pid)
             continue
         total = sum(m for m, _ in children)
@@ -149,7 +154,7 @@ def panel_weight_cog_consistent(context,
             if abs(total - panel_mass) / panel_mass > tol:
                 findings.append(Finding(
                     message=(f"Panel declared dry weight {panel_mass:.2f} kg "
-                             f"deviates from the sum of its plate weights "
+                             f"deviates from the sum of its child part weights "
                              f"{total:.2f} kg by more than {tol * 100:.0f}%"),
                     element_id=pid, guid=panel.guidref))
         if panel_cog is not None:
@@ -163,7 +168,7 @@ def panel_weight_cog_consistent(context,
                 if dist > cog_tol_m:
                     findings.append(Finding(
                         message=(f"Panel centre of gravity deviates from the "
-                                 f"mass-weighted plate centre of gravity by "
+                                 f"mass-weighted child centre of gravity by "
                                  f"{dist * 1000:.1f} mm, exceeding "
                                  f"{cog_tol_m * 1000:.1f} mm"),
                         element_id=pid, guid=panel.guidref))

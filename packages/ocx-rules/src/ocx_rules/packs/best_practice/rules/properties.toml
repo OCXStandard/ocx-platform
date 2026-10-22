@@ -15,7 +15,7 @@ relative_tolerance = 0.02
 [[rule]]
 id          = "OCX-PROP-002"
 title       = "Panel weight/CoG consistent"
-description = "Panel weight and centre of gravity must be consistent with all composed plates, stiffeners, pillars and brackets."
+description = "Panel declared weight and centre of gravity cover the complete panel and must reconcile with the sum of all children parented to it: plates, stiffeners, edge reinforcements, brackets and pillars."
 source      = "property_validation"
 category    = "properties"
 severity    = "warning"
