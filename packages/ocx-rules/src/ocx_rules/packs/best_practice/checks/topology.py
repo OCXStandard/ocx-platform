@@ -332,6 +332,7 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
 
 _ADJACENCY_TOL_M = 0.001   # boundary proximity that makes two members adjacent
 _MAX_SHARED_SAMPLES = 5    # normal evaluations per adjacent member pair
+_MAX_CLOSE_POINTS = 400    # dedup workload cap for the close-point set
 
 
 def _normal_at(param, point: np.ndarray) -> np.ndarray | None:
@@ -402,6 +403,11 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                                key=lambda c: c[0])
                 if not close:
                     continue  # not adjacent
+                # Bound the O(k^2) dedup below: thin very large close-point
+                # sets with an even stride (close is distance-sorted, so a
+                # stride keeps samples from the whole set).
+                if len(close) > _MAX_CLOSE_POINTS:
+                    close = close[::-(-len(close) // _MAX_CLOSE_POINTS)]
                 # The handedness test needs stations on the shared-edge
                 # interior with the shared-edge tangent: corner samples have
                 # ill-defined tangents, so sample at midpoints between
@@ -417,7 +423,19 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                     continue
                 arr = np.asarray(uniq, dtype=float)
                 span = arr.max(axis=0) - arr.min(axis=0)
-                arr = arr[np.argsort(arr @ span)]
+                # Nearest-neighbour chain from the extreme-projection seed:
+                # sorting by projection onto the bounding-box diagonal is
+                # non-monotonic along curved shared edges and produces
+                # cross-chords whose midpoints lie off the edge.
+                order = [int(np.argmin(arr @ span))]
+                remaining = set(range(len(arr))) - {order[0]}
+                while remaining:
+                    last = arr[order[-1]]
+                    nxt = min(remaining, key=lambda j: float(
+                        np.linalg.norm(arr[j] - last)))
+                    order.append(nxt)
+                    remaining.remove(nxt)
+                arr = arr[order]
                 stations: list[tuple[np.ndarray, np.ndarray]] = []
                 for q1, q2 in zip(arr[:-1], arr[1:]):
                     t = q2 - q1
@@ -427,7 +445,12 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                     stations.append(((q1 + q2) / 2.0, t / norm))
                 votes: list[bool] = []
                 angles: list[float] = []
-                for p, t in stations[:_MAX_SHARED_SAMPLES]:
+                # Spread the sampled stations evenly along the shared edge
+                # instead of clustering them at one end.
+                if len(stations) > _MAX_SHARED_SAMPLES:
+                    step = max(1, len(stations) // _MAX_SHARED_SAMPLES)
+                    stations = stations[::step][:_MAX_SHARED_SAMPLES]
+                for p, t in stations:
                     try:
                         na = _normal_at(param_a, p)
                         nb = _normal_at(param_b, p)
@@ -443,7 +466,7 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                         continue
                     sa = float(np.cross(t, da) @ na)
                     sb = float(np.cross(t, db) @ nb)
-                    if abs(sa) < 1e-9 or abs(sb) < 1e-9:
+                    if abs(sa) < 1e-3 or abs(sb) < 1e-3:
                         continue  # degenerate handedness sample
                     votes.append(sa * sb > 0.0)
                     dot = float(np.clip(na @ nb, -1.0, 1.0))

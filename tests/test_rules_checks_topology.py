@@ -417,6 +417,40 @@ class TestSurfaceNormalsAndBoundaries:
                         IrSurface(id="sb", geometry=geom_b))
         assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
 
+    def test_curved_shared_edge_consistently_oriented_passes(self):
+        # Quarter-arc shared edge (r = 1000 mm) between an inner pie
+        # sector and an outer quarter annulus, both coplanar in z=0
+        # with the same +z normal — consistently oriented, must pass.
+        # Projection onto the bounding-box diagonal (cos t + sin t) is
+        # non-monotonic along the arc, so a diagonal sort interleaves
+        # the two arc halves and produces cross-chords whose midpoints
+        # lie deep inside the sector; ordering must follow the curve.
+        import math
+        n = 17
+        thetas = [math.pi / 2 * i / (n - 1) for i in range(n)]
+        arc = [(1000 * math.cos(t), 1000 * math.sin(t)) for t in thetas]
+        outer = [(3000 * math.cos(t), 3000 * math.sin(t)) for t in thetas]
+        # Inner pie sector: origin -> arc (ccw) -> back to origin.
+        boundary_b = IrPolyLine3D(curve_length=None, vertices=(
+            [_pt(0, 0)] + [_pt(x, y) for x, y in arc] + [_pt(0, 0)]),
+            is_closed=True)
+        geom_b = IrExtrudedSurface(
+            base_curve=_line(_pt(0, 0), _pt(1000, 0)),
+            sweep=IrVector3D(0.0, 1.0, 0.0),
+            face_boundary_curve=boundary_b)
+        # Outer quarter annulus: inner arc (ccw) -> outer arc (cw) -> close.
+        boundary_a = IrPolyLine3D(curve_length=None, vertices=(
+            [_pt(x, y) for x, y in arc]
+            + [_pt(x, y) for x, y in reversed(outer)]
+            + [_pt(*arc[0])]), is_closed=True)
+        geom_a = IrExtrudedSurface(
+            base_curve=_line(_pt(1000, 0), _pt(3000, 0)),
+            sweep=IrVector3D(0.0, 1.0, 0.0),
+            face_boundary_curve=boundary_a)
+        ctx = _coll_ctx(IrSurface(id="sa", geometry=geom_a),
+                        IrSurface(id="sb", geometry=geom_b))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+
     def test_no_collections_passes(self):
         ctx = _ctx(_vessel({}))
         assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
