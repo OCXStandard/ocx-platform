@@ -448,8 +448,9 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                 # Spread the sampled stations evenly along the shared edge
                 # instead of clustering them at one end.
                 if len(stations) > _MAX_SHARED_SAMPLES:
-                    step = max(1, len(stations) // _MAX_SHARED_SAMPLES)
-                    stations = stations[::step][:_MAX_SHARED_SAMPLES]
+                    idx = np.linspace(0, len(stations) - 1,
+                                      _MAX_SHARED_SAMPLES).astype(int)
+                    stations = [stations[k] for k in idx]
                 for p, t in stations:
                     try:
                         na = _normal_at(param_a, p)
