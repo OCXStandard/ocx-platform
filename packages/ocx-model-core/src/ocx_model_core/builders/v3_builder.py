@@ -548,7 +548,7 @@ class OcxV3Builder(IOcxBuilder):
         return contours
 
     def _build_hole2d_contours(self, cut_by) -> list[IrHole2DContour]:
-        """Extract CutBy/PlateCutBy Hole2DContour placements (ref + frame)."""
+        """Extract CutBy/PlateCutBy Hole2DContour/SlotContour placements (ref + frame)."""
         out: list[IrHole2DContour] = []
         if cut_by is None:
             return out
