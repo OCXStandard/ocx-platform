@@ -243,7 +243,7 @@ def _tessellate_plates(vessel: IrVessel,
                          if sink is not None else None)
                 chart_cache[panel_id] = make_lscm_chart(
                     candidates, options.tolerance_m,
-                    np.vstack(hints[panel_id]), diag=cdiag)
+                    hints[panel_id], diag=cdiag)
                 if cdiag is not None:
                     cdiag.build_s = time.perf_counter() - t_chart
                 logger.debug("Timing: LSCM chart for panel {} "

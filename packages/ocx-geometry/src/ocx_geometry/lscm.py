@@ -145,9 +145,12 @@ def _facet_member(member: SurfaceParam, dom, tol_m: float):
 
 
 def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float,
-                   excluded: shapely.Geometry | None = None):
+                   excluded: shapely.Geometry | None = None,
+                   include: shapely.Geometry | None = None):
     """Facet an unbounded member inside its hint envelope, excluding
-    authoritative bounded-patch footprints where available."""
+    authoritative bounded-patch footprints where available.  ``include``
+    is a region known to be real surface (the projected polygons of the
+    closed plate-contour loops) that the hull must always cover."""
     hull_uv = np.asarray(hull_uv, dtype=float)
     if getattr(member, "periodic_u", False):
         # inverse() unwraps u per polyline, so points from different hint
@@ -186,6 +189,12 @@ def _facet_trimmed(member: SurfaceParam, hull_uv: np.ndarray, tol_m: float,
             hull = mp.convex_hull
         if getattr(hull, "area", 0.0) < 1e-12:
             hull = mp.convex_hull
+        if include is not None:
+            # Closed plate-contour loops are authoritative: the concave
+            # hull may follow the panel outline between plates, but must
+            # never carve a cavity out of a plate's own interior (sparse
+            # hints along a knuckle seam otherwise let it tunnel in).
+            hull = shapely.union_all([hull, include])
     if getattr(hull, "area", 0.0) < 1e-12:
         return None                     # degenerate: no 2-D extent
     u0, v0, u1, v1 = hull.bounds
@@ -487,10 +496,19 @@ def _zip_boundaries(V: np.ndarray, F: np.ndarray, src: list[dict],
 
 
 def _build_mesh(members: list[SurfaceParam], tol_m: float,
-                hint_pts: np.ndarray | None,
+                hint_pts: np.ndarray | list[np.ndarray] | None,
                 require_connected: bool = True, diag=None) -> _ChartMesh | None:
     weld_tol = max(1e-6, 0.1 * tol_m)
     on_tol = max(10.0 * weld_tol, tol_m)
+    # Hints may arrive as per-plate closed contour loops; keep the loop
+    # boundaries so plane trims can be bounded by the loop polygons.
+    groups: list[slice] | None = None
+    if isinstance(hint_pts, (list, tuple)):
+        loops = [np.asarray(h, dtype=float) for h in hint_pts if len(h)]
+        offs = np.concatenate(
+            [[0], np.cumsum([len(lp) for lp in loops])]).astype(int)
+        groups = [slice(offs[i], offs[i + 1]) for i in range(len(loops))]
+        hint_pts = np.vstack(loops) if loops else None
     # Assign each hint point to its best-fitting member (ties shared):
     # at tangent seams (e.g. bottom plane / bilge cylinder) near-seam arc
     # points lie within on_tol of the plane too and would otherwise
@@ -548,7 +566,23 @@ def _build_mesh(members: list[SurfaceParam], tol_m: float,
                 # The plate hints alone can stop at a chord of a curved
                 # seam, leaving a slit between the two member trims.
                 hints = np.vstack([hints, seam_uv])
-            out = _facet_trimmed(member, hints, tol_m, excluded)
+            include = None
+            if (groups is not None and excluded is None
+                    and isinstance(member, PlaneParam)):
+                # Planes only: periodic members unwrap uv per polyline, so
+                # loop polygons could straddle branches there.
+                uv_all = fits[k][0]
+                polys = []
+                for sl in groups:
+                    sel = on[sl]
+                    if int(sel.sum()) < 3:
+                        continue
+                    poly = shapely.Polygon(uv_all[sl][sel]).buffer(0.0)
+                    if getattr(poly, "area", 0.0) > 1e-12:
+                        polys.append(poly)
+                if polys:
+                    include = shapely.union_all(polys)
+            out = _facet_trimmed(member, hints, tol_m, excluded, include)
         except Exception:  # noqa: BLE001 — member disqualifies itself
             continue
         if out is None:
@@ -1353,10 +1387,12 @@ class LscmChart:
 
 
 def make_lscm_chart(members: list[SurfaceParam], tol_m: float,
-                    hint_pts: np.ndarray | None = None,
+                    hint_pts: np.ndarray | list[np.ndarray] | None = None,
                     diag=None) -> LscmChart | None:
     """Chart mesh over collection members for per-plate flattening, or
-    None if no usable mesh can be built."""
+    None if no usable mesh can be built.  ``hint_pts`` may be a list of
+    per-plate contour loops (preferred — loop polygons bound the plane
+    trims) or a single stacked point array."""
     try:
         cm = _build_mesh(members, tol_m, hint_pts, require_connected=False,
                          diag=diag)
@@ -1369,7 +1405,8 @@ def make_lscm_chart(members: list[SurfaceParam], tol_m: float,
 
 
 def make_lscm(members: list[SurfaceParam], tol_m: float,
-              hint_pts: np.ndarray | None = None) -> LscmParam | None:
+              hint_pts: np.ndarray | list[np.ndarray] | None = None,
+              ) -> LscmParam | None:
     """LSCM chart over collection members, or None if not buildable."""
     try:
         cm = _build_mesh(members, tol_m, hint_pts)

@@ -1,5 +1,14 @@
 # Changelog — ocx-render
 
+## Unreleased
+
+### Fixed
+
+- Pass per-plate contour loops (not a stacked point array) to
+  `make_lscm_chart`, so plane trims on multi-member panels are bounded by
+  the plate polygons — fixes inner-skin plates rendering with missing
+  halves ("bowtie") or blown-up whole-chart geometry on knuckled panels.
+
 ## 0.1.0 — 2026-10-20
 
 Initial release.

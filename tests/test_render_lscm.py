@@ -210,6 +210,94 @@ class TestBuildMesh:
         assert _build_mesh([p1, p2], tol_m=0.01, hint_pts=None) is None
 
 
+class TestHintContourLoops:
+    """Hints passed as per-plate closed contour loops bound each plane
+    trim by the loop polygons, so the concave hull of sparse hint points
+    can never carve a cavity out of a real plate interior (regression for
+    knuckled inner-skin panels rendering with missing plate halves)."""
+
+    @staticmethod
+    def _knuckle_panel_loops():
+        """Two-strake panel on plane A (z=0) whose upper strake crosses a
+        knuckle at y=8.4 onto a 60-degree plane B. Along the knuckle, the
+        on-A hint points sit only at plate corners 18 m apart — sparse
+        enough that concave_hull(ratio=0.3) tunnels into the upper-strake
+        plate interiors down to their bottom edges."""
+        from ocx_geometry.surfaces import PlaneParam
+        plane_a = PlaneParam(np.zeros(3), np.array([0.0, 0.0, 1.0]))
+        knee = np.array([0.0, 8.4, 0.0])
+        plane_b = PlaneParam(
+            knee, np.array([0.0, -np.sin(np.pi / 3), np.cos(np.pi / 3)]))
+        up = np.array([0.0, np.cos(np.pi / 3), np.sin(np.pi / 3)])
+
+        def rect_loop(x0, x1, y0, y1):
+            loop = []
+            for x in np.linspace(x0, x1, 7)[:-1]:
+                loop.append([x, y0, 0.0])
+            for y in np.linspace(y0, y1, 8)[:-1]:
+                loop.append([x1, y, 0.0])
+            for x in np.linspace(x1, x0, 7)[:-1]:
+                loop.append([x, y1, 0.0])
+            for y in np.linspace(y1, y0, 8)[:-1]:
+                loop.append([x0, y, 0.0])
+            return np.asarray(loop)
+
+        def knuckle_loop(x0, x1):
+            y0, yk = 4.2, 8.4
+            top = knee + 0.2 * up
+            loop = []
+            for x in np.linspace(x0, x1, 7)[:-1]:
+                loop.append([x, y0, 0.0])
+            for y in np.linspace(y0, yk, 8)[:-1]:
+                loop.append([x1, y, 0.0])
+            loop.append([x1, yk, 0.0])
+            loop.append([x1, *(knee + 0.1 * up)[1:]])
+            for x in np.linspace(x1, x0, 7)[:-1]:
+                loop.append([x, top[1], top[2]])
+            loop.append([x0, top[1], top[2]])
+            loop.append([x0, *(knee + 0.1 * up)[1:]])
+            loop.append([x0, yk, 0.0])
+            for y in np.linspace(yk, y0, 8)[1:-1]:
+                loop.append([x0, y, 0.0])
+            return np.asarray(loop)
+
+        loops = ([rect_loop(18.0 * i, 18.0 * (i + 1), 0.0, 4.2)
+                  for i in range(3)]
+                 + [knuckle_loop(18.0 * i, 18.0 * (i + 1))
+                    for i in range(3)])
+        return [plane_a, plane_b], loops
+
+    def test_contour_loops_keep_plate_interiors(self):
+        from ocx_geometry.lscm import _boundary_edges, _build_mesh
+        members, loops = self._knuckle_panel_loops()
+        cm = _build_mesh(members, tol_m=0.05, hint_pts=loops,
+                         require_connected=False)
+        assert cm is not None
+        bnd = _boundary_edges(cm.F)
+        mids = 0.5 * (cm.V[bnd[:, 0]] + cm.V[bnd[:, 1]])
+        interior = ((mids[:, 0] > 0.5) & (mids[:, 0] < 53.5)
+                    & (mids[:, 1] > 0.5) & (mids[:, 1] < 8.0)
+                    & (np.abs(mids[:, 2]) < 1e-6))
+        assert int(interior.sum()) == 0, (
+            f"{int(interior.sum())} slit edges inside the panel interior")
+
+    def test_stacked_hints_still_carve_without_loop_info(self):
+        """Back-compat: a single stacked hint array carries no loop
+        structure; the concave hull still carves (documents why the
+        renderer must pass per-plate loops)."""
+        from ocx_geometry.lscm import _boundary_edges, _build_mesh
+        members, loops = self._knuckle_panel_loops()
+        cm = _build_mesh(members, tol_m=0.05, hint_pts=np.vstack(loops),
+                         require_connected=False)
+        assert cm is not None
+        bnd = _boundary_edges(cm.F)
+        mids = 0.5 * (cm.V[bnd[:, 0]] + cm.V[bnd[:, 1]])
+        interior = ((mids[:, 0] > 0.5) & (mids[:, 0] < 53.5)
+                    & (mids[:, 1] > 0.5) & (mids[:, 1] < 8.0)
+                    & (np.abs(mids[:, 2]) < 1e-6))
+        assert int(interior.sum()) > 0
+
+
 class TestLscmFlat:
     def test_single_patch_chart_is_metric_and_exact(self):
         from ocx_geometry.lscm import make_lscm
