@@ -5,6 +5,7 @@ import numpy as np
 from ocx_geometry.measure import (
     chain_gap_details,
     chain_polylines,
+    chained_junction_gaps,
     ordered_junction_gaps,
 )
 
@@ -98,3 +99,35 @@ class TestChainGapDetails:
         details = chain_gap_details([one])
         assert len(details) == 1              # closure gap only
         assert abs(details[0][2] - 1.0) < 1e-12
+
+
+class TestChainedJunctionGaps:
+    def test_out_of_order_scrambled_square_has_zero_gaps(self):
+        gaps = chained_junction_gaps(_SQ)
+        assert len(gaps) == 3           # junctions only, no closure gap
+        assert max(gaps) < 1e-12
+
+    def test_open_polyline_out_of_order(self):
+        # L-shape declared middle-last: chainable only via both-end growth.
+        segs = [_seg([1, 0, 0], [1, 1, 0]),
+                _seg([1, 1, 0], [0, 1, 0]),
+                _seg([0, 0, 0], [1, 0, 0])]
+        gaps = chained_junction_gaps(segs)
+        assert len(gaps) == 2 and max(gaps) < 1e-12
+
+    def test_genuine_gap_reported(self):
+        segs = [_seg([0, 0, 0], [1, 0, 0]),
+                _seg([1.057, 0, 0], [2, 0, 0])]
+        gaps = chained_junction_gaps(segs)
+        assert abs(gaps[0] - 0.057) < 1e-9
+
+    def test_reversed_segment_chains(self):
+        segs = [_seg([0, 0, 0], [1, 0, 0]),
+                _seg([2, 0, 0], [1, 0, 0])]    # reversed
+        gaps = chained_junction_gaps(segs)
+        assert len(gaps) == 1 and gaps[0] < 1e-12
+
+    def test_fewer_than_two_segments(self):
+        assert chained_junction_gaps([]) == []
+        assert chained_junction_gaps([_seg([0, 0, 0], [1, 0, 0])]) == []
+        assert chained_junction_gaps([None]) == []

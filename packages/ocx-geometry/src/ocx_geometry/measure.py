@@ -167,6 +167,38 @@ def ordered_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
     return gaps
 
 
+def chained_junction_gaps(polylines: list[np.ndarray]) -> list[float]:
+    """Junction gaps of the best greedy end-to-end chain of ``polylines``.
+
+    Order-invariant: each segment may attach at either end of the growing
+    chain and may be reversed — declared order carries no meaning.  Returns
+    one gap per junction (no closure gap), or ``[]`` for fewer than two
+    usable polylines.  Never raises.
+    """
+    parts = [np.asarray(p, dtype=float) for p in polylines
+             if p is not None and len(p) >= 2]
+    if len(parts) < 2:
+        return []
+    head, tail = parts[0][0], parts[0][-1]
+    remaining = parts[1:]
+    gaps: list[float] = []
+    while remaining:
+        # (gap, index, new_head, new_tail) of the best attachment
+        best: tuple[float, int, np.ndarray, np.ndarray] | None = None
+        for i, pts in enumerate(remaining):
+            for p_join, p_far in ((pts[0], pts[-1]), (pts[-1], pts[0])):
+                d_tail = float(np.linalg.norm(p_join - tail))
+                if best is None or d_tail < best[0]:
+                    best = (d_tail, i, head, p_far)
+                d_head = float(np.linalg.norm(p_join - head))
+                if d_head < best[0]:
+                    best = (d_head, i, p_far, tail)
+        gap, i, head, tail = best
+        remaining.pop(i)
+        gaps.append(gap)
+    return gaps
+
+
 # 3-point Gauss rule on the reference triangle (degree-2 exact); barycentric.
 _TRI_GAUSS = np.array([[2 / 3, 1 / 6, 1 / 6],
                        [1 / 6, 2 / 3, 1 / 6],
