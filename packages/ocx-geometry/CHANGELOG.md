@@ -12,6 +12,14 @@
 
 ### Fixed
 
+- UV tessellation (`UvTessellator`): hole cut-outs are now removed with an
+  explicit boolean difference (shell − holes) instead of constructing a
+  holed polygon and repairing it with `make_valid`. Cut-outs crossing the
+  plate exterior (e.g. slot contours open to a plate edge, as authored for
+  stiffener penetrations) now cut proper boundary notches; previously the
+  even-odd `make_valid` repair kept the overlap as spurious filled
+  fragments, so slots did not remove material. Holes fully outside the
+  plate are now dropped instead of rendered as detached islands.
 - Mesh trimming (`MeshTrimmer._assemble`): after the exact-duplicate weld,
   the trimmed mesh is now welded at a tolerance tied to the cut-end border
   pull (3 mm = 2 × pull), remaining T-junctions on boundary edges are

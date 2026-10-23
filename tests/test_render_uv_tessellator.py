@@ -48,6 +48,29 @@ class TestPlanarPlate:
         assert pm is not None
         assert np.isclose(mesh_area(pm), 11.0, atol=1e-6)
 
+    def test_edge_crossing_slot_cuts_boundary_notch(self):
+        # Slot contour extends past the plate edge (common for slot cut-outs
+        # authored at stiffener penetrations): must remove material, leaving
+        # a notch, not refill it with a spurious make_valid fragment.
+        contour = np.array([[0, 0, 0], [10, 0, 0], [10, 5, 0], [0, 5, 0]],
+                           dtype=float)                            # area 50
+        slot = np.array([[4, 4, 0], [6, 4, 0], [6, 6, 0], [4, 6, 0]],
+                        dtype=float)                               # 2x1 inside
+        pm = UvTessellator().tessellate_trimmed_surface(
+            "pl3", "slotted", "plate", contour, [slot], plane_param(), OPT)
+        assert pm is not None
+        assert np.isclose(mesh_area(pm), 48.0, atol=1e-6)
+
+    def test_fully_outside_hole_is_dropped(self):
+        contour = np.array([[0, 0, 0], [10, 0, 0], [10, 5, 0], [0, 5, 0]],
+                           dtype=float)
+        hole = np.array([[20, 1, 0], [21, 1, 0], [21, 2, 0], [20, 2, 0]],
+                        dtype=float)
+        pm = UvTessellator().tessellate_trimmed_surface(
+            "pl4", "plate", "plate", contour, [hole], plane_param(), OPT)
+        assert pm is not None
+        assert np.isclose(mesh_area(pm), 50.0, atol=1e-6)
+
     def test_degenerate_contour_returns_none(self):
         contour = np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]], dtype=float)  # zero area
         pm = UvTessellator().tessellate_trimmed_surface(

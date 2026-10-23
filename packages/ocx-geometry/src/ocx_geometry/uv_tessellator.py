@@ -43,19 +43,32 @@ def _clean_polygon(uv: np.ndarray, holes: list[np.ndarray]
 
     A locally folded development splits into several parts under
     ``make_valid``; all parts belong to the plate and must be kept.
+
+    Holes are removed with an explicit boolean difference so that cut-outs
+    crossing the exterior (e.g. slot contours open to a plate edge) become
+    boundary notches, and holes fully outside the plate are dropped.
     """
     try:
-        poly = Polygon(uv, holes=[h for h in holes if len(h) >= 3])
+        shell = Polygon(uv)
+        if not shell.is_valid:
+            shell = shapely.make_valid(shell)
+        hole_polys = []
+        for h in holes:
+            if len(h) < 3:
+                continue
+            hp = Polygon(h)
+            if not hp.is_valid:
+                hp = shapely.make_valid(hp)
+            if not hp.is_empty:
+                hole_polys.append(hp)
+        if hole_polys:
+            shell = shell.difference(shapely.union_all(hole_polys))
+        parts = _polygon_parts(shell)
     except (ValueError, TypeError):
         return []
-    if poly.is_valid:
-        parts = [poly]
-    else:
-        try:
-            parts = _polygon_parts(shapely.make_valid(poly))
-        except shapely.errors.GEOSException as exc:
-            logger.debug("GEOSException during make_valid: {}", exc)
-            return []
+    except shapely.errors.GEOSException as exc:
+        logger.debug("GEOSException during UV polygon cleaning: {}", exc)
+        return []
     largest = max((p.area for p in parts), default=0.0)
     out = []
     for p in parts:
