@@ -31,6 +31,7 @@ from ocx_model_core.model.ir.connections import (
 from ocx_model_core.model.ir.geometry import (
     IrCoordinateSystem,
     IrCurve3D,
+    IrPlane3D,
     IrPoint3D,
     IrRefPlane,
     IrSurface,
@@ -117,6 +118,9 @@ class IrBracket:
     origin: IrPoint3D | None = None
     udirection: IrVector3D | None = None
     vdirection: IrVector3D | None = None
+    outer_contour: IrCurve3D | None = None
+    plane: IrPlane3D | None = None
+    offset: Quantity | None = None
 
 
 @dataclass

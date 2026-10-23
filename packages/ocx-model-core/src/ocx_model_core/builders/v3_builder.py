@@ -1325,7 +1325,17 @@ class OcxV3Builder(IOcxBuilder):
             origin=self._pt(getattr(bp, "origin", None) if bp else None),
             udirection=self._vec(getattr(bp, "udirection", None) if bp else None),
             vdirection=self._vec(getattr(bp, "vdirection", None) if bp else None),
+            outer_contour=self._build_contour(getattr(raw, "outer_contour", None)),
+            plane=self._bracket_plane(getattr(raw, "unbounded_geometry", None)),
+            offset=self._qty(getattr(raw, "offset", None)),
         )
+
+    def _bracket_plane(self, ug) -> IrPlane3D | None:
+        """The bracket's own plane, when its UnboundedGeometry holds one."""
+        built = self._build_unbounded(ug)
+        if built is None or built.surface is None:
+            return None
+        return built.surface if isinstance(built.surface, IrPlane3D) else None
 
     def _build_feature_cope(self, fc) -> IrFeatureCope | None:
         if fc is None:

@@ -366,3 +366,70 @@ def test_panel_without_outer_contour_is_empty_list():
     builder = OcxV3Builder()
     panel = builder._build_panel(_StubPanelWithBounds(None), IrVessel(id="V1"), "V1")
     assert panel.outer_contours == []
+
+class TestBuildBracketGeometry:
+    """_build_bracket extracts OuterContour, Plane3D and Offset."""
+
+    @staticmethod
+    def _raw_bracket():
+        class Point3D:
+            def __init__(self, *c):
+                self.coordinates = list(c)
+                self.unit = "Um"
+
+        class Vector3D:
+            def __init__(self, *d):
+                self.direction = list(d)
+
+        class Line3D:
+            def __init__(self, a, b):
+                self.start_point = a
+                self.end_point = b
+
+        class OuterContour:
+            line3_d = [Line3D(Point3D(0, 0, 0), Point3D(1, 0, 0)),
+                       Line3D(Point3D(1, 0, 0), Point3D(1, 1, 0)),
+                       Line3D(Point3D(1, 1, 0), Point3D(0, 0, 0))]
+
+        class Plane3D:
+            point_on_surface = Point3D(0, 0, 0)
+            normal = Vector3D(0, 0, 1)
+
+        class UnboundedGeometry:
+            plane3_d = Plane3D()
+
+        class Offset:
+            numericvalue = 0.005
+            unit = "Um"
+
+        class Bracket:
+            id = "br1"
+            name = "BR1"
+            outer_contour = OuterContour()
+            unbounded_geometry = UnboundedGeometry()
+            offset = Offset()
+
+        return Bracket()
+
+    def test_bracket_geometry_fields_extracted(self):
+        from ocx_model_core.model.ir.geometry import IrPlane3D
+
+        b = OcxV3Builder()
+        parent = ParentRef(kind=ParentKind.VESSEL, id="v1")
+        ir = b._build_bracket(self._raw_bracket(), parent)
+        assert ir is not None
+        assert ir.outer_contour is not None
+        assert isinstance(ir.plane, IrPlane3D)
+        assert ir.plane.normal is not None
+        assert ir.offset is not None
+
+    def test_bracket_geometry_fields_default_none(self):
+        class Bracket:
+            id = "br2"
+
+        b = OcxV3Builder()
+        parent = ParentRef(kind=ParentKind.VESSEL, id="v1")
+        ir = b._build_bracket(Bracket(), parent)
+        assert ir.outer_contour is None
+        assert ir.plane is None
+        assert ir.offset is None
