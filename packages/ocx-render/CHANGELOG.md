@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- Exported plate meshes no longer contain unwelded internal seams or
+  T-junctions (drawn as skew lines by CAD viewers that show mesh free
+  edges) — fixed upstream in `ocx-geometry` mesh trimming (tolerant weld
+  + T-junction stitch in `MeshTrimmer`).
+- Plate-contour corners are sampled exactly (upstream `ocx-geometry`
+  NURBS fix), closing corner gaps between adjacent plates.
 - Pass per-plate contour loops (not a stacked point array) to
   `make_lscm_chart`, so plane trims on multi-member panels are bounded by
   the plate polygons — fixes inner-skin plates rendering with missing
