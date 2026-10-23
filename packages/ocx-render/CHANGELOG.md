@@ -11,6 +11,11 @@
 
 ### Fixed
 
+- Slot contours (and other hole cut-outs crossing a plate edge) now cut
+  the plate and remove material, rendering as open boundary notches —
+  fixed upstream in `ocx-geometry` (`UvTessellator` boolean difference).
+  Previously such slots left the plate uncut, and holes fully outside a
+  plate could render as detached islands.
 - Exported plate meshes no longer contain unwelded internal seams or
   T-junctions (drawn as skew lines by CAD viewers that show mesh free
   edges) — fixed upstream in `ocx-geometry` mesh trimming (tolerant weld
