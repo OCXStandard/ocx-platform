@@ -81,6 +81,12 @@ class TestPlaneHandling:
         wv, wf = _welded(v, f)
         assert abs(_volume(wv, wf)) == pytest.approx(4 * 2 * 0.02, rel=0.01)
 
+    def test_offset_ignored_with_fitted_plane(self):
+        # a fitted normal's sign is arbitrary — offset must not be applied
+        v, f, n = tessellate_bracket(RECT, None, 0.02, 0.005, TOL)
+        assert v[:, 2].min() == pytest.approx(-0.01, abs=1e-9)
+        assert v[:, 2].max() == pytest.approx(+0.01, abs=1e-9)
+
     def test_non_planar_contour_returns_none(self):
         pts = RECT.copy()
         pts[2, 2] = 1.0  # one corner lifted 1 m out of plane

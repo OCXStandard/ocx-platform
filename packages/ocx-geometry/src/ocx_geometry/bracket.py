@@ -52,6 +52,9 @@ def tessellate_bracket(contour: np.ndarray,
         normal = normal / ln if ln > 1e-12 else None
     if normal is None:
         origin, normal = _fit_plane(pts)
+        # a fitted normal has an arbitrary sign, so an offset along it
+        # would place the solid on a coin-flip side — go symmetric
+        offset_m = None
 
     # planarity: spread of signed distances about their mean (the mean
     # absorbs a contour authored offset from the stated plane)
