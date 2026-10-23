@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Brackets are rendered as extruded solids using the plate thickness
+  (`Offset` honoured, otherwise symmetric about the contour plane);
+  brackets without a usable thickness render as flat sheets. Brackets
+  were previously ignored by the renderer.
+
 ### Fixed
 
 - Exported plate meshes no longer contain unwelded internal seams or

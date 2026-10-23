@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- `IrBracket` gains `outer_contour`, `plane` and `offset`, populated
+  from the bracket's `OuterContour`, `UnboundedGeometry/Plane3D` and
+  `Offset` elements.
+
 ### Fixed
 
 - `UnboundedGeometry` surface/grid references are list-valued in the

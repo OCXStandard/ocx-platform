@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- `bracket.tessellate_bracket`: planar bracket tessellation — outer
+  contour + plane (given or best-fit) extruded by the plate thickness
+  into a closed prism (`Offset` honoured, else symmetric), or a flat
+  sheet when thickness is unknown.
+- `KIND_COLORS` gains a `"bracket"` entry (orange).
+
 ### Fixed
 
 - Mesh trimming (`MeshTrimmer._assemble`): after the exact-duplicate weld,
