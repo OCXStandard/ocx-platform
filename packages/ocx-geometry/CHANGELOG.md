@@ -4,6 +4,16 @@
 
 ### Fixed
 
+- Mesh trimming (`MeshTrimmer._assemble`): after the exact-duplicate weld,
+  the trimmed mesh is now welded at a tolerance tied to the cut-end border
+  pull (3 mm = 2 × pull), remaining T-junctions on boundary edges are
+  stitched by splitting the edge at the near-lying vertex, and the mesh is
+  re-welded. Previously `_cut` pulled cut-segment ends onto a face border
+  independently in each face's 2-D frame, so the same 3-D cut point could
+  re-emerge up to a couple of millimetres apart in adjacent faces; the
+  exact weld could not merge those, leaving unwelded internal seams along
+  interior chart edges (e.g. the hull's flat-of-side tangent line) that
+  CAD viewers draw as skew lines on shell plates.
 - NURBS curve sampling (`curves._sample_nurbs`): the adaptive sampler now
   seeds its parameter set with every distinct interior knot, so C0 corners
   (full-multiplicity knots, as CAD exports use for plate-contour corners)

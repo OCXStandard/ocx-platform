@@ -10,7 +10,7 @@ result follows the contour exactly, whatever the curvature.
 from __future__ import annotations
 
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import mapbox_earcut
 import numpy as np
@@ -20,14 +20,117 @@ import trimesh
 from loguru import logger
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
+from scipy.spatial import cKDTree
 
 _GRID = 1e-9            # shapely snapping grid inside a triangle's 2-D frame
 _MAX_REFINE = 12
 _MIN_GAP = 1e-4         # smallest ring step worth refining across a slit
+_PULL = 1.5e-3          # cut ends this close to a face border are pulled onto it
+_SEAM_WELD = 2 * _PULL  # per-face pulls can separate a shared cut point by 2x
 
 
 def _edge_key(a: int, b: int) -> tuple[int, int]:
     return (a, b) if a < b else (b, a)
+
+
+def _drop_bad_faces(P: np.ndarray, T: np.ndarray) -> np.ndarray:
+    """Remove index-degenerate, zero-area and duplicate faces."""
+    good = ((T[:, 0] != T[:, 1]) & (T[:, 1] != T[:, 2])
+            & (T[:, 2] != T[:, 0]))
+    T = T[good]
+    if len(T) == 0:
+        return T
+    a = P[T[:, 1]] - P[T[:, 0]]
+    b = P[T[:, 2]] - P[T[:, 0]]
+    T = T[np.linalg.norm(np.cross(a, b), axis=1) > 1e-14]
+    if len(T) == 0:
+        return T
+    _, first = np.unique(np.sort(T, axis=1), axis=0, return_index=True)
+    return T[np.sort(first)]
+
+
+def _weld_close(P: np.ndarray, N: np.ndarray, T: np.ndarray, tol: float
+                ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Union-find weld of vertices closer than ``tol``."""
+    pairs = cKDTree(P).query_pairs(tol, output_type="ndarray")
+    if len(pairs) == 0:
+        return P, N, _drop_bad_faces(P, T)
+    parent = np.arange(len(P))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i, j in pairs:
+        ri, rj = find(int(i)), find(int(j))
+        if ri != rj:
+            parent[max(ri, rj)] = min(ri, rj)
+    root = np.fromiter((find(i) for i in range(len(P))), np.int64, len(P))
+    keep, inv = np.unique(root, return_inverse=True)
+    P2, N2, T2 = P[keep], N[keep], np.asarray(inv).ravel()[T]
+    return P2, N2, _drop_bad_faces(P2, T2)
+
+
+def _stitch_tjunctions(P: np.ndarray, T: np.ndarray, tol: float,
+                       max_passes: int = 8) -> np.ndarray:
+    """Split boundary edges at boundary vertices lying on them.
+
+    After the tolerant weld, adjacent faces whose shared cut line was
+    subdivided differently leave T-junctions: a vertex of one side lies
+    in the interior of a boundary edge of the other.  Splitting the edge
+    at that vertex (reusing it, so no new positions or normals) lets the
+    final weld close the seam.
+    """
+    for _ in range(max_passes):
+        cnt: Counter = Counter()
+        for f in T:
+            a, b, c = int(f[0]), int(f[1]), int(f[2])
+            cnt[_edge_key(a, b)] += 1
+            cnt[_edge_key(b, c)] += 1
+            cnt[_edge_key(c, a)] += 1
+        bnd = {e for e, n in cnt.items() if n == 1}
+        if not bnd:
+            return T
+        bverts = np.fromiter({i for e in bnd for i in e}, np.int64)
+        tree = cKDTree(P[bverts])
+        out, changed = [], False
+        for f in T:
+            split = None
+            for k in range(3):
+                a, b = int(f[k]), int(f[(k + 1) % 3])
+                if _edge_key(a, b) not in bnd:
+                    continue
+                pa, pb = P[a], P[b]
+                e = pb - pa
+                le = float(e @ e)
+                if le < 1e-18:
+                    continue
+                half = 0.5 * math.sqrt(le)
+                for wi in tree.query_ball_point(pa + 0.5 * e, half + tol):
+                    w = int(bverts[wi])
+                    if w in (a, b) or w == int(f[(k + 2) % 3]):
+                        continue
+                    t = float((P[w] - pa) @ e) / le
+                    if not 1e-6 < t < 1.0 - 1e-6:
+                        continue
+                    if float(np.linalg.norm(P[w] - (pa + t * e))) > tol:
+                        continue
+                    c = int(f[(k + 2) % 3])
+                    split = ([a, w, c], [w, b, c])
+                    break
+                if split:
+                    break
+            if split:
+                out.extend(split)
+                changed = True
+            else:
+                out.append([int(f[0]), int(f[1]), int(f[2])])
+        if not changed:
+            return T
+        T = _drop_bad_faces(P, np.asarray(out, dtype=np.int64))
+    return T
 
 
 def _shared_counts(fa: np.ndarray, fb: np.ndarray) -> np.ndarray:
@@ -178,7 +281,7 @@ def _on_edge(mesh: _Mesh, f: int, seg) -> tuple[int, int] | None:
             if not -1e-6 <= t <= 1.0 + 1e-6:
                 ok = False
                 break
-            if float(np.linalg.norm(p - (pu + t * e))) > 1.5e-3:
+            if float(np.linalg.norm(p - (pu + t * e))) > _PULL:
                 ok = False
                 break
         if ok:
@@ -276,7 +379,7 @@ class MeshTrimmer:
                 # onto it so the cut line fully separates the face
                 for end in (0, -1):
                     pt = shapely.Point(xy[end])
-                    if 1e-7 < tri_poly.boundary.distance(pt) < 1.5e-3:
+                    if 1e-7 < tri_poly.boundary.distance(pt) < _PULL:
                         near = shapely.ops.nearest_points(
                             tri_poly.boundary, pt)[0]
                         xy[end] = (near.x, near.y)
@@ -478,6 +581,14 @@ class MeshTrimmer:
         a = P2[T2[:, 1]] - P2[T2[:, 0]]
         b = P2[T2[:, 2]] - P2[T2[:, 0]]
         T2 = T2[np.linalg.norm(np.cross(a, b), axis=1) > 1e-14]
+        if len(T2) == 0:
+            return None
+        # per-face border pulls in _cut can displace the same 3-D cut
+        # point differently in adjacent faces; weld those seams shut and
+        # stitch remaining T-junctions so no internal free edges survive
+        P2, N2, T2 = _weld_close(P2, N2, T2, _SEAM_WELD)
+        T2 = _stitch_tjunctions(P2, T2, _SEAM_WELD)
+        P2, N2, T2 = _weld_close(P2, N2, T2, _SEAM_WELD)
         return _Mesh(P2, T2, N2) if len(T2) else None
 
     # -- public --------------------------------------------------------

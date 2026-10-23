@@ -1,3 +1,5 @@
+from collections import Counter
+
 import numpy as np
 import pytest
 from ocx_geometry.mesh_trim import MeshTrimmer
@@ -56,3 +58,59 @@ class TestMeshTrim:
         tr = MeshTrimmer(V, F, 0.05)
         ring = _square(2, 4, 2, 4) + np.array([0, 0, 5.0])
         assert tr.trim(ring, []) is None
+
+
+def _seam_edges(v, f, tol=3e-3):
+    """Boundary edges whose midpoint lies on another boundary edge —
+    unwelded seams and T-junctions."""
+    e = np.sort(f[:, [0, 1, 1, 2, 2, 0]].reshape(-1, 2), axis=1)
+    cnt = Counter(map(tuple, e))
+    bnd = [k for k, c in cnt.items() if c == 1]
+
+    def dist(p, a, b):
+        ab = b - a
+        t = np.clip(((p - a) @ ab) / max(float(ab @ ab), 1e-12), 0.0, 1.0)
+        return float(np.linalg.norm(p - (a + t * ab)))
+
+    bad = []
+    for a, b in bnd:
+        if np.linalg.norm(v[b] - v[a]) < 0.01:
+            continue
+        mid = (v[a] + v[b]) / 2
+        for c, d in bnd:
+            if (c, d) == (a, b):
+                continue
+            if dist(mid, v[c], v[d]) < tol:
+                bad.append(((a, b), (c, d)))
+                break
+    return bad
+
+
+class TestSeamWelding:
+    """Cuts crossing a shared chart edge must not leave free-edge seams.
+
+    ``_cut`` pulls cut ends that fall just short of a face border onto
+    that border independently in each face's 2-D frame.  Across a
+    dihedral (e.g. the hull's flat-of-side tangent line) the pulled
+    points differ by up to a couple of millimetres per side, so the
+    exact-duplicate weld in ``_assemble`` cannot merge them, leaving
+    coincident boundary edges that CAD viewers draw as skew lines.
+    """
+
+    def test_cut_across_dihedral_leaves_no_seam_edges(self):
+        ang = np.radians(2.0)
+        axis = np.array([20.0, 10.0, 0.0])
+        axis /= np.linalg.norm(axis)
+        # fold the upper triangle about the shared diagonal by 2 deg
+        p = np.array([0.0, 10.0, 0.0])
+        folded = (p * np.cos(ang) + np.cross(axis, p) * np.sin(ang)
+                  + axis * (axis @ p) * (1 - np.cos(ang)))
+        V = np.array([[0, 0, 0], [20, 0, 0], [20, 10, 0], folded])
+        F = np.array([[0, 1, 2], [0, 2, 3]])
+        # ring points slightly off-surface, as sampled contours are
+        ring = np.array([[2, 2, 5e-4], [18, 2, 5e-4],
+                         [18, 8, 5e-4], [2, 8, 5e-4]])
+        out = MeshTrimmer(V, F, 0.05).trim(ring, [])
+        assert out is not None
+        v, f, _ = out
+        assert _seam_edges(v, f) == []
