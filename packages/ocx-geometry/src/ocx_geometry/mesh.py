@@ -12,6 +12,7 @@ KIND_COLORS: dict[str, tuple[int, int, int]] = {
     "plate": (140, 145, 150),      # steel grey
     "stiffener": (70, 110, 200),   # blue
     "pillar": (80, 170, 110),      # green
+    "bracket": (200, 140, 60),     # orange
     "panel": (205, 170, 125),      # tan (reserved; panels are not tessellated in v1)
 }
 
@@ -31,7 +32,7 @@ class PartMesh:
     """A single tessellated part, in metres."""
     part_id: str
     name: str
-    kind: str                                  # "plate" | "stiffener" | "pillar" | "panel"
+    kind: str                                  # "plate" | "stiffener" | "pillar" | "bracket" | "panel"
     vertices: np.ndarray                       # (N, 3) float64, metres
     triangles: np.ndarray                      # (M, 3) int
     normals: np.ndarray | None = None          # (N, 3) float64 or None
