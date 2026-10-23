@@ -89,3 +89,52 @@ class TestPlaneHandling:
     def test_degenerate_contour_returns_none(self):
         line = np.array([[0.0, 0, 0], [1.0, 0, 0], [2.0, 0, 0]])
         assert tessellate_bracket(line, PLANE, 0.02, None, TOL) is None
+
+
+class TestRenderModelBrackets:
+    @staticmethod
+    def _vessel():
+        from ocx_model_core.model.ir.base import (IrVector3D, ParentKind,
+                                                  ParentRef, Quantity)
+        from ocx_model_core.model.ir.geometry import (IrCompositeCurve3D,
+                                                      IrLine3D, IrPlane3D,
+                                                      IrPoint3D)
+        from ocx_model_core.model.ir.structural import IrBracket, IrVessel
+
+        def pt(x, y, z):
+            return IrPoint3D(x, y, z, "Um")
+
+        contour = IrCompositeCurve3D(curve_length=None, segments=[
+            IrLine3D(curve_length=None, start=pt(0, 0, 0), end=pt(1, 0, 0)),
+            IrLine3D(curve_length=None, start=pt(1, 0, 0), end=pt(1, 1, 0)),
+            IrLine3D(curve_length=None, start=pt(1, 1, 0), end=pt(0, 0, 0)),
+        ])
+        plane = IrPlane3D(point_on_surface=pt(0, 0, 0),
+                          normal=IrVector3D(0, 0, 1))
+        parent = ParentRef(kind=ParentKind.VESSEL, id="v1")
+        v = IrVessel(id="v1", name="V")
+        v.brackets["br1"] = IrBracket(
+            id="br1", parent_ref=parent, name="BR1",
+            thickness=Quantity(0.01, "Um"),
+            outer_contour=contour, plane=plane)
+        v.brackets["br2"] = IrBracket(id="br2", parent_ref=parent)
+        return v
+
+    def test_bracket_rendered_as_solid(self):
+        from ocx_render.render import render_model
+
+        result = render_model(self._vessel())
+        brackets = [m for m in result.meshes if m.kind == "bracket"]
+        assert len(brackets) == 1
+        pm = brackets[0]
+        assert pm.part_id == "br1"
+        # solid: both sides of the plane present
+        assert pm.vertices[:, 2].min() == pytest.approx(-0.005, abs=1e-9)
+        assert pm.vertices[:, 2].max() == pytest.approx(+0.005, abs=1e-9)
+        assert pm.normals is not None
+
+    def test_bracket_without_contour_is_skipped_with_reason(self):
+        from ocx_render.render import render_model
+
+        result = render_model(self._vessel())
+        assert result.skipped.get("br2") == "no outer contour"

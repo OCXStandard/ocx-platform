@@ -687,9 +687,10 @@ class TestHullModelChart:
 
         vessel, options, contours, chart = hull_data
         result = render_model(vessel, options)
-        assert result.rendered_count == 25
+        plate_meshes = [m for m in result.meshes if m.kind == "plate"]
+        assert len(plate_meshes) == 25
         assert not result.skipped
-        for mesh in result.meshes:
+        for mesh in plate_meshes:
             contour = contours[mesh.name]
             param = chart.param_for(contour)
             assert param is not None

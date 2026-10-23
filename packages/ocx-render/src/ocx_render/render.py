@@ -15,6 +15,7 @@ from ocx_geometry.backend import (
     RenderResult,
     TessellationOptions,
 )
+from ocx_geometry.bracket import tessellate_bracket
 from ocx_geometry.curves import sample_contour, sample_curve
 from ocx_geometry.diagnostics import ChartDiag, PlateDiag
 from ocx_geometry.holes import parametric_profile, place_hole
@@ -349,6 +350,43 @@ def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
     result.meshes.append(pm)
 
 
+def _tessellate_brackets(vessel: IrVessel, length: LengthResolver,
+                         options: TessellationOptions,
+                         result: RenderResult) -> None:
+    for br in vessel.brackets.values():
+        panel_id = (br.parent_ref.id
+                    if br.parent_ref.kind == ParentKind.PANEL else None)
+        if options.only_panels is not None and panel_id not in options.only_panels:
+            continue
+        if br.outer_contour is None:
+            result.skipped[br.id] = "no outer contour"
+            continue
+        pts = sample_contour(br.outer_contour, length, options.tolerance_m,
+                             options.snap_tolerance_m)
+        if pts is None or len(pts) < 3:
+            result.skipped[br.id] = "contour unsampleable or open"
+            continue
+        plane = None
+        if (br.plane is not None and br.plane.normal is not None
+                and br.plane.point_on_surface is not None):
+            plane = (length.point(br.plane.point_on_surface),
+                     np.array([br.plane.normal.x, br.plane.normal.y,
+                               br.plane.normal.z], dtype=np.float64))
+        thickness = length.qty(br.thickness)
+        offset = length.qty(br.offset)
+        out = tessellate_bracket(pts, plane, thickness, offset,
+                                 options.tolerance_m)
+        if out is None:
+            result.skipped[br.id] = "degenerate or non-planar contour"
+            continue
+        verts, faces, normals = out
+        pm = PartMesh(part_id=br.id, name=br.name or br.id, kind="bracket",
+                      vertices=verts, triangles=faces, normals=normals,
+                      extras={"id": br.id, "guid": br.guidref,
+                              "kind": "bracket", "panel_id": panel_id})
+        result.meshes.append(pm)
+
+
 def render_model(vessel: IrVessel,
                  options: TessellationOptions | None = None) -> RenderResult:
     """Tessellate all renderable parts of ``vessel``; never raises per-part."""
@@ -381,6 +419,10 @@ def render_model(vessel: IrVessel,
         _sweep_part(pillar, "pillar", vessel, length, options, result)
     logger.debug("Timing: {} pillars in {:.2f}s", len(vessel.pillars),
                  time.perf_counter() - t_stiff)
+    t_pillars = time.perf_counter()
+    _tessellate_brackets(vessel, length, options, result)
+    logger.debug("Timing: {} brackets in {:.2f}s", len(vessel.brackets),
+                 time.perf_counter() - t_pillars)
     logger.debug("Timing: render_model total {:.2f}s",
                  time.perf_counter() - t_start)
 
