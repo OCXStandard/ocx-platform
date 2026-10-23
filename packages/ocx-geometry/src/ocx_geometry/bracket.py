@@ -39,7 +39,7 @@ def tessellate_bracket(contour: np.ndarray,
     degenerate or non-planar contours.
     """
     pts = np.asarray(contour, dtype=np.float64)
-    if len(pts) >= 2 and np.linalg.norm(pts[0] - pts[-1]) < 1e-12:
+    if len(pts) >= 2 and np.linalg.norm(pts[0] - pts[-1]) < 1e-9:
         pts = pts[:-1]
     if len(pts) < 3:
         return None
