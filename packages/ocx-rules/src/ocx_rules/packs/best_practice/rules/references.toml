@@ -22,7 +22,7 @@ requires    = ["xml"]
 [rule.check]
 primitive = "cardinality"
 xpath     = "//ocx:Panel"
-child     = "ocx:ComposedOf"
+child     = "ocx:ComposedOf/ocx:Plate"
 min       = 1
 
 [[rule]]

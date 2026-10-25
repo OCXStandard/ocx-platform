@@ -104,6 +104,21 @@ class TestCardinality:
         (finding,) = content.cardinality(ctx, params)
         assert "at most 1" in finding.message
 
+    def test_nested_child_path_counts_grandchildren(self):
+        params = {"xpath": "//ocx:Panel", "child": "ocx:ComposedOf/ocx:Plate",
+                  "min": 1}
+        ctx = context_for(
+            '<ocx:Panel id="p"><ocx:ComposedOf><ocx:Plate id="pl"/>'
+            "</ocx:ComposedOf></ocx:Panel>")
+        assert content.cardinality(ctx, params) == []
+
+    def test_nested_child_path_empty_wrapper_fails(self):
+        params = {"xpath": "//ocx:Panel", "child": "ocx:ComposedOf/ocx:Plate",
+                  "min": 1}
+        ctx = context_for('<ocx:Panel id="p"><ocx:ComposedOf/></ocx:Panel>')
+        (finding,) = content.cardinality(ctx, params)
+        assert "ocx:ComposedOf/ocx:Plate" in finding.message
+
 
 class TestValueInSet:
     PARAMS = {"xpath": "//ocx:Panel", "key": "@tightness", "allowed": ["WaterTight", "NonTight"]}

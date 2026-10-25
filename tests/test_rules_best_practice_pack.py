@@ -60,3 +60,8 @@ class TestBestPracticePack:
         restricted = [r.rule_id for r in pack.rules
                       if r.rule_id != "OCX-PROP-004" and r.schemas is not None]
         assert restricted == []
+
+    def test_ref_002_counts_plates_inside_composed_of(self):
+        pack = load_pack()
+        by_id = {r.rule_id: r for r in pack.rules}
+        assert by_id["OCX-REF-002"].params["child"] == "ocx:ComposedOf/ocx:Plate"
