@@ -39,11 +39,11 @@ _HERE = "tests.test_rules_manager"
 
 
 def _spec(rule_id, custom, requires=frozenset({"xml"}), category="identity",
-          severity=Severity.ERROR):
+          severity=Severity.ERROR, schemas=None):
     return RuleSpec(
         rule_id=rule_id, title=rule_id, description="d", category=category,
         severity=severity, source="unittest", requires=requires,
-        check=CheckRef(custom=f"{_HERE}:{custom}"), params={})
+        check=CheckRef(custom=f"{_HERE}:{custom}"), params={}, schemas=schemas)
 
 
 def _pack(*specs):
@@ -109,6 +109,41 @@ class TestExecution:
         results = manager.run(context)
         assert [r.spec.rule_id for r in results] == ["R-A"]
         assert results[0].spec.severity is Severity.INFO
+
+
+class TestSchemaApplicability:
+    def test_matching_schema_runs(self, context):
+        manager = RuleManager(packs=[_pack(
+            _spec("R-NEW", "check_passes", schemas=frozenset({"3.1", "3.2"})))])
+        (result,) = manager.run(context)
+        assert result.status is RuleStatus.PASSED
+
+    def test_non_matching_schema_skips(self, context):
+        manager = RuleManager(packs=[_pack(
+            _spec("R-NEW", "check_passes", schemas=frozenset({"3.2", "3.3"})))])
+        (result,) = manager.run(context)
+        assert result.status is RuleStatus.SKIPPED
+        assert result.reason == "not applicable to schema 3.1.0"
+
+    def test_unknown_version_skips_restricted_rule(self, tmp_path):
+        doc = tmp_path / "nov.3docx"
+        doc.write_text("<root><a/></root>")
+        ctx = ValidationContext(doc)
+        manager = RuleManager(packs=[_pack(
+            _spec("R-NEW", "check_passes", requires=frozenset(),
+                  schemas=frozenset({"3.2"})))])
+        (result,) = manager.run(ctx)
+        assert result.status is RuleStatus.SKIPPED
+        assert result.reason == "schema version unknown"
+
+    def test_unrestricted_rule_ignores_unknown_version(self, tmp_path):
+        doc = tmp_path / "nov.3docx"
+        doc.write_text("<root><a/></root>")
+        ctx = ValidationContext(doc)
+        manager = RuleManager(packs=[_pack(
+            _spec("R-ANY", "check_passes", requires=frozenset()))])
+        (result,) = manager.run(ctx)
+        assert result.status is RuleStatus.PASSED
 
 
 class TestDiscovery:

@@ -111,6 +111,13 @@ class RuleManager:
 
     @staticmethod
     def _unsatisfied(spec: RuleSpec, context: ValidationContext) -> str | None:
+        if spec.schemas is not None:
+            version = context.schema_version
+            if version is None:
+                return "schema version unknown"
+            family = ".".join(version.split(".")[:2])
+            if family not in spec.schemas:
+                return f"not applicable to schema {version}"
         if "xml" in spec.requires:
             try:
                 context.xml_tree  # noqa: B018 — triggers lazy parse
