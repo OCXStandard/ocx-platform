@@ -1,6 +1,6 @@
 # Rule Schema-Support Markers Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add an optional `schemas = ["X.Y", ...]` marker to TOML rule definitions so the rule runner skips rules not applicable to the loaded model's schema version.
 
@@ -18,7 +18,7 @@
 - Modify: `packages\ocx-rules\src\ocx_rules\context.py`
 - Test: `tests\test_rules_context.py`
 
-- [ ] **Step 1: Write the failing tests** — append to `TestValidationContext` in `tests\test_rules_context.py`:
+- [x] **Step 1: Write the failing tests** — append to `TestValidationContext` in `tests\test_rules_context.py`:
 
 ```python
     def test_schema_version_read_from_root(self, vessel_stub: Path):
@@ -40,12 +40,12 @@
 
 Note: `vessel_stub` is the existing fixture (`stub_dir_310 / "ocxxml.3docx"`); the 3.1.0 stub root carries `schemaVersion="3.1.0"` (verify the literal in the stub file first; if it differs, assert the actual value).
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `uv run pytest tests/test_rules_context.py -k schema_version -v`
 Expected: 3 FAILED with `AttributeError: 'ValidationContext' object has no attribute 'schema_version'`
 
-- [ ] **Step 3: Implement** — add to `ValidationContext` in `context.py` (after `xml_tree`):
+- [x] **Step 3: Implement** — add to `ValidationContext` in `context.py` (after `xml_tree`):
 
 ```python
     @cached_property
@@ -58,12 +58,12 @@ Expected: 3 FAILED with `AttributeError: 'ValidationContext' object has no attri
             return None
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_rules_context.py -v`
 Expected: all PASS (new 3 + existing 6)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ocx-rules/src/ocx_rules/context.py tests/test_rules_context.py
@@ -81,7 +81,7 @@ git commit -m "feat(ocx-rules): expose model schemaVersion on ValidationContext"
 - Modify: `packages\ocx-rules\src\ocx_rules\catalogue.py` (`_parse_rule`)
 - Test: `tests\test_rules_catalogue.py`
 
-- [ ] **Step 1: Write the failing tests** — append to `tests\test_rules_catalogue.py`:
+- [x] **Step 1: Write the failing tests** — append to `tests\test_rules_catalogue.py`:
 
 ```python
 SCHEMA_RULE = '''
@@ -127,12 +127,12 @@ class TestSchemasMarker:
             parse_rules_toml(toml, source_name="t.toml")
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `uv run pytest tests/test_rules_catalogue.py::TestSchemasMarker -v`
 Expected: `test_schemas_parsed_to_frozenset` FAILS with `AttributeError: ... no attribute 'schemas'`; `test_schemas_omitted_means_none` FAILS likewise; the 7 invalid cases FAIL with `DID NOT RAISE` (the loader currently ignores unknown top-level keys — verify this is the actual failure mode; if `schemas` leaks into nothing, the test output will show it).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `model.py`, add the field to `RuleSpec` (after `params`):
 
@@ -175,12 +175,12 @@ In `_parse_rule`, call it and pass to `RuleSpec`:
 
 and add `schemas=schemas,` to the `RuleSpec(...)` construction.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_rules_catalogue.py tests/test_rules_model.py -v`
 Expected: all PASS (new 9 + existing)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ocx-rules/src/ocx_rules/model.py packages/ocx-rules/src/ocx_rules/catalogue.py tests/test_rules_catalogue.py
@@ -195,7 +195,7 @@ git commit -m "feat(ocx-rules): parse optional per-rule schema-support markers" 
 - Modify: `packages\ocx-rules\src\ocx_rules\manager.py` (`_unsatisfied`)
 - Test: `tests\test_rules_manager.py`
 
-- [ ] **Step 1: Write the failing tests** — in `tests\test_rules_manager.py`, extend the `_spec` helper with a `schemas=None` keyword and add a test class. Change `_spec` to:
+- [x] **Step 1: Write the failing tests** — in `tests\test_rules_manager.py`, extend the `_spec` helper with a `schemas=None` keyword and add a test class. Change `_spec` to:
 
 ```python
 def _spec(rule_id, custom, requires=frozenset({"xml"}), category="identity",
@@ -244,12 +244,12 @@ class TestSchemaApplicability:
         assert result.status is RuleStatus.PASSED
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `uv run pytest tests/test_rules_manager.py::TestSchemaApplicability -v`
 Expected: `test_matching_schema_runs` and `test_unrestricted_rule_ignores_unknown_version` PASS (no skip logic yet, rule just runs); `test_non_matching_schema_skips` and `test_unknown_version_skips_restricted_rule` FAIL with `assert <RuleStatus.PASSED> is <RuleStatus.SKIPPED>`. The two failing tests are the behavior being added; the two passing ones are regression guards.
 
-- [ ] **Step 3: Implement** — in `manager.py`, add at the top of `_unsatisfied` (before the `"xml"` check):
+- [x] **Step 3: Implement** — in `manager.py`, add at the top of `_unsatisfied` (before the `"xml"` check):
 
 ```python
         if spec.schemas is not None:
@@ -261,12 +261,12 @@ Expected: `test_matching_schema_runs` and `test_unrestricted_rule_ignores_unknow
                 return f"not applicable to schema {version}"
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_rules_manager.py -v`
 Expected: all PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/ocx-rules/src/ocx_rules/manager.py tests/test_rules_manager.py
@@ -281,7 +281,7 @@ git commit -m "feat(ocx-rules): skip rules not applicable to the model schema ve
 - Modify: `packages\ocx-rules\src\ocx_rules\packs\best_practice\rules\properties.toml`
 - Test: `tests\test_rules_best_practice_pack.py`
 
-- [ ] **Step 1: Write the failing test** — append to the test class in `tests\test_rules_best_practice_pack.py`:
+- [x] **Step 1: Write the failing test** — append to the test class in `tests\test_rules_best_practice_pack.py`:
 
 ```python
     def test_schema_markers(self):
@@ -295,12 +295,12 @@ git commit -m "feat(ocx-rules): skip rules not applicable to the model schema ve
 
 (Use the same pack-loading call the existing tests in that file use — check the import at the top of the file and reuse it verbatim.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_rules_best_practice_pack.py -v`
 Expected: `test_schema_markers` FAILS with `assert None == frozenset({'3.2', '3.3'})`; all other tests PASS.
 
-- [ ] **Step 3: Implement** — in `properties.toml`, add one line to the OCX-PROP-004 rule block (after its `requires` line):
+- [x] **Step 3: Implement** — in `properties.toml`, add one line to the OCX-PROP-004 rule block (after its `requires` line):
 
 ```toml
 schemas     = ["3.2", "3.3"]
@@ -308,12 +308,12 @@ schemas     = ["3.2", "3.3"]
 
 Rationale (from the spec): `RenewalThickness` exists only in the 3.2.0 and 3.3.0 XSDs; on older schemas the rule would silently PASS.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_rules_best_practice_pack.py tests/test_rules_corpus.py -v`
 Expected: all PASS (corpus runs the pack against real models — confirms no load-time regression).
 
-- [ ] **Step 5: Full suite + commit**
+- [x] **Step 5: Full suite + commit**
 
 Run: `uv run pytest -q`
 Expected: all tests pass.
@@ -331,8 +331,8 @@ git commit -m "feat(ocx-rules): restrict OCX-PROP-004 to schema 3.2/3.3" --no-ve
 - Modify: `.github/copilot-instructions.md` — only if it describes the rule TOML keys (check first; if it only describes the packages at folder level, no change needed).
 - Modify: `C:\PythonDev\ocx-wiki\out\wiki-writer\rules\OCX-PROP-004.md` — add a `Supported schemas | 3.2, 3.3` row to the metadata table and one sentence in the Description noting the marker (keeps the wiki pages consistent with the catalogue; this file is outside the repo, no commit).
 
-- [ ] **Step 1: Check and update docs as above**
-- [ ] **Step 2: Commit any repo-side doc change**
+- [x] **Step 1: Check and update docs as above**
+- [x] **Step 2: Commit any repo-side doc change**
 
 ```bash
 git add -A
