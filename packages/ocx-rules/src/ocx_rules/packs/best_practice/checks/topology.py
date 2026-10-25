@@ -281,6 +281,30 @@ def hole_not_splitting_plate(context, params: dict[str, Any]) -> list[Finding]:
     return findings
 
 
+def _plate_contours_closed(context, panel, tol_m: float) -> list[Finding]:
+    """OCX-TOP-005 aspect: plates of a seamed panel have closed outer contours."""
+    geo = context.geometry
+    vessel = context.vessel
+    findings: list[Finding] = []
+    for plate_id in panel.plate_ids:
+        plate = vessel.plates.get(plate_id)
+        if plate is None or plate.outer_contour is None:
+            continue
+        pts = geo.sample(plate.outer_contour)
+        if pts is None or len(pts) < 3:
+            logger.debug("TOP-005: plate {} skipped (unsampleable outer "
+                         "contour)", plate_id)
+            continue
+        gap = float(np.linalg.norm(pts[0] - pts[-1]))
+        if gap > tol_m:
+            findings.append(Finding(
+                message=(f"Plate outer contour is not closed: gap "
+                         f"{gap * 1000:.2f} mm exceeds "
+                         f"{tol_m * 1000:.2f} mm"),
+                element_id=plate_id, guid=plate.guidref))
+    return findings
+
+
 def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
     """OCX-TOP-005: seam endpoints must not land on hole contours."""
     tol_m = float(params.get("tolerance_mm", 5.0)) / 1000.0
@@ -292,6 +316,7 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
                  if sid in vessel.seams]
         if not seams:
             continue
+        findings += _plate_contours_closed(context, panel, tol_m)
         boundary, _ = _panel_boundary_samples(context, panel)
         cut_holes = list(panel.cut_by_holes)
         cut_contours = list(panel.cut_by_contours)

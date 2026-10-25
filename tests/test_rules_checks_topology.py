@@ -336,6 +336,61 @@ class TestSeamTopology:
         ctx = _ctx(_vessel({"pan1": panel}))
         assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
 
+    def _ctx_with_seam_and_plate(self, closed_plate: bool,
+                                 with_seam: bool = True,
+                                 hole_at: tuple[float, float] | None = None
+                                 ) -> SimpleNamespace:
+        a, b, c, d = _pt(0, 0), _pt(1000, 0), _pt(1000, 1000), _pt(0, 1000)
+        segs = [_line(a, b), _line(b, c), _line(c, d)]
+        if closed_plate:
+            segs.append(_line(d, a))
+        outline = IrCompositeCurve3D(curve_length=None, segments=segs)
+        cut_by = []
+        cat = None
+        if hole_at is not None:
+            cat = IrHoleShapeCatalogue(id="cat",
+                                       holes={"h1": _circle_hole(100.0)})
+            cut_by = [IrHole2DContour(
+                id="hc1", hole_ref=Ref(local_ref="h1"),
+                transformation=_placement(*hole_at))]
+        panel = IrPanel(
+            id="pan1", plate_ids=["pl1"],
+            seam_ids=(["s1"] if with_seam else []),
+            limited_by=_square_sides(),
+            unbounded_geometry=IrUnboundedGeometry(surface=_Z_PLANE),
+            cut_by_holes=cut_by)
+        plate = IrPlate(
+            id="pl1", guidref="gpl1",
+            parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
+            outer_contour=outline)
+        vessel = _vessel({"pan1": panel}, catalogue=cat)
+        vessel.plates["pl1"] = plate
+        if with_seam:
+            vessel.seams["s1"] = IrSeam(
+                id="s1", trace_line=_line(_pt(0, 500), _pt(1000, 500)))
+        return _ctx(vessel)
+
+    def test_seamed_panel_closed_plate_contour_passes(self):
+        ctx = self._ctx_with_seam_and_plate(closed_plate=True)
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
+
+    def test_seamed_panel_open_plate_contour_fails(self):
+        ctx = self._ctx_with_seam_and_plate(closed_plate=False)
+        (finding,) = seam_topology(ctx, {"tolerance_mm": 5.0})
+        assert finding.element_id == "pl1"
+        assert finding.guid == "gpl1"
+        assert "closed" in finding.message
+
+    def test_unseamed_panel_open_plate_contour_ignored(self):
+        ctx = self._ctx_with_seam_and_plate(closed_plate=False, with_seam=False)
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == []
+
+    def test_open_plate_contour_reported_even_with_holes_present(self):
+        ctx = self._ctx_with_seam_and_plate(closed_plate=False,
+                                            hole_at=(500.0, 100.0))
+        (finding,) = seam_topology(ctx, {"tolerance_mm": 5.0})
+        assert finding.element_id == "pl1"
+
 
 def _coll_member(sid: str, x0_mm: float, x1_mm: float, sweep_y: float = 1.0,
                  guid: str | None = None, buildable: bool = True) -> IrSurface:
