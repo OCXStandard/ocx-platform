@@ -36,6 +36,23 @@ custom       = "ocx_rules.primitives.geometry:closed_contour"
 tolerance_mm = 1.0
 '''
 
+SCHEMA_RULE = '''
+[[rule]]
+id          = "OCX-TST-003"
+title       = "Version-restricted rule"
+description = "Only applies to newer schemas."
+source      = "unittest"
+category    = "properties"
+severity    = "error"
+requires    = ["xml"]
+schemas     = ["3.2", "3.3"]
+
+[rule.check]
+primitive = "unique"
+xpath     = "//*[@id]"
+key       = "@id"
+'''
+
 
 class TestParseRulesToml:
     def test_primitive_rule(self):
@@ -71,6 +88,31 @@ class TestParseRulesToml:
     def test_duplicate_ids_rejected(self):
         with pytest.raises(CatalogueError, match="OCX-TST-001"):
             parse_rules_toml(VALID_RULE + VALID_RULE, source_name="t.toml")
+
+
+class TestSchemasMarker:
+    def test_schemas_parsed_to_frozenset(self):
+        (spec,) = parse_rules_toml(SCHEMA_RULE, source_name="t.toml")
+        assert spec.schemas == frozenset({"3.2", "3.3"})
+        assert "schemas" not in spec.params
+
+    def test_schemas_omitted_means_none(self):
+        (spec,) = parse_rules_toml(VALID_RULE, source_name="t.toml")
+        assert spec.schemas is None
+
+    @pytest.mark.parametrize("bad", [
+        'schemas     = "3.2"',          # not a list
+        'schemas     = []',             # empty list
+        'schemas     = ["3.2", "3.2"]', # duplicates
+        'schemas     = ["3"]',          # not major.minor
+        'schemas     = ["3.2.0"]',      # full version, not prefix
+        'schemas     = ["v3.2"]',       # malformed
+        'schemas     = [32]',           # wrong element type
+    ])
+    def test_invalid_schemas_raise(self, bad):
+        toml = SCHEMA_RULE.replace('schemas     = ["3.2", "3.3"]', bad)
+        with pytest.raises(CatalogueError):
+            parse_rules_toml(toml, source_name="t.toml")
 
 
 class TestLoadCatalogueDir:

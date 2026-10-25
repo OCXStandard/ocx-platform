@@ -7,6 +7,7 @@ load time — never at run time.
 from __future__ import annotations
 
 import importlib
+import re
 
 import tomllib
 from loguru import logger
@@ -16,6 +17,27 @@ from ocx_rules.model import VALID_REQUIREMENTS, CheckRef, RuleSpec, Severity
 
 class CatalogueError(ValueError):
     """A rule catalogue file is structurally invalid."""
+
+
+_SCHEMA_PREFIX_RE = re.compile(r"^\d+\.\d+$")
+
+
+def _parse_schemas(raw: dict, rule_id: str, source_name: str) -> frozenset[str] | None:
+    if "schemas" not in raw:
+        return None
+    value = raw["schemas"]
+    if not isinstance(value, list) or not value:
+        raise CatalogueError(
+            f"{source_name}: rule {rule_id!r} 'schemas' must be a non-empty list")
+    for entry in value:
+        if not isinstance(entry, str) or not _SCHEMA_PREFIX_RE.match(entry):
+            raise CatalogueError(
+                f"{source_name}: rule {rule_id!r} has invalid schema prefix "
+                f"{entry!r} (expected 'major.minor', e.g. '3.2')")
+    if len(set(value)) != len(value):
+        raise CatalogueError(
+            f"{source_name}: rule {rule_id!r} has duplicate schema prefixes")
+    return frozenset(value)
 
 
 def resolve_custom(ref: str):
@@ -75,6 +97,7 @@ def _parse_rule(raw: dict, source_name: str) -> RuleSpec:
         raise CatalogueError(
             f"{source_name}: rule {rule_id!r} has unknown requires {sorted(unknown)}")
     check, params = _parse_check(raw["check"], rule_id, source_name)
+    schemas = _parse_schemas(raw, rule_id, source_name)
     return RuleSpec(
         rule_id=rule_id,
         title=raw["title"],
@@ -85,6 +108,7 @@ def _parse_rule(raw: dict, source_name: str) -> RuleSpec:
         requires=requires,
         check=check,
         params=params,
+        schemas=schemas,
     )
 
 

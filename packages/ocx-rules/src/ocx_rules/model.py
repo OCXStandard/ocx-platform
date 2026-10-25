@@ -66,6 +66,8 @@ class RuleSpec:
     requires: frozenset[str]
     check: CheckRef
     params: dict = field(default_factory=dict)
+    #: Supported schema families as "major.minor" prefixes; None = all versions.
+    schemas: frozenset[str] | None = None
 
 
 @dataclass(frozen=True)
