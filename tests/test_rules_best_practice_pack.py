@@ -52,3 +52,11 @@ class TestBestPracticePack:
         for spec in load_pack().rules:
             if spec.category in ("topology", "properties"):
                 assert "geometry" in spec.requires or "ir" in spec.requires, spec.rule_id
+
+    def test_schema_markers(self):
+        pack = load_pack()
+        by_id = {r.rule_id: r for r in pack.rules}
+        assert by_id["OCX-PROP-004"].schemas == frozenset({"3.2", "3.3"})
+        restricted = [r.rule_id for r in pack.rules
+                      if r.rule_id != "OCX-PROP-004" and r.schemas is not None]
+        assert restricted == []

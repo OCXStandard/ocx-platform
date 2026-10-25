@@ -44,5 +44,8 @@ source      = "renewal_thickness"
 category    = "properties"
 severity    = "error"
 requires    = ["ir", "xml"]
+# RenewalThickness exists only in the 3.2.0+ schemas; on older schemas the
+# rule would silently pass, so it is skipped there instead.
+schemas     = ["3.2", "3.3"]
 [rule.check]
 custom = "ocx_rules.packs.best_practice.checks:renewal_thickness_on_instance"
