@@ -306,7 +306,8 @@ def _plate_contours_closed(context, panel, tol_m: float) -> list[Finding]:
 
 
 def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
-    """OCX-TOP-005: seam endpoints must not land on hole contours."""
+    """OCX-TOP-005: seam endpoints must not land on hole contours, and
+    plate outer contours of seamed panels must be closed."""
     tol_m = float(params.get("tolerance_mm", 5.0)) / 1000.0
     findings: list[Finding] = []
     geo = context.geometry
