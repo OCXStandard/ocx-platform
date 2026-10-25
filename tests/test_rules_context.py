@@ -53,3 +53,19 @@ class TestValidationContext:
         ctx = ValidationContext(doc)
         ids = [el.get("{http://www.w3.org/XML/1998/namespace}id") for el in ctx.xml_tree.getroot()]
         assert ids == ["u1", "u1"]
+
+    def test_schema_version_read_from_root(self, vessel_stub: Path):
+        ctx = ValidationContext(vessel_stub)
+        assert ctx.schema_version == "3.1.0"
+
+    def test_schema_version_none_when_attribute_missing(self, tmp_path: Path):
+        doc = tmp_path / "nov.3docx"
+        doc.write_text("<root><a/></root>")
+        ctx = ValidationContext(doc)
+        assert ctx.schema_version is None
+
+    def test_schema_version_none_when_unparseable(self, tmp_path: Path):
+        doc = tmp_path / "bad.3docx"
+        doc.write_text("<root><unclosed></root>")
+        ctx = ValidationContext(doc)
+        assert ctx.schema_version is None

@@ -46,6 +46,15 @@ class ValidationContext:
         return etree.parse(str(self.model_path), parser=xml_parser)
 
     @cached_property
+    def schema_version(self) -> str | None:
+        """The model's declared schemaVersion, or None when undetectable."""
+        try:
+            return self.xml_tree.getroot().get("schemaVersion")
+        except Exception as exc:
+            logger.debug("Cannot determine schema version: {}", exc)
+            return None
+
+    @cached_property
     def vessel(self):
         """The schema-neutral IR (IrVessel); built on first access."""
         logger.debug("Building IR: {}", self.model_path)
