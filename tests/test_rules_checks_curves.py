@@ -112,7 +112,7 @@ class TestCatalogueHolesPlanar:
     def test_planar_contour_passes(self):
         ctx = context_for(
             "<ocx:HoleShapeCatalogue><ocx:Hole2D id=\"h1\">"
-            '<ocx:Point3D coordinates="0 0 0"/><ocx:Point3D coordinates="5 5 0"/>'
+            '<ocx:Point3D coordinates="-5 -5 0"/><ocx:Point3D coordinates="5 5 0"/>'
             "</ocx:Hole2D></ocx:HoleShapeCatalogue>")
         assert catalogue_holes_planar(ctx, {"tolerance_mm": 0.1}) == []
 
@@ -123,3 +123,42 @@ class TestCatalogueHolesPlanar:
             "</ocx:Hole2D></ocx:HoleShapeCatalogue>")
         (finding,) = catalogue_holes_planar(ctx, {"tolerance_mm": 0.1})
         assert "Z" in finding.message
+
+
+class TestCatalogueHolesCentered:
+    PARAMS = {"tolerance_mm": 0.1, "center_tolerance_mm": 1.0}
+
+    def _catalogue(self, coords: list[str]) -> str:
+        pts = "".join(f'<ocx:Point3D coordinates="{c}"/>' for c in coords)
+        return (f'<ocx:HoleShapeCatalogue><ocx:Hole2D id="h1">{pts}'
+                "</ocx:Hole2D></ocx:HoleShapeCatalogue>")
+
+    def test_centered_contour_passes(self):
+        ctx = context_for(self._catalogue(
+            ["-50 -50 0", "50 -50 0", "50 50 0", "-50 50 0"]))
+        assert catalogue_holes_planar(ctx, self.PARAMS) == []
+
+    def test_off_centre_contour_fails(self):
+        # bbox centre = (5, 0) mm -> exceeds 1 mm tolerance
+        ctx = context_for(self._catalogue(
+            ["-45 -50 0", "55 -50 0", "55 50 0", "-45 50 0"]))
+        (finding,) = catalogue_holes_planar(ctx, self.PARAMS)
+        assert finding.element_id == "h1"
+        assert "center" in finding.message.lower()
+
+    def test_parametric_hole_without_coordinates_passes(self):
+        ctx = context_for(
+            '<ocx:HoleShapeCatalogue><ocx:Hole2D id="h1">'
+            '<ocx:RectangularHole id="h1s"><ocx:Height numericvalue="2.0" unit="Um"/>'
+            '<ocx:Width numericvalue="1.8" unit="Um"/></ocx:RectangularHole>'
+            "</ocx:Hole2D></ocx:HoleShapeCatalogue>")
+        assert catalogue_holes_planar(ctx, self.PARAMS) == []
+
+    def test_one_finding_per_hole_not_per_point(self):
+        two = (self._catalogue(["90 -50 0", "110 -50 0", "110 50 0", "90 50 0"])
+               .replace("</ocx:HoleShapeCatalogue>", "")
+               + '<ocx:Hole2D id="h2"><ocx:Point3D coordinates="-50 -50 0"/>'
+                 '<ocx:Point3D coordinates="50 50 0"/></ocx:Hole2D>'
+                 "</ocx:HoleShapeCatalogue>")
+        (finding,) = catalogue_holes_planar(context_for(two), self.PARAMS)
+        assert finding.element_id == "h1"

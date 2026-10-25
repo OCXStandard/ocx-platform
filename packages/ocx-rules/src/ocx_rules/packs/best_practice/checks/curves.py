@@ -167,9 +167,11 @@ def polyline_closed(context, params: dict) -> list[Finding]:
 
 
 def catalogue_holes_planar(context, params: dict) -> list[Finding]:
-    """OCX-GEO-005 (warning): catalogue hole contour points lie in Z = 0."""
+    """OCX-GEO-005 (warning): catalogue hole contours are planar (Z = 0)
+    and centered on the catalogue origin."""
     idx = context.xml_index
     tol = float(params.get("tolerance_mm", 0.1))
+    center_tol = float(params.get("center_tolerance_mm", 1.0))
     scales = _unit_scales_mm(idx)
     findings = []
     for point in idx.xpath("//ocx:HoleShapeCatalogue//*[@coordinates]"):
@@ -182,4 +184,24 @@ def catalogue_holes_planar(context, params: dict) -> list[Finding]:
                 message=(f"catalogue hole point at line {point.sourceline} has "
                          f"Z = {z_mm:.3f} mm; contours must be planar (Z = 0)"),
                 location=point.sourceline))
+    for hole in idx.xpath("//ocx:HoleShapeCatalogue//ocx:Hole2D"):
+        xs, ys = [], []
+        for point in hole.xpath(".//*[@coordinates]", namespaces=idx.nsmap):
+            coords = _floats_of(point.get("coordinates"))
+            if coords is None or len(coords) != 3:
+                continue
+            scale = scales.get(point.get("unit"), 1.0)
+            xs.append(coords[0] * scale)
+            ys.append(coords[1] * scale)
+        if not xs:
+            continue  # purely parametric shape — centered by construction
+        cx = (min(xs) + max(xs)) / 2.0
+        cy = (min(ys) + max(ys)) / 2.0
+        if max(abs(cx), abs(cy)) > center_tol:
+            findings.append(Finding(
+                message=(f"catalogue hole contour bounding-box center is "
+                         f"({cx:.2f}, {cy:.2f}) mm; contours must be centered "
+                         f"at the catalogue origin "
+                         f"(tolerance {center_tol:.2f} mm)"),
+                element_id=hole.get("id"), location=hole.sourceline))
     return findings

@@ -56,3 +56,4 @@ requires    = ["xml"]
 [rule.check]
 custom       = "ocx_rules.packs.best_practice.checks:catalogue_holes_planar"
 tolerance_mm = 0.1
+center_tolerance_mm = 1.0

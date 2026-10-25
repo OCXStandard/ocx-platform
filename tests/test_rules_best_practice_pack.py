@@ -65,3 +65,8 @@ class TestBestPracticePack:
         pack = load_pack()
         by_id = {r.rule_id: r for r in pack.rules}
         assert by_id["OCX-REF-002"].params["child"] == "ocx:ComposedOf/ocx:Plate"
+
+    def test_geo_005_declares_center_tolerance(self):
+        pack = load_pack()
+        by_id = {r.rule_id: r for r in pack.rules}
+        assert by_id["OCX-GEO-005"].params["center_tolerance_mm"] == 1.0
