@@ -332,4 +332,4 @@ validator CLI / ocx-mcp MCP server
 
 ## License
 
-[MIT](LICENSE) © 2026 ocastrup
+[MIT](LICENSE) © 2026 3docx.org
