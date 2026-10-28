@@ -25,7 +25,7 @@ making downstream tools independent of any particular OCX schema version.
   compartments and scantling write-back to LLM clients
 - **XSD schema validation** (`validator validate schema`): offline validation
   against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
-- **Rule-based validation** (`validator validate rules`): configurable
+- **Rule-based validation - EXPERIMENTAL** (`validator validate rules`): configurable
   best-practice rules beyond the XSD — 36 wiki-sourced rules in 6 categories
   (identity, document, references, curves/surfaces, topology, properties),
   defined declaratively in TOML, extensible via `ocx_rules.packs` entry-point
@@ -35,11 +35,11 @@ making downstream tools independent of any particular OCX schema version.
   other versions. 34 of the 36 rules are fully implemented (24 content
   rules + 10 geometry-dependent rules backed by the analytic geometry
   kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred
-- **3-D rendering** (`ocx-render`): tessellates the model to a GLB plus a
+- **3-D rendering - EXPERIMENTAL** (`ocx-render`): tessellates the model to a GLB plus a
   self-contained HTML viewer. Multi-member shell panels are built from one
   shared chart mesh that plates are trimmed out of (`ocx_geometry.mesh_trim`);
   `--log-level DEBUG` prints per-stage timings
-- **Render diagnostics** (`ocx-diagnose`): runs the render with diagnostic
+- **Render diagnostics EXPERIMENTAL** (`ocx-diagnose`): runs the render with diagnostic
   hooks and writes an interactive HTML report (plotly.js embedded) plus optional
   JSON: per-plate route, mesh health, surface deviation, neighbour gaps/overlaps,
   chart distortion and a tolerance sweep. The report also contains ranked
