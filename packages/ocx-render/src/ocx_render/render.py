@@ -125,37 +125,30 @@ def _best_param(candidates: list[SurfaceParam],
     return best
 
 
-def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
+def _hole_polylines(owner, vessel: IrVessel, length: LengthResolver,
                     options: TessellationOptions
                     ) -> tuple[list[np.ndarray], dict[str, str]]:
-    """All hole polylines for one plate: inline contours + resolved CutBy holes.
+    """Hole polylines cut by one owner (a plate or a panel): inline
+    contours + resolved CutBy holes.
 
     Returns (hole polylines in metres, failures keyed
-    ``<plate_id>/hole:<id>`` for ``RenderResult.hole_failures``).
-    Panel-level holes are offered to every plate of the panel; the UV
-    polygon clean-up clips or drops holes outside the plate region.
+    ``<owner_id>/hole:<id>`` for ``RenderResult.hole_failures``).
     """
     holes: list[np.ndarray] = []
     failures: dict[str, str] = {}
 
-    inline = list(plate.cut_by_contours)
-    if panel is not None:
-        inline += panel.cut_by_contours
-    for c in inline:
+    for c in owner.cut_by_contours:
         h = sample_contour(c, length, options.tolerance_m,
                            options.snap_tolerance_m)
         if h is not None:
             holes.append(h)
 
-    entries = list(plate.cut_by_holes)
-    if panel is not None:
-        entries += panel.cut_by_holes
-    if not entries:
+    if not owner.cut_by_holes:
         return holes, failures
 
     cat = vessel.hole_shape_catalogue
-    for hc in entries:
-        key = (f"{plate.id}/hole:"
+    for hc in owner.cut_by_holes:
+        key = (f"{owner.id}/hole:"
                f"{hc.id or (hc.hole_ref.local_ref if hc.hole_ref else '?')}")
         shape = None
         if cat is not None and hc.hole_ref is not None:
@@ -225,6 +218,10 @@ def _tessellate_plates(vessel: IrVessel,
     # plates; each plate flattens only its local submesh (a whole-panel
     # conformal flattening degenerates on doubly-curved panels).
     chart_cache: dict[str, object] = {}
+    # Panel-level holes are resolved once per panel and offered to every
+    # plate of it; the UV polygon clean-up clips or drops holes outside
+    # each plate region.
+    panel_holes: dict[str, list[np.ndarray]] = {}
     trim_cache: dict[str, MeshTrimmer] = {}
     n_total = len(prepared)
     t_pass2 = time.perf_counter()
@@ -246,11 +243,15 @@ def _tessellate_plates(vessel: IrVessel,
         local = None
         pm = None
         panel = vessel.panels.get(panel_id)
-        holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
-                                               options)
+        holes, hole_failures = _hole_polylines(plate, vessel, length, options)
+        if panel is not None:
+            if panel_id not in panel_holes:
+                panel_holes[panel_id], failures = _hole_polylines(
+                    panel, vessel, length, options)
+                hole_failures.update(failures)
+            holes += panel_holes[panel_id]
         for key, reason in hole_failures.items():
-            logger.warning("CutBy hole not applied to {} — {} ({})",
-                           plate.id, reason, key)
+            logger.warning("CutBy hole not applied — {} ({})", reason, key)
         result.hole_failures.update(hole_failures)
         if len(candidates) > 1:
             if panel_id not in chart_cache:

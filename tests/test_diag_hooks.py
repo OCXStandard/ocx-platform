@@ -77,3 +77,16 @@ def test_param_for_sets_last_stage():
         assert chart.last_stage in {"gates", "no-gates", "tutte"}
         V, F, uv = param.chart
         assert len(uv) == len(V)
+
+
+def test_plate_skips_include_panel_level_hole_failures():
+    from ocx_diagnose.sweep import plate_skips
+    from ocx_geometry.backend import RenderResult
+
+    vessel = make_vessel()
+    res = RenderResult()
+    res.hole_failures["pan1/hole:hc1"] = "unresolvable HoleRef"
+    res.hole_failures["other/hole:hc9"] = "unresolvable HoleRef"
+    assert plate_skips(vessel, res, {"pan1"}) == {
+        "pan1/hole:hc1": "unresolvable HoleRef"}
+    assert "pan1/hole:hc1" in plate_skips(vessel, res, None)

@@ -31,9 +31,11 @@ def plate_meshes(result, sink: DiagSink) -> list:
 
 
 def plate_skips(vessel, result, panel_ids: set[str] | None) -> dict[str, str]:
-    """Skip-log and hole-failure entries for plates of the analysed panels."""
+    """Skip-log and hole-failure entries for plates of the analysed panels
+    (panel-level hole failures are keyed by the panel id)."""
     ids = {p.id for p in vessel.plates.values()
            if panel_ids is None or getattr(p.parent_ref, "id", None) in panel_ids}
+    ids |= set(vessel.panels) if panel_ids is None else set(panel_ids)
     entries = {**result.skipped, **result.hole_failures}
     return {k: v for k, v in entries.items() if k.split("/")[0] in ids}
 

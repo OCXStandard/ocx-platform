@@ -53,7 +53,7 @@ class TestHoleFailuresSeparated:
         vessel = model_tests.TestCutByHoles()._vessel_with_hole()
         vessel.hole_shape_catalogue.holes.clear()
         result = render_model(vessel)
-        assert result.hole_failures == {"pl1/hole:hc1": "unresolvable HoleRef"}
+        assert result.hole_failures == {"pan1/hole:hc1": "unresolvable HoleRef"}
         assert not any("/hole:" in k for k in result.skipped)
 
     def test_skipped_count_excludes_hole_failures(self):

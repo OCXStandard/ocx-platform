@@ -15,6 +15,12 @@
   instead of mixed into `RenderResult.skipped`, so `skipped` /
   `skipped_count` count only parts that did not render. The CLI summary
   and log line use these counts directly.
+- Panel-level CutBy holes are resolved once per panel (previously
+  re-sampled and re-placed for every plate of the panel), and their
+  failures are reported once, keyed `<panel_id>/hole:<id>`, instead of
+  once per plate under each plate id. Plate-level hole failures keep
+  their `<plate_id>/hole:<id>` keys. `ocx-diagnose` includes the
+  panel-keyed entries in the analysed panel's skip table.
 
 ### Fixed
 
