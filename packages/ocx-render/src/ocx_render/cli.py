@@ -59,24 +59,27 @@ def render(
         raise typer.Exit(code=2) from exc
     logger.debug("Timing: parse+build in {:.2f}s", time.perf_counter() - t0)
 
-    result = render_model(
-        vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))
-    # Hole failures ("<plate_id>/hole:<id>" keys) are not skipped parts.
-    part_skips = sum(1 for k in result.skipped if "/hole:" not in k)
+    try:
+        result = render_model(
+            vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))
+    except Exception as exc:  # noqa: BLE001 — a whole-model failure renders nothing
+        logger.error("Cannot render {}: {}", model, exc)
+        raise typer.Exit(code=1) from exc
     if not result.meshes:
         logger.error("No renderable geometry in {} ({} parts skipped)",
-                     model, part_skips)
+                     model, result.skipped_count)
         raise typer.Exit(code=1)
 
     glb = destination if destination is not None else model.with_suffix(".glb")
     try:
         write_glb(result.meshes, glb)
         typer.echo(f"GLB written to {glb} "
-                   f"({result.rendered_count} parts, {part_skips} skipped)")
+                   f"({result.rendered_count} parts, "
+                   f"{result.skipped_count} skipped)")
         if not no_html:
             html = write_html(glb)
             typer.echo(f"Viewer written to {html}")
-    except OSError as exc:
+    except Exception as exc:  # noqa: BLE001 — any write/export failure is exit 3
         logger.error("Cannot write output for {}: {}", model, exc)
         raise typer.Exit(code=3) from exc
 

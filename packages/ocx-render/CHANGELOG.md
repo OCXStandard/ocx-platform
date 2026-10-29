@@ -9,7 +9,25 @@
   brackets without a usable thickness render as flat sheets. Brackets
   were previously ignored by the renderer.
 
+### Changed
+
+- CutBy hole failures are reported in the new `RenderResult.hole_failures`
+  instead of mixed into `RenderResult.skipped`, so `skipped` /
+  `skipped_count` count only parts that did not render. The CLI summary
+  and log line use these counts directly.
+
 ### Fixed
+
+- `render_model` now honours its "never raises per part" contract: an
+  exception from any plate, stiffener, pillar, bracket, panel surface or
+  LSCM chart is logged and recorded as `skipped[id] = "error: …"`
+  (LSCM chart failures fall back to the best single member) instead of
+  aborting the whole render.
+- The CLI maps every failure to its documented exit code: an unexpected
+  `render_model` failure exits 1 and any write/export error exits 3
+  (previously only `OSError`; other errors printed a traceback).
+- `--destination` without a `.glb` suffix is written as GLB instead of
+  failing with "unsupported export format".
 
 - Slot contours (and other hole cut-outs crossing a plate edge) now cut
   the plate and remove material, rendering as open boundary notches —

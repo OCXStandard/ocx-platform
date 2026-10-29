@@ -295,10 +295,10 @@ class TestCutByHoles:
         vessel.hole_shape_catalogue.holes.clear()
         result = render_model(vessel)
         assert any(m.kind == "plate" for m in result.meshes)
-        assert result.skipped.get("pl1/hole:hc1") == "unresolvable HoleRef"
+        assert result.hole_failures.get("pl1/hole:hc1") == "unresolvable HoleRef"
 
     def test_missing_transformation_is_logged_not_fatal(self):
         result = render_model(self._vessel_with_hole(with_transformation=False))
         assert any(m.kind == "plate" for m in result.meshes)
-        assert result.skipped.get("pl1/hole:hc1") == "missing or degenerate transformation"
+        assert result.hole_failures.get("pl1/hole:hc1") == "missing or degenerate transformation"
 

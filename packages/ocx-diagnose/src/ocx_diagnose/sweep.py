@@ -31,10 +31,11 @@ def plate_meshes(result, sink: DiagSink) -> list:
 
 
 def plate_skips(vessel, result, panel_ids: set[str] | None) -> dict[str, str]:
-    """Skip log entries belonging to plates of the analysed panels."""
+    """Skip-log and hole-failure entries for plates of the analysed panels."""
     ids = {p.id for p in vessel.plates.values()
            if panel_ids is None or getattr(p.parent_ref, "id", None) in panel_ids}
-    return {k: v for k, v in result.skipped.items() if k.split("/")[0] in ids}
+    entries = {**result.skipped, **result.hole_failures}
+    return {k: v for k, v in entries.items() if k.split("/")[0] in ids}
 
 
 def deviations(result, sink: DiagSink) -> np.ndarray:

@@ -21,9 +21,14 @@ class TessellationOptions:
 
 @dataclass
 class RenderResult:
-    """Outcome of a render: meshes plus a skip log (part id → reason)."""
+    """Outcome of a render: meshes plus a skip log (part id → reason).
+
+    ``hole_failures`` (``<plate_id>/hole:<id>`` → reason) records CutBy
+    holes that could not be applied; the plate itself still rendered.
+    """
     meshes: list[PartMesh] = field(default_factory=list)
     skipped: dict[str, str] = field(default_factory=dict)
+    hole_failures: dict[str, str] = field(default_factory=dict)
 
     @property
     def rendered_count(self) -> int:

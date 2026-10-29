@@ -72,7 +72,7 @@ def write_glb(meshes: list[PartMesh], destination: Path) -> Path:
             parent_node_name=parent or scene.graph.base_frame,
         )
 
-    destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    scene.export(str(destination))  # format inferred from .glb suffix
+    # Explicit file_type: the destination suffix need not be ``.glb``.
+    scene.export(str(destination), file_type="glb")
     return destination
