@@ -90,3 +90,16 @@ def test_plate_skips_include_panel_level_hole_failures():
     assert plate_skips(vessel, res, {"pan1"}) == {
         "pan1/hole:hc1": "unresolvable HoleRef"}
     assert "pan1/hole:hc1" in plate_skips(vessel, res, None)
+
+
+def test_only_panels_restricts_every_part_kind():
+    vessel = make_vessel()   # pl1 + st1 on pan1, vessel-level pillar pi1
+    res = render_model(vessel, TessellationOptions(only_panels=frozenset({"pan1"})))
+    assert sorted(m.part_id for m in res.meshes) == ["pl1", "st1"]
+    assert "pi1" not in res.skipped
+
+
+def test_only_panels_excluding_all_panels_renders_nothing():
+    res = render_model(make_vessel(),
+                       TessellationOptions(only_panels=frozenset({"nope"})))
+    assert res.meshes == [] and res.skipped == {}

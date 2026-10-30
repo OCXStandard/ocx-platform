@@ -44,6 +44,17 @@ __all__ = ["render_model", "RenderResult", "TessellationOptions", "PartMesh"]
 _AXIS_VECTORS = {"x": (1.0, 0.0, 0.0), "y": (0.0, 1.0, 0.0), "z": (0.0, 0.0, 1.0)}
 
 
+def _panel_of(part) -> str | None:
+    """Id of the panel a part is parented to, or None."""
+    return part.parent_ref.id if part.parent_ref.kind == ParentKind.PANEL else None
+
+
+def _excluded(panel_id: str | None, options: TessellationOptions) -> bool:
+    """True when ``only_panels`` is set and the part is not in those panels
+    (parts not parented to a panel are then excluded too)."""
+    return options.only_panels is not None and panel_id not in options.only_panels
+
+
 def _record_error(result: RenderResult, part_id: str, exc: Exception) -> None:
     """Skip a part whose geometry raised; one bad part never aborts a render."""
     logger.warning("Rendering {} failed: {}: {}", part_id,
@@ -187,12 +198,11 @@ def _tessellate_plates(vessel: IrVessel,
     prepared = []
     hints: dict[str, list[np.ndarray]] = {}
     for plate in vessel.plates.values():
-        panel_id = (plate.parent_ref.id
-                    if plate.parent_ref.kind == ParentKind.PANEL else None)
+        panel_id = _panel_of(plate)
+        if _excluded(panel_id, options):
+            continue
         if panel_id is None:
             result.skipped[plate.id] = "not parented to a panel"
-            continue
-        if options.only_panels is not None and panel_id not in options.only_panels:
             continue
         candidates = params.get(panel_id) or []
         if not candidates:
@@ -367,8 +377,7 @@ def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
         result.skipped[part.id] = "sweep failed"
         return
     verts, faces = out
-    panel_id = (part.parent_ref.id
-                if part.parent_ref.kind == ParentKind.PANEL else None)
+    panel_id = _panel_of(part)
     pm = PartMesh(part_id=part.id, name=part.name or part.id, kind=kind,
                   vertices=verts, triangles=faces,
                   extras={"id": part.id, "guid": part.guidref, "kind": kind,
@@ -379,6 +388,8 @@ def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
 
 def _guarded_sweep(part, kind: str, vessel: IrVessel, length: LengthResolver,
                    options: TessellationOptions, result: RenderResult) -> None:
+    if _excluded(_panel_of(part), options):
+        return
     try:
         _sweep_part(part, kind, vessel, length, options, result)
     except Exception as exc:  # noqa: BLE001 — isolate per-part failures
@@ -389,9 +400,8 @@ def _tessellate_brackets(vessel: IrVessel, length: LengthResolver,
                          options: TessellationOptions,
                          result: RenderResult) -> None:
     for br in vessel.brackets.values():
-        panel_id = (br.parent_ref.id
-                    if br.parent_ref.kind == ParentKind.PANEL else None)
-        if options.only_panels is not None and panel_id not in options.only_panels:
+        panel_id = _panel_of(br)
+        if _excluded(panel_id, options):
             continue
         try:
             _tessellate_bracket(br, panel_id, length, options, result)
@@ -442,7 +452,7 @@ def render_model(vessel: IrVessel,
 
     params: dict[str, list[SurfaceParam]] = {}
     for pid, panel in vessel.panels.items():
-        if options.only_panels is not None and pid not in options.only_panels:
+        if _excluded(pid, options):
             continue
         try:
             surfs = _resolve_panel_surfaces(panel, vessel)

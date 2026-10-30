@@ -21,6 +21,12 @@
 
 ### Changed
 
+- `TessellationOptions.only_panels` now restricts every part kind to the
+  given panels: stiffeners are filtered too (previously always rendered),
+  and parts not parented to a panel (e.g. vessel-level pillars, or plates
+  that were skipped as "not parented to a panel") are left out silently.
+  A single-panel `ocx-diagnose` render of the VLCC hold model drops from
+  1.2 s / 4005 meshes to 0.4 s / 110 meshes.
 - CutBy hole failures are reported in the new `RenderResult.hole_failures`
   instead of mixed into `RenderResult.skipped`, so `skipped` /
   `skipped_count` count only parts that did not render. The CLI summary

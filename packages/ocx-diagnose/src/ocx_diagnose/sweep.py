@@ -25,7 +25,7 @@ class SweepPoint:
 
 
 def plate_meshes(result, sink: DiagSink) -> list:
-    """Plate meshes only (only_panels filters plates, not stiffeners)."""
+    """Plate meshes only (only_panels also renders the panels' stiffeners)."""
     return [m for m in result.meshes
             if m.extras.get("kind") == "plate" and m.part_id in sink.plates]
 
