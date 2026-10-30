@@ -1,5 +1,34 @@
 # Changelog
 
+Workspace-level summary; each package keeps its own `CHANGELOG.md` under
+`packages/` with the details.
+
+## Unreleased
+
+### Added
+
+- `ocx-render`: colour by plate thickness (default) with a viewer legend
+  that isolates a thickness; panel-grouped, searchable parts tree with
+  show/hide and click-to-select in 3D; `--panel` filter; parallel plate
+  tessellation (`--workers`); brackets rendered as solids.
+
+### Fixed
+
+- `ocx-geometry` / `ocx-render`: plates trimmed from multi-member panel
+  charts no longer render as the whole panel side, as fragments or empty
+  (mesh-trim side vote and bridging, LSCM chart stitching and faceting,
+  holes that only touch a plate edge, plus an area guard as backstop).
+- `ocx-render`: per-part failures are isolated and recorded instead of
+  aborting the render; CutBy hole failures are reported separately from
+  skipped parts; failing plates get complete diagnostics records.
+- `ocx-diagnose`: skip tables include hole failures (see the package
+  changelog).
+
+### Dependencies
+
+- certifi 2026.10.19, filelock 4.2.1, setuptools 84.1.0, virtualenv
+  21.14.13 (lockfile).
+
 ## 0.5.0 — 2026-10-03
 
 ### Added

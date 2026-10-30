@@ -1,5 +1,17 @@
 # Changelog — ocx-diagnose
 
+## Unreleased
+
+### Changed
+
+- The analysed panel's skip table now includes CutBy hole failures
+  (`RenderResult.hole_failures`, split out of `skipped` by `ocx-render`),
+  including panel-level failures keyed `<panel_id>/hole:<id>`, which
+  `ocx-render` now reports once per panel instead of once per plate.
+- Single-panel renders also include the panel's stiffeners
+  (`only_panels` now filters every part kind); plate statistics are
+  unaffected, since they use plate meshes only.
+
 ## 0.1.0 — 2026-10-20
 
 Initial release.

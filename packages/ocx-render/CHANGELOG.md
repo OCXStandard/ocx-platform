@@ -100,6 +100,16 @@
   T-junctions (drawn as skew lines by CAD viewers that show mesh free
   edges) — fixed upstream in `ocx-geometry` mesh trimming (tolerant weld
   + T-junction stitch in `MeshTrimmer`).
+- Plates on multi-member panels no longer render as the whole panel side,
+  as fragments, or empty — fixed upstream in `ocx-geometry` (mesh-trim
+  side vote, uncut-face bridging, area guard, LSCM chart stitch fold and
+  needle fan, holes that only touch a plate edge). On the tr05_tc18 ropax
+  model this restores e.g. the superstructure sides (`nplcid8174`,
+  `nplcid8568`), the side-shell plates along a patch seam (`nplcid2934`,
+  `nplcid2938`, `nplcid4218`, `nplcid4222`), the plates beside the bow
+  thrusters (`nplcid4252`, `nplcid2971`) and two DK8 deck plates. Of the
+  558 trimmed ropax plates, 557 match their contour's vector area within
+  1% and the last within 1.1%.
 - Plate-contour corners are sampled exactly (upstream `ocx-geometry`
   NURBS fix), closing corner gaps between adjacent plates.
 - Pass per-plate contour loops (not a stacked point array) to

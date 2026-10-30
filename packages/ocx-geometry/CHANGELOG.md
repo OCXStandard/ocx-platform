@@ -74,7 +74,10 @@
   meet: where the ring jumps to an overlapping sheet and back, the stretch
   of the first sheet it skips is never cut and joins inside to outside
   (ropax `nplcid4222` on `SHELL_P` rendered as the whole 5163 m² side).
-  The proper fix belongs in the chart construction.
+  The underlying chart defects (a stitch fold and a needle fan at a patch
+  seam, see the `_stitch` / `_facet_member` entries above) are now fixed
+  at the source; the guard stays as a backstop and rejects no trim on the
+  VLCC or ropax test models.
 - UV tessellation (`UvTessellator`): hole cut-outs are now removed with an
   explicit boolean difference (shell − holes) instead of constructing a
   holed polygon and repairing it with `make_valid`. Cut-outs crossing the
