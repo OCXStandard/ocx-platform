@@ -42,6 +42,7 @@ class PlateDiag:
     contour: np.ndarray | None = None
     chart: Any = None               # ChartDiag of the panel (multi-member panels)
     seconds: float = 0.0
+    failure: str | None = None      # skip reason when the plate did not render
 
 
 @dataclass

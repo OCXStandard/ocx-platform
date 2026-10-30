@@ -252,98 +252,101 @@ def _tessellate_plates(vessel: IrVessel,
         route = "single"
         local = None
         pm = None
-        panel = vessel.panels.get(panel_id)
-        holes, hole_failures = _hole_polylines(plate, vessel, length, options)
-        if panel is not None:
-            if panel_id not in panel_holes:
-                panel_holes[panel_id], failures = _hole_polylines(
-                    panel, vessel, length, options)
-                hole_failures.update(failures)
-            holes += panel_holes[panel_id]
-        for key, reason in hole_failures.items():
-            logger.warning("CutBy hole not applied — {} ({})", reason, key)
-        result.hole_failures.update(hole_failures)
-        if len(candidates) > 1:
-            if panel_id not in chart_cache:
-                t_chart = time.perf_counter()
-                cdiag = (sink.charts.setdefault(panel_id, ChartDiag())
-                         if sink is not None else None)
-                try:
-                    chart_cache[panel_id] = make_lscm_chart(
-                        candidates, options.tolerance_m,
-                        hints[panel_id], diag=cdiag)
-                except Exception as exc:  # noqa: BLE001 — best member below
-                    logger.warning("LSCM chart for panel {} failed: {}",
-                                   panel_id, exc)
-                    chart_cache[panel_id] = None
-                if cdiag is not None:
-                    cdiag.build_s = time.perf_counter() - t_chart
-                logger.debug("Timing: LSCM chart for panel {} "
-                             "({} members) in {:.2f}s", panel_id,
-                             len(candidates), time.perf_counter() - t_chart)
-            chart = chart_cache[panel_id]
-            if chart is not None:
-                if panel_id not in trim_cache:
-                    trim_cache[panel_id] = MeshTrimmer(*chart.mesh,
-                                                       options.tolerance_m)
-                seed = (length.point(plate.point_on_surface)
-                        if plate.point_on_surface is not None else None)
-                try:
-                    out = trim_cache[panel_id].trim(contour, holes, seed,
-                                                    diag=pdiag)
-                except Exception as exc:  # noqa: BLE001 — fall back below
-                    logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
-                    if pdiag is not None:
-                        pdiag.trim_reject = f"exception: {exc}"
-                    out = None
-                if out is not None and len(out[1]):
-                    pm = PartMesh(part_id=plate.id,
-                                  name=plate.name or plate.id, kind="plate",
-                                  vertices=out[0], triangles=out[1],
-                                  normals=out[2])
-                    route = "mesh-trim"
-            if pm is None:
-                local = chart.param_for(contour) if chart is not None else None
-                if pdiag is not None and chart is not None:
-                    pdiag.chart_stage = chart.last_stage
-                param = local or _best_param(candidates, contour)
-                route = "lscm" if local is not None else "best-member"
-        else:
-            param = candidates[0]
-        t_param = time.perf_counter()
-        if pm is None:
-            pm = tess.tessellate_trimmed_surface(
-                plate.id, plate.name or plate.id, "plate", contour, holes,
-                param, options)
-        if pm is None and local is not None:
-            # chart built but this contour would not triangulate on it:
-            # retry once on the best single member before giving up
-            pm = tess.tessellate_trimmed_surface(
-                plate.id, plate.name or plate.id, "plate", contour, holes,
-                _best_param(candidates, contour), options)
-            route = "best-member"
-        if pm is None:
-            result.skipped[plate.id] = "triangulation failed"
-            return
-        pm.extras.update({"id": plate.id, "guid": plate.guidref,
-                          "kind": "plate", "functionType": plate.function_type,
-                          "panel_id": panel_id})
-        result.meshes.append(pm)
-        if pdiag is not None:
-            pdiag.route = route
-            pdiag.local_param = local
-            pdiag.chart = sink.charts.get(panel_id)
-            pdiag.seconds = time.perf_counter() - t_plate
-        logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
-                     "(elapsed {:.0f}s)", idx, n_total, plate.id,
-                     t_param - t_plate, time.perf_counter() - t_plate,
-                     time.perf_counter() - t_pass2)
-
-    for idx, (plate, *rest) in enumerate(prepared, 1):
         try:
-            tessellate_plate(idx, plate, *rest)
+            panel = vessel.panels.get(panel_id)
+            holes, hole_failures = _hole_polylines(plate, vessel, length, options)
+            if panel is not None:
+                if panel_id not in panel_holes:
+                    panel_holes[panel_id], failures = _hole_polylines(
+                        panel, vessel, length, options)
+                    hole_failures.update(failures)
+                holes += panel_holes[panel_id]
+            for key, reason in hole_failures.items():
+                logger.warning("CutBy hole not applied — {} ({})", reason, key)
+            result.hole_failures.update(hole_failures)
+            if len(candidates) > 1:
+                if panel_id not in chart_cache:
+                    t_chart = time.perf_counter()
+                    cdiag = (sink.charts.setdefault(panel_id, ChartDiag())
+                             if sink is not None else None)
+                    try:
+                        chart_cache[panel_id] = make_lscm_chart(
+                            candidates, options.tolerance_m,
+                            hints[panel_id], diag=cdiag)
+                    except Exception as exc:  # noqa: BLE001 — best member below
+                        logger.warning("LSCM chart for panel {} failed: {}",
+                                       panel_id, exc)
+                        chart_cache[panel_id] = None
+                    if cdiag is not None:
+                        cdiag.build_s = time.perf_counter() - t_chart
+                    logger.debug("Timing: LSCM chart for panel {} "
+                                 "({} members) in {:.2f}s", panel_id,
+                                 len(candidates), time.perf_counter() - t_chart)
+                chart = chart_cache[panel_id]
+                if chart is not None:
+                    if panel_id not in trim_cache:
+                        trim_cache[panel_id] = MeshTrimmer(*chart.mesh,
+                                                           options.tolerance_m)
+                    seed = (length.point(plate.point_on_surface)
+                            if plate.point_on_surface is not None else None)
+                    try:
+                        out = trim_cache[panel_id].trim(contour, holes, seed,
+                                                        diag=pdiag)
+                    except Exception as exc:  # noqa: BLE001 — fall back below
+                        logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
+                        if pdiag is not None:
+                            pdiag.trim_reject = f"exception: {exc}"
+                        out = None
+                    if out is not None and len(out[1]):
+                        pm = PartMesh(part_id=plate.id,
+                                      name=plate.name or plate.id, kind="plate",
+                                      vertices=out[0], triangles=out[1],
+                                      normals=out[2])
+                        route = "mesh-trim"
+                if pm is None:
+                    local = chart.param_for(contour) if chart is not None else None
+                    if pdiag is not None and chart is not None:
+                        pdiag.chart_stage = chart.last_stage
+                    param = local or _best_param(candidates, contour)
+                    route = "lscm" if local is not None else "best-member"
+            else:
+                param = candidates[0]
+            t_param = time.perf_counter()
+            if pm is None:
+                pm = tess.tessellate_trimmed_surface(
+                    plate.id, plate.name or plate.id, "plate", contour, holes,
+                    param, options)
+            if pm is None and local is not None:
+                # chart built but this contour would not triangulate on it:
+                # retry once on the best single member before giving up
+                pm = tess.tessellate_trimmed_surface(
+                    plate.id, plate.name or plate.id, "plate", contour, holes,
+                    _best_param(candidates, contour), options)
+                route = "best-member"
+            if pm is None:
+                result.skipped[plate.id] = "triangulation failed"
+                return
+            pm.extras.update({"id": plate.id, "guid": plate.guidref,
+                              "kind": "plate", "functionType": plate.function_type,
+                              "panel_id": panel_id})
+            result.meshes.append(pm)
+            logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
+                         "(elapsed {:.0f}s)", idx, n_total, plate.id,
+                         t_param - t_plate, time.perf_counter() - t_plate,
+                         time.perf_counter() - t_pass2)
         except Exception as exc:  # noqa: BLE001 — isolate per-part failures
             _record_error(result, plate.id, exc)
+        finally:
+            # Recorded on every outcome so failed plates are diagnosable too.
+            if pdiag is not None:
+                pdiag.route = route
+                pdiag.local_param = local
+                pdiag.chart = sink.charts.get(panel_id)
+                pdiag.seconds = time.perf_counter() - t_plate
+                pdiag.failure = result.skipped.get(plate.id)
+
+    for idx, item in enumerate(prepared, 1):
+        tessellate_plate(idx, *item)
 
 
 def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,

@@ -9,6 +9,8 @@
   into a closed prism (`Offset` honoured, else symmetric), or a flat
   sheet when thickness is unknown.
 - `KIND_COLORS` gains a `"bracket"` entry (orange).
+- `PlateDiag.failure`: the skip reason when the plate did not render
+  (`None` when it did).
 - `RenderResult.hole_failures` (`<plate_or_panel_id>/hole:<id>` → reason): CutBy
   holes that could not be applied, kept separate from `skipped`.
 

@@ -45,6 +45,11 @@
   LSCM chart is logged and recorded as `skipped[id] = "error: …"`
   (LSCM chart failures fall back to the best single member) instead of
   aborting the whole render.
+- Plates that fail (triangulation failure or exception) now get a
+  complete diagnostics record: `route`, `local_param`, `chart` and
+  `seconds` are filled on every outcome, and the new `PlateDiag.failure`
+  holds the skip reason (previously the record was left at its defaults
+  for exactly the plates that most needed diagnosing).
 - The CLI maps every failure to its documented exit code: an unexpected
   `render_model` failure exits 1 and any write/export error exits 3
   (previously only `OSError`; other errors printed a traceback).
