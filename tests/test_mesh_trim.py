@@ -1,4 +1,5 @@
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -114,3 +115,29 @@ class TestSeamWelding:
         assert out is not None
         v, f, _ = out
         assert _seam_edges(v, f) == []
+
+
+def _ring_area(ring):
+    return 0.5 * float(np.linalg.norm(
+        np.cross(ring, np.roll(ring, -1, axis=0)).sum(axis=0)))
+
+
+class TestSliverChartSide:
+    """Regression (tr05_tc18 ropax, plates nplcid8174/nplcid8568): on a
+    coarse chart of 60-80 m sliver triangles, far-away outside pieces were
+    assigned their side from a clipped segment end, out-voted the correct
+    pieces, and the whole 5143 m2 superstructure side was kept as plate."""
+
+    FIXTURE = (Path(__file__).parent / "data" / "mesh_trim"
+               / "ropax_superstructure_side.npz")
+
+    @pytest.mark.parametrize("suffix", ["", "2"])
+    def test_unseeded_trim_keeps_only_the_ring_region(self, suffix):
+        d = np.load(self.FIXTURE)
+        V, F, ring = d["V" + suffix], d["F" + suffix], d["ring" + suffix]
+        out = MeshTrimmer(V, F, 0.05).trim(ring, [], None)
+        assert out is not None
+        v, f, _ = out
+        assert _area(v, f) == pytest.approx(_ring_area(ring), rel=0.02)
+        lo, hi = ring.min(axis=0) - 0.05, ring.max(axis=0) + 0.05
+        assert np.all((v >= lo) & (v <= hi))

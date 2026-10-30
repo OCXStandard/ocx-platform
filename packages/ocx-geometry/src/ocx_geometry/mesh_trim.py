@@ -26,6 +26,7 @@ _GRID = 1e-9            # shapely snapping grid inside a triangle's 2-D frame
 _MAX_REFINE = 12
 _MIN_GAP = 1e-4         # smallest ring step worth refining across a slit
 _PULL = 1.5e-3          # cut ends this close to a face border are pulled onto it
+_PROBE = 1e-6           # offset of the side probes either side of a cut segment
 _SEAM_WELD = 2 * _PULL  # per-face pulls can separate a shared cut point by 2x
 
 
@@ -355,7 +356,7 @@ class MeshTrimmer:
         # -- split cut faces into pieces
         n_face = len(F)
         unit_face: list[int] = []
-        unit_side: list[int] = []
+        unit_side: list[float] = []      # signed ring length bordered
         unit_poly: list = []                 # shapely polygon in face frame
         unit_area: list[float] = []
         frames: dict[int, tuple] = {}
@@ -395,22 +396,30 @@ class MeshTrimmer:
                 polys = [tri_poly]
             ids = []
             for p in polys:
-                rp = np.asarray(p.representative_point().coords[0])
-                best, sign = 1e300, 1
-                for a, b in seg2d:
-                    ab = b - a
-                    l2 = float(ab @ ab)
-                    t = float(np.clip((rp - a) @ ab / l2, 0.0, 1.0)) \
-                        if l2 > 0 else 0.0
-                    dd = float(np.linalg.norm(rp - (a + t * ab)))
-                    if dd < best:
-                        cr = ab[0] * (rp - a)[1] - ab[1] * (rp - a)[0]
-                        best, sign = dd, (1 if cr > 0 else -1)
                 ids.append(len(unit_face))
                 unit_face.append(f)
-                unit_side.append(sign)
+                unit_side.append(0.0)
                 unit_poly.append(p)
                 unit_area.append(p.area)
+            # Sides are read at the ring itself: the piece just left of a
+            # segment's midpoint gains its length, the piece just right
+            # loses it.  (A piece's representative point can lie far from
+            # the ring, e.g. in long sliver faces, where the nearest point
+            # is a clipped segment end and the cross-product side is
+            # arbitrary.)
+            for a, b in seg2d:
+                ab = b - a
+                ln = float(np.hypot(ab[0], ab[1]))
+                if ln < 1e-12:
+                    continue
+                mid = 0.5 * (a + b)
+                off = np.array([-ab[1], ab[0]]) * (_PROBE / ln)
+                for sgn in (1.0, -1.0):
+                    q = shapely.Point(mid + sgn * off)
+                    k = next((k for k, p in zip(ids, polys)
+                              if p.contains(q)), None)
+                    if k is not None:
+                        unit_side[k] += sgn * ln
             pieces_of[f] = ids
         if not pieces_of:
             return None, snap
@@ -463,7 +472,7 @@ class MeshTrimmer:
 
         side = np.zeros(n_units)
         for k, s in enumerate(unit_side):
-            side[pid(k)] = s * max(unit_area[k], 1e-12)
+            side[pid(k)] = s
         vote = np.bincount(comp, weights=side, minlength=comp.max() + 1)
         has_cut = np.zeros(comp.max() + 1, dtype=bool)
         has_cut[comp[n_face:]] = True
