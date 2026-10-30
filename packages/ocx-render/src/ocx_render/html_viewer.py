@@ -34,6 +34,14 @@ _TEMPLATE = """<!DOCTYPE html>
   #info{position:absolute;right:8px;top:8px;background:#1e1e1ecc;color:#ddd;
         font-size:12px;padding:8px;max-width:320px;white-space:pre-wrap}
   #info:empty{display:none}
+  #legend{position:absolute;right:8px;bottom:8px;background:#1e1e1ecc;color:#ddd;
+          font-size:12px;padding:8px;max-height:45%;overflow:auto}
+  #legend .title{color:#aaa;margin-bottom:4px}
+  #legend .entry{cursor:pointer;padding:1px 4px;white-space:nowrap}
+  #legend .entry:hover{background:#444}
+  #legend .entry.on{background:#2a6}
+  #legend .swatch{display:inline-block;width:12px;height:12px;margin-right:6px;
+                  vertical-align:middle;border-radius:2px}
   #status{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
           color:#ddd;font-size:14px;max-width:60%;text-align:center}
 </style>
@@ -48,6 +56,7 @@ _TEMPLATE = """<!DOCTYPE html>
   <div id="tree"></div><div id="results" hidden></div>
 </div>
 <div id="info"></div>
+<div id="legend" hidden></div>
 <div id="status">Loading model&hellip;</div>
 <script>
 function viewerFailed(msg) {
@@ -63,6 +72,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const GLB_B64 = "__GLB_B64__";
 const HIGHLIGHT = 0x22aa55;
 const MAX_RESULTS = 500;
+const DIM_OPACITY = 0.08;
+const THICKNESS_KINDS = new Set(['plate', 'bracket']);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
@@ -80,6 +91,7 @@ const tree = document.getElementById('tree');
 const results = document.getElementById('results');
 const search = document.getElementById('search');
 const info = document.getElementById('info');
+const legend = document.getElementById('legend');
 
 let modelSize = 10;
 const parts = [];               // every mesh, in tree order
@@ -87,6 +99,8 @@ const haystack = new Map();     // mesh -> lower-case search text
 const rowOf = new Map();        // mesh -> its tree row (once created)
 const groupOf = new Map();      // mesh -> enclosing <details>
 let selected = null;            // {obj, original}
+const dimmed = new Map();       // mesh -> its own material while dimmed
+const dimCache = new Map();     // material -> translucent clone
 
 // A data: URL fetch decodes base64 natively: far faster and leaner than
 // base64-decoding in JS with a per-byte copy on large models.
@@ -106,6 +120,7 @@ function onLoad(gltf) {
   for (const child of gltf.scene.children) {
     tree.appendChild(child.isMesh ? partRow(child) : groupNode(child));
   }
+  buildLegend(gltf.scene.userData.legend);
   document.getElementById('status').remove();
   document.body.dataset.state = 'loaded';
 }
@@ -201,6 +216,54 @@ function select(obj) {
   if (row) { row.classList.add('sel'); row.scrollIntoView({block: 'nearest'}); }
 }
 
+function buildLegend(entries) {
+  if (!entries || !entries.length) return;
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = 'Plate thickness (click to isolate)';
+  legend.append(title);
+  for (const entry of entries) {
+    const row = document.createElement('div');
+    row.className = 'entry';
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+    swatch.style.background = entry.color;
+    row.append(swatch, `${entry.label} (${entry.count})`);
+    row.onclick = () => isolate(row.classList.contains('on') ? null : entry, row);
+    legend.append(row);
+  }
+  legend.hidden = false;
+}
+
+function hasThickness(obj, entry) {
+  return THICKNESS_KINDS.has(obj.userData.kind)
+    && (obj.userData.thickness_mm ?? null) === entry.thickness_mm;
+}
+
+// Dim every part outside the chosen thickness (entry null: show all).
+// Parts swap to translucent clones, so shared materials are never mutated.
+function isolate(entry, row) {
+  select(null);
+  for (const r of legend.querySelectorAll('.entry')) {
+    r.classList.toggle('on', entry !== null && r === row);
+  }
+  for (const o of parts) {
+    const dim = entry !== null && !hasThickness(o, entry);
+    if (dim && !dimmed.has(o)) {
+      dimmed.set(o, o.material);
+      if (!dimCache.has(o.material)) {
+        const m = o.material.clone();
+        Object.assign(m, {transparent: true, opacity: DIM_OPACITY, depthWrite: false});
+        dimCache.set(o.material, m);
+      }
+      o.material = dimCache.get(o.material);
+    } else if (!dim && dimmed.has(o)) {
+      o.material = dimmed.get(o);
+      dimmed.delete(o);
+    }
+  }
+}
+
 function shown(obj) {
   for (let o = obj; o; o = o.parent) if (!o.visible) return false;
   return true;
@@ -215,7 +278,8 @@ renderer.domElement.addEventListener('pointerup', e => {
   const ndc = new THREE.Vector2(e.clientX / innerWidth * 2 - 1,
                                 -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
-  const hit = raycaster.intersectObjects(parts, false).find(h => shown(h.object));
+  const hit = raycaster.intersectObjects(parts, false)
+    .find(h => shown(h.object) && !dimmed.has(h.object));
   select(hit ? hit.object : null);
 });
 

@@ -8,7 +8,16 @@ Geometry stays in OCX Z-up coordinates internally. GLB export rotates positions
 and normals to glTF's right-handed Y-up convention: `(x, y, z)` becomes
 `(x, z, -y)`. The HTML viewer uses these same exported coordinates.
 
-    ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
+    ocx-render model.3docx [--destination out.glb] [--tolerance MM]
+                           [--color-by thickness|part] [--no-html]
+
+By default plates and brackets get one distinct colour per plate thickness
+(grey when the thickness is unknown) and stiffeners/pillars one shade per
+section, so parts share materials. The GLB carries the thickness legend,
+which the viewer shows; clicking an entry isolates that thickness. Past 17
+or so thicknesses colours become hard to tell apart (and no such palette is
+colour-blind safe), so use the legend to isolate. `--color-by part` gives
+every part its own shade instead.
 
 The HTML viewer embeds the GLB, so it opens straight from disk, but it
 loads three.js from unpkg.com and therefore needs network access; offline it

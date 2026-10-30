@@ -2,7 +2,9 @@
 
 Node naming: ``<kind>_<part_id>`` per part; parts with a ``panel_id`` extra
 are parented under a ``Panel_<panel_id>`` grouping node.  Part extras are
-attached as mesh metadata (exported into glTF mesh ``extras``).
+attached as mesh metadata (exported into glTF mesh ``extras``).  Parts of
+the same colour share one material; an optional colour legend is exported
+into the glTF scene ``extras`` for the viewer.
 OCX Z-up positions and normals are rotated to glTF Y-up at export.
 """
 from __future__ import annotations
@@ -25,7 +27,8 @@ def _material(color: tuple[int, int, int]) -> PBRMaterial:
     )
 
 
-def write_glb(meshes: list[PartMesh], destination: Path) -> Path:
+def write_glb(meshes: list[PartMesh], destination: Path,
+              legend: list[dict] | None = None) -> Path:
     """Write all parts to a single .glb file; returns the destination path.
 
     An empty mesh list writes no file (trimesh cannot export empty scenes);
@@ -37,6 +40,9 @@ def write_glb(meshes: list[PartMesh], destination: Path) -> Path:
         return destination
 
     scene = trimesh.Scene()
+    if legend:
+        scene.metadata["legend"] = legend
+    materials: dict[tuple[int, int, int], PBRMaterial] = {}
     groups: set[str] = set()
     # A -90 degree X rotation preserves handedness: (x, y, z) -> (x, z, -y).
     ocx_to_gltf = np.array([[1.0, 0.0, 0.0],
@@ -50,7 +56,9 @@ def write_glb(meshes: list[PartMesh], destination: Path) -> Path:
             vertex_normals=pm.normals @ ocx_to_gltf if pm.normals is not None else None,
             process=False,
         )
-        tm.visual = trimesh.visual.TextureVisuals(material=_material(pm.color))
+        if pm.color not in materials:
+            materials[pm.color] = _material(pm.color)
+        tm.visual = trimesh.visual.TextureVisuals(material=materials[pm.color])
         tm.metadata.update(pm.extras)
 
         parent = None

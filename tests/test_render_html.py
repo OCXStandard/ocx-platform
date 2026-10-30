@@ -97,6 +97,15 @@ const waitLoaded = setInterval(() => {
   r.picked = raycaster.intersectObjects(parts, false).length > 0;
   search.value = 'stiffener'; search.dispatchEvent(new Event('input'));
   r.hits = results.querySelectorAll('.row').length;
+  const entries = legend.querySelectorAll('.entry');
+  r.legend = [...entries].map(e => e.textContent);
+  const plate = parts.find(o => o.userData.kind === 'plate');
+  const stiff = parts.find(o => o.userData.kind === 'stiffener');
+  const stiffMat = stiff.material;
+  entries[0].click();
+  r.isolated = !dimmed.has(plate) && dimmed.has(stiff) && stiff.material.opacity < 1;
+  entries[0].click();
+  r.unisolated = dimmed.size === 0 && stiff.material === stiffMat;
   document.body.dataset.selftest = JSON.stringify(r);
 }, 50);
 """
@@ -118,6 +127,7 @@ def test_viewer_loads_and_interacts_in_headless_chrome(tmp_path):
     import re
     import subprocess
 
+    from ocx_render.colors import apply_color_scheme
     from ocx_render.gltf_writer import write_glb
     from ocx_render.render import render_model
 
@@ -126,7 +136,9 @@ def test_viewer_loads_and_interacts_in_headless_chrome(tmp_path):
     chrome = _chrome()
     if chrome is None:
         pytest.skip("Chrome not installed")
-    glb = write_glb(render_model(make_vessel()).meshes, tmp_path / "m.glb")
+    meshes = render_model(make_vessel()).meshes
+    glb = write_glb(meshes, tmp_path / "m.glb",
+                    legend=apply_color_scheme(meshes, "thickness"))
     page = write_html(glb).read_text(encoding="utf-8")
     end = page.rindex("</script>")   # inject into the viewer module's scope
     test_page = tmp_path / "selftest.html"
@@ -140,4 +152,5 @@ def test_viewer_loads_and_interacts_in_headless_chrome(tmp_path):
         r'<div id="status">([^<]*)', dom) or [None, "no status"])[1]
     r = json.loads(html_lib.unescape(m.group(1)))
     assert r == {"groups": 1, "parts": 2, "selected": True, "restored": True,
-                 "picked": True, "hits": 1}
+                 "picked": True, "hits": 1, "legend": ["no thickness (1)"],
+                 "isolated": True, "unisolated": True}

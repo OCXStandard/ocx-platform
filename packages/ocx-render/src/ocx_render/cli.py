@@ -35,6 +35,10 @@ def render(
     tolerance_mm: float = typer.Option(
         50.0, "--tolerance",
         help="Linear deflection tolerance in millimetres."),
+    color_by: str = typer.Option(
+        "thickness", "--color-by",
+        help="Colour plates/brackets by 'thickness' (stiffeners by section) "
+             "or each part individually ('part')."),
     no_html: bool = typer.Option(
         False, "--no-html", help="Skip writing the HTML viewer page."),
     log_level: str = typer.Option(
@@ -46,11 +50,15 @@ def render(
     Exit codes: 0 rendered (parts may be skipped), 1 nothing renderable,
     2 cannot parse/build the model, 3 cannot write output.
     """
+    from ocx_render.colors import COLOR_SCHEMES, apply_color_scheme
     from ocx_render.gltf_writer import write_glb
     from ocx_render.html_viewer import write_html
     from ocx_render.render import TessellationOptions, render_model
 
     configure_logging(log_level.upper())
+    if color_by not in COLOR_SCHEMES:
+        raise typer.BadParameter(
+            f"expected one of {', '.join(COLOR_SCHEMES)}", param_hint="--color-by")
     t0 = time.perf_counter()
     try:
         vessel = _load_vessel(model)
@@ -72,7 +80,8 @@ def render(
 
     glb = destination if destination is not None else model.with_suffix(".glb")
     try:
-        write_glb(result.meshes, glb)
+        write_glb(result.meshes, glb,
+                  legend=apply_color_scheme(result.meshes, color_by))
         typer.echo(f"GLB written to {glb} "
                    f"({result.rendered_count} parts, "
                    f"{result.skipped_count} skipped)")

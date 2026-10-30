@@ -4,13 +4,22 @@
 
 ### Added
 
+- Colour by plate thickness (new default, `--color-by thickness`):
+  plates and brackets get one distinct colour per thickness from a
+  20-colour palette (max-min separated in OKLab; grey when unknown),
+  stiffeners and pillars one shade per section. Parts of one colour share
+  a material: the VLCC hold model drops from 4314 to 46 materials and its
+  GLB from 5.9 to 5.3 MB. `--color-by part` keeps per-part shades.
+  `apply_color_scheme(meshes, scheme)` returns the legend, which
+  `write_glb(..., legend=)` stores in the glTF scene `extras`.
+- HTML viewer: thickness legend with plate counts; clicking an entry
+  isolates that thickness (other parts turn translucent and unpickable).
+- Part metadata gains `thickness_mm` (plates, brackets) and `section`
+  (stiffeners, pillars).
 - Brackets are rendered as extruded solids using the plate thickness
   (`Offset` honoured, otherwise symmetric about the contour plane);
   brackets without a usable thickness render as flat sheets. Brackets
   were previously ignored by the renderer.
-
-### Added
-
 - HTML viewer: parts tree grouped by panel (rows built lazily on first
   open), a filter box matching name / id / guid / panel id / function
   type (first 500 hits), show/hide checkboxes on panels and parts, and

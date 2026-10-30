@@ -55,6 +55,12 @@ def _excluded(panel_id: str | None, options: TessellationOptions) -> bool:
     return options.only_panels is not None and panel_id not in options.only_panels
 
 
+def _thickness_mm(length: LengthResolver, thickness) -> float | None:
+    """Plate thickness in mm (2 decimals) for metadata/colouring, or None."""
+    t = length.qty(thickness) if thickness is not None else None
+    return round(t * 1000.0, 2) if t is not None else None
+
+
 def _record_error(result: RenderResult, part_id: str, exc: Exception) -> None:
     """Skip a part whose geometry raised; one bad part never aborts a render."""
     logger.warning("Rendering {} failed: {}: {}", part_id,
@@ -328,7 +334,9 @@ def _tessellate_plates(vessel: IrVessel,
                 return
             pm.extras.update({"id": plate.id, "guid": plate.guidref,
                               "kind": "plate", "functionType": plate.function_type,
-                              "panel_id": panel_id})
+                              "panel_id": panel_id,
+                              "thickness_mm": _thickness_mm(length,
+                                                            plate.thickness)})
             result.meshes.append(pm)
             logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
                          "(elapsed {:.0f}s)", idx, n_total, plate.id,
@@ -385,7 +393,9 @@ def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
                   vertices=verts, triangles=faces,
                   extras={"id": part.id, "guid": part.guidref, "kind": kind,
                           "functionType": part.function_type,
-                          "panel_id": panel_id})
+                          "panel_id": panel_id,
+                          "section": (part.section_ref.local_ref
+                                      if part.section_ref is not None else None)})
     result.meshes.append(pm)
 
 
@@ -440,7 +450,8 @@ def _tessellate_bracket(br, panel_id: str | None, length: LengthResolver,
     pm = PartMesh(part_id=br.id, name=br.name or br.id, kind="bracket",
                   vertices=verts, triangles=faces, normals=normals,
                   extras={"id": br.id, "guid": br.guidref,
-                          "kind": "bracket", "panel_id": panel_id})
+                          "kind": "bracket", "panel_id": panel_id,
+                          "thickness_mm": _thickness_mm(length, br.thickness)})
     result.meshes.append(pm)
 
 
