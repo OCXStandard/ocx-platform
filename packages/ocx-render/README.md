@@ -9,7 +9,12 @@ and normals to glTF's right-handed Y-up convention: `(x, y, z)` becomes
 `(x, z, -y)`. The HTML viewer uses these same exported coordinates.
 
     ocx-render model.3docx [--destination out.glb] [--tolerance MM]
-                           [--color-by thickness|part] [--workers N] [--no-html]
+                           [--panel ID ...] [--color-by thickness|part]
+                           [--workers N] [--no-html]
+
+`--panel` (repeatable) renders only the parts of those panels; unknown ids
+are reported and ignored. For per-plate tessellation diagnostics use
+`ocx-diagnose`, which takes the same `--panel` option.
 
 Plates are tessellated in parallel worker processes (`--workers`, default:
 all CPU cores; `-j 1` renders serially); the output is identical either

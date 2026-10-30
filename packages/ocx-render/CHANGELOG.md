@@ -23,6 +23,8 @@
   mode; a failed task or broken pool falls back to serial rendering.
   VLCC hold model: render 13.3 s -> 6.8 s, CLI end-to-end 17.6 s -> ~11 s
   (parse/build, 3.5 s, stays serial).
+- CLI `--panel/-p ID` (repeatable) renders only those panels' parts
+  (`only_panels`); unknown ids are logged and ignored.
 - Part metadata gains `thickness_mm` (plates, brackets) and `section`
   (stiffeners, pillars).
 - Brackets are rendered as extruded solids using the plate thickness
@@ -82,6 +84,10 @@
     no longer substituted;
   - camera near/far planes follow the view distance instead of a fixed
     0.01–1e6 range that z-fought on ship-sized models.
+- `--tolerance` must be greater than 0 (0 or negative is a usage error,
+  exit 2, instead of an unusable render).
+- `ocx_render.__version__` is read from the installed package metadata
+  instead of a hard-coded string that could drift from `pyproject.toml`.
 - `--destination` without a `.glb` suffix is written as GLB instead of
   failing with "unsupported export format".
 

@@ -17,6 +17,12 @@ def configure_logging(level: str = "INFO") -> None:
     logger.add(sys.stderr, level=level)
 
 
+def _positive(value: float) -> float:
+    if value <= 0:
+        raise typer.BadParameter("must be greater than 0")
+    return value
+
+
 def _load_vessel(model: Path):
     """Parse the model and build the IR (raises on failure)."""
     from ocx_model_core.builders.factory import get_builder
@@ -34,8 +40,11 @@ def render(
         None, "--destination", "-d",
         help="Output .glb path (default: next to the model)."),
     tolerance_mm: float = typer.Option(
-        50.0, "--tolerance",
-        help="Linear deflection tolerance in millimetres."),
+        50.0, "--tolerance", callback=_positive,
+        help="Linear deflection tolerance in millimetres (> 0)."),
+    panel: list[str] | None = typer.Option(
+        None, "--panel", "-p",
+        help="Render only parts of this panel id (repeatable)."),
     color_by: str = typer.Option(
         "thickness", "--color-by",
         help="Colour plates/brackets by 'thickness' (stiffeners by section) "
@@ -71,10 +80,16 @@ def render(
         logger.error("Cannot parse/build {}: {}", model, exc)
         raise typer.Exit(code=2) from exc
     logger.debug("Timing: parse+build in {:.2f}s", time.perf_counter() - t0)
+    only_panels = frozenset(panel) if panel else None
+    if only_panels is not None:
+        unknown = sorted(only_panels - vessel.panels.keys())
+        if unknown:
+            logger.warning("Unknown panel id(s), ignored: {}", ", ".join(unknown))
 
     try:
         result = render_model(
             vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0,
+                                        only_panels=only_panels,
                                         workers=workers or os.cpu_count() or 1))
     except Exception as exc:  # noqa: BLE001 — a whole-model failure renders nothing
         logger.error("Cannot render {}: {}", model, exc)
