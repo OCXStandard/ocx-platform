@@ -457,6 +457,14 @@ class MeshTrimmer:
                         iv = _edge_intervals(piece_geoms[f], o, pu, pw, ln)
                         sides.append(iv)
                     ln = float(np.linalg.norm(V[key[1]] - V[key[0]]))
+                    # An uncut face on an edge the ring crosses (split
+                    # between pieces) would bridge both sides.  Manifold
+                    # meshes cut that neighbour too; overlapping sheets
+                    # and folded non-manifold slivers do not.
+                    if cut[fa] != cut[fb] and sum(
+                            (t1 - t0) * ln > 5e-3
+                            for _, t0, t1 in sides[1 if cut[fb] else 0]) > 1:
+                        continue
                     for ua, a0, a1 in sides[0]:
                         for ub, b0, b1 in sides[1]:
                             if (min(a1, b1) - max(a0, b0)) * ln > 5e-3:

@@ -141,3 +141,30 @@ class TestSliverChartSide:
         assert _area(v, f) == pytest.approx(_ring_area(ring), rel=0.02)
         lo, hi = ring.min(axis=0) - 0.05, ring.max(axis=0) + 0.05
         assert np.all((v >= lo) & (v <= hi))
+
+
+class TestUncutBridge:
+    """Regression (tr05_tc18 ropax): a face the ring never cuts, yet lying
+    on an edge the ring crosses, joined the inside and outside pieces into
+    one component and the whole chart was kept.  ``deck`` (nplcid5964):
+    two member sheets overlap and the ring jumps between them, leaving a
+    straddling face of the first sheet uncut.  ``shell`` (nplcid4241,
+    chart cropped around the ring): a folded sliver on a non-manifold edge
+    the ring crosses.  Areas are compared as vector areas, which match the
+    ring's exactly for a trimmed curved surface (the shell is curved)."""
+
+    FIXTURE = (Path(__file__).parent / "data" / "mesh_trim"
+               / "ropax_uncut_bridge.npz")
+
+    @pytest.mark.parametrize("key", ["deck", "shell"])
+    def test_unseeded_trim_keeps_only_the_ring_region(self, key):
+        d = np.load(self.FIXTURE)
+        V, F, ring = d["V_" + key], d["F_" + key], d["ring_" + key]
+        out = MeshTrimmer(V, F, 0.05).trim(ring, [], None)
+        assert out is not None
+        v, f, _ = out
+        t = v[f]
+        vector_area = 0.5 * float(np.linalg.norm(np.cross(
+            t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0)))
+        assert vector_area == pytest.approx(_ring_area(ring), rel=0.02)
+        assert _area(v, f) < 1.1 * _ring_area(ring)

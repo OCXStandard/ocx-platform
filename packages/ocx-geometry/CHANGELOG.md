@@ -23,6 +23,15 @@
   the rest. Both components then came out "inside" and unseeded plates
   rendered as the whole chart (e.g. the ropax superstructure sides
   `nplcid8174`/`nplcid8568` as 5143 m² instead of 20/38 m²).
+- Mesh trimming (`MeshTrimmer._cut`): an uncut face no longer connects
+  across an edge the ring crosses (one split between two or more cut
+  pieces). On a manifold chart the face beyond a crossed edge is always
+  cut too, but where member sheets overlap (the ring jumps to the other
+  sheet, leaving a straddling face of the first uncut) or a folded sliver
+  sits on a non-manifold edge, that uncut face bridged the inside and
+  outside pieces into one component and unseeded plates rendered as the
+  whole chart (ropax `nplcid5964` on `DK8_E_S`: 312 m² instead of 24 m²;
+  `nplcid4241` on `SHELL_P`: 5171 m² instead of 12 m²).
 - UV tessellation (`UvTessellator`): hole cut-outs are now removed with an
   explicit boolean difference (shell − holes) instead of constructing a
   holed polygon and repairing it with `make_valid`. Cut-outs crossing the
