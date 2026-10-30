@@ -23,6 +23,35 @@
 
 ### Fixed
 
+- Mesh trimming (`MeshTrimmer._cut`): each cut piece's inside/outside side
+  is now read at the ring itself — probes just left and right of every
+  ring segment's midpoint vote for the piece they fall in, weighted by
+  segment length. Previously a piece took its side from the ring segment
+  nearest its representative point, weighted by piece area; in coarse
+  charts with long sliver faces that point could lie tens of metres from
+  the ring, its nearest point a clipped segment end with an arbitrary
+  cross-product sign, and one large mislabelled outside piece outvoted
+  the rest. Both components then came out "inside" and unseeded plates
+  rendered as the whole chart (e.g. the ropax superstructure sides
+  `nplcid8174`/`nplcid8568` as 5143 m² instead of 20/38 m²).
+- Mesh trimming (`MeshTrimmer._cut`): an uncut face no longer connects
+  across an edge the ring crosses (one split between two or more cut
+  pieces). On a manifold chart the face beyond a crossed edge is always
+  cut too, but where member sheets overlap (the ring jumps to the other
+  sheet, leaving a straddling face of the first uncut) or a folded sliver
+  sits on a non-manifold edge, that uncut face bridged the inside and
+  outside pieces into one component and unseeded plates rendered as the
+  whole chart (ropax `nplcid5964` on `DK8_E_S`: 312 m² instead of 24 m²;
+  `nplcid4241` on `SHELL_P`: 5171 m² instead of 12 m²).
+- Mesh trimming (`MeshTrimmer.trim`): a cut whose kept vector area exceeds
+  1.5 × the outer ring's is rejected (`trim_reject` records both areas), so
+  the renderer falls back to its next route instead of keeping a leaked
+  cut. A correct cut's vector area equals the ring's however curved the
+  surface. Safety net for charts whose member sheets overlap rather than
+  meet: where the ring jumps to an overlapping sheet and back, the stretch
+  of the first sheet it skips is never cut and joins inside to outside
+  (ropax `nplcid4222` on `SHELL_P` rendered as the whole 5163 m² side).
+  The proper fix belongs in the chart construction.
 - UV tessellation (`UvTessellator`): hole cut-outs are now removed with an
   explicit boolean difference (shell − holes) instead of constructing a
   holed polygon and repairing it with `make_valid`. Cut-outs crossing the

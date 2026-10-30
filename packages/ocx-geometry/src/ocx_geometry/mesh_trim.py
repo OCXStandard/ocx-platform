@@ -26,6 +26,8 @@ _GRID = 1e-9            # shapely snapping grid inside a triangle's 2-D frame
 _MAX_REFINE = 12
 _MIN_GAP = 1e-4         # smallest ring step worth refining across a slit
 _PULL = 1.5e-3          # cut ends this close to a face border are pulled onto it
+_PROBE = 1e-6           # offset of the side probes either side of a cut segment
+_MAX_AREA_RATIO = 1.5   # kept / ring vector area beyond which a cut is rejected
 _SEAM_WELD = 2 * _PULL  # per-face pulls can separate a shared cut point by 2x
 
 
@@ -192,6 +194,18 @@ def _is_ring_vertex(pts: np.ndarray, ring: np.ndarray) -> np.ndarray:
                    np.round(ring, 9).view([("", float)] * 3).ravel())
 
 
+def _ring_vector_area(ring: np.ndarray) -> float:
+    r = np.asarray(ring, dtype=float)
+    return 0.5 * float(np.linalg.norm(
+        np.cross(r, np.roll(r, -1, axis=0)).sum(axis=0)))
+
+
+def _vector_area(V: np.ndarray, F: np.ndarray) -> float:
+    t = V[F]
+    return 0.5 * float(np.linalg.norm(
+        np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0)))
+
+
 def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
     """Snap a closed ring onto the mesh and cut it at triangle borders.
 
@@ -327,9 +341,7 @@ class MeshTrimmer:
     def _cut(self, mesh: _Mesh, ring: np.ndarray, seed: np.ndarray | None,
              max_snap: float):
         step = max(0.25, 5.0 * self._tol)
-        r = np.asarray(ring, dtype=float)
-        ring_area = max(0.5 * float(np.linalg.norm(
-            np.cross(r, np.roll(r, -1, axis=0)).sum(axis=0))), 1e-9)
+        ring_area = max(_ring_vector_area(ring), 1e-9)
         segs, snap = _walk_ring(mesh, ring, step)
         if snap > max_snap:
             return None, snap
@@ -355,7 +367,7 @@ class MeshTrimmer:
         # -- split cut faces into pieces
         n_face = len(F)
         unit_face: list[int] = []
-        unit_side: list[int] = []
+        unit_side: list[float] = []      # signed ring length bordered
         unit_poly: list = []                 # shapely polygon in face frame
         unit_area: list[float] = []
         frames: dict[int, tuple] = {}
@@ -395,22 +407,30 @@ class MeshTrimmer:
                 polys = [tri_poly]
             ids = []
             for p in polys:
-                rp = np.asarray(p.representative_point().coords[0])
-                best, sign = 1e300, 1
-                for a, b in seg2d:
-                    ab = b - a
-                    l2 = float(ab @ ab)
-                    t = float(np.clip((rp - a) @ ab / l2, 0.0, 1.0)) \
-                        if l2 > 0 else 0.0
-                    dd = float(np.linalg.norm(rp - (a + t * ab)))
-                    if dd < best:
-                        cr = ab[0] * (rp - a)[1] - ab[1] * (rp - a)[0]
-                        best, sign = dd, (1 if cr > 0 else -1)
                 ids.append(len(unit_face))
                 unit_face.append(f)
-                unit_side.append(sign)
+                unit_side.append(0.0)
                 unit_poly.append(p)
                 unit_area.append(p.area)
+            # Sides are read at the ring itself: the piece just left of a
+            # segment's midpoint gains its length, the piece just right
+            # loses it.  (A piece's representative point can lie far from
+            # the ring, e.g. in long sliver faces, where the nearest point
+            # is a clipped segment end and the cross-product side is
+            # arbitrary.)
+            for a, b in seg2d:
+                ab = b - a
+                ln = float(np.hypot(ab[0], ab[1]))
+                if ln < 1e-12:
+                    continue
+                mid = 0.5 * (a + b)
+                off = np.array([-ab[1], ab[0]]) * (_PROBE / ln)
+                for sgn in (1.0, -1.0):
+                    q = shapely.Point(mid + sgn * off)
+                    k = next((k for k, p in zip(ids, polys)
+                              if p.contains(q)), None)
+                    if k is not None:
+                        unit_side[k] += sgn * ln
             pieces_of[f] = ids
         if not pieces_of:
             return None, snap
@@ -448,6 +468,14 @@ class MeshTrimmer:
                         iv = _edge_intervals(piece_geoms[f], o, pu, pw, ln)
                         sides.append(iv)
                     ln = float(np.linalg.norm(V[key[1]] - V[key[0]]))
+                    # An uncut face on an edge the ring crosses (split
+                    # between pieces) would bridge both sides.  Manifold
+                    # meshes cut that neighbour too; overlapping sheets
+                    # and folded non-manifold slivers do not.
+                    if cut[fa] != cut[fb] and sum(
+                            (t1 - t0) * ln > 5e-3
+                            for _, t0, t1 in sides[1 if cut[fb] else 0]) > 1:
+                        continue
                     for ua, a0, a1 in sides[0]:
                         for ub, b0, b1 in sides[1]:
                             if (min(a1, b1) - max(a0, b0)) * ln > 5e-3:
@@ -463,7 +491,7 @@ class MeshTrimmer:
 
         side = np.zeros(n_units)
         for k, s in enumerate(unit_side):
-            side[pid(k)] = s * max(unit_area[k], 1e-12)
+            side[pid(k)] = s
         vote = np.bincount(comp, weights=side, minlength=comp.max() + 1)
         has_cut = np.zeros(comp.max() + 1, dtype=bool)
         has_cut[comp[n_face:]] = True
@@ -613,6 +641,17 @@ class MeshTrimmer:
         if mesh is None:
             if diag is not None:
                 diag.trim_reject = "assembly failed"
+            return None
+        # A correct cut's vector area equals the ring's, however curved the
+        # surface; far more means the cut leaked (e.g. via overlapping
+        # sheets the ring jumps between) and kept the outside too.
+        kept, ring_area = _vector_area(mesh.V, mesh.F), _ring_vector_area(outer)
+        if kept > _MAX_AREA_RATIO * ring_area:
+            if diag is not None:
+                diag.trim_reject = (f"kept area {kept:.3g} m2 exceeds ring "
+                                    f"area {ring_area:.3g} m2")
+            logger.debug("Mesh trim: kept area {:.3g} m2 exceeds ring area "
+                         "{:.3g} m2", kept, ring_area)
             return None
         for h in holes:
             if len(h) < 3:

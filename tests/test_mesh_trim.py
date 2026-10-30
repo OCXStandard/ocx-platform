@@ -1,4 +1,5 @@
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -114,3 +115,93 @@ class TestSeamWelding:
         assert out is not None
         v, f, _ = out
         assert _seam_edges(v, f) == []
+
+
+def _ring_area(ring):
+    return 0.5 * float(np.linalg.norm(
+        np.cross(ring, np.roll(ring, -1, axis=0)).sum(axis=0)))
+
+
+class TestSliverChartSide:
+    """Regression (tr05_tc18 ropax, plates nplcid8174/nplcid8568): on a
+    coarse chart of 60-80 m sliver triangles, far-away outside pieces were
+    assigned their side from a clipped segment end, out-voted the correct
+    pieces, and the whole 5143 m2 superstructure side was kept as plate."""
+
+    FIXTURE = (Path(__file__).parent / "data" / "mesh_trim"
+               / "ropax_superstructure_side.npz")
+
+    @pytest.mark.parametrize("suffix", ["", "2"])
+    def test_unseeded_trim_keeps_only_the_ring_region(self, suffix):
+        d = np.load(self.FIXTURE)
+        V, F, ring = d["V" + suffix], d["F" + suffix], d["ring" + suffix]
+        out = MeshTrimmer(V, F, 0.05).trim(ring, [], None)
+        assert out is not None
+        v, f, _ = out
+        assert _area(v, f) == pytest.approx(_ring_area(ring), rel=0.02)
+        lo, hi = ring.min(axis=0) - 0.05, ring.max(axis=0) + 0.05
+        assert np.all((v >= lo) & (v <= hi))
+
+
+class TestUncutBridge:
+    """Regression (tr05_tc18 ropax): a face the ring never cuts, yet lying
+    on an edge the ring crosses, joined the inside and outside pieces into
+    one component and the whole chart was kept.  ``deck`` (nplcid5964):
+    two member sheets overlap and the ring jumps between them, leaving a
+    straddling face of the first sheet uncut.  ``shell`` (nplcid4241,
+    chart cropped around the ring): a folded sliver on a non-manifold edge
+    the ring crosses.  Areas are compared as vector areas, which match the
+    ring's exactly for a trimmed curved surface (the shell is curved)."""
+
+    FIXTURE = (Path(__file__).parent / "data" / "mesh_trim"
+               / "ropax_uncut_bridge.npz")
+
+    @pytest.mark.parametrize("key", ["deck", "shell"])
+    def test_unseeded_trim_keeps_only_the_ring_region(self, key):
+        d = np.load(self.FIXTURE)
+        V, F, ring = d["V_" + key], d["F_" + key], d["ring_" + key]
+        out = MeshTrimmer(V, F, 0.05).trim(ring, [], None)
+        assert out is not None
+        v, f, _ = out
+        t = v[f]
+        vector_area = 0.5 * float(np.linalg.norm(np.cross(
+            t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0)))
+        assert vector_area == pytest.approx(_ring_area(ring), rel=0.02)
+        assert _area(v, f) < 1.1 * _ring_area(ring)
+
+
+class TestAreaGuard:
+    """A cut that keeps far more than the ring encloses (e.g. ropax
+    nplcid4222, where the ring jumps to an overlapping sheet and back and
+    the skipped stretch of the first sheet bridges both sides) is rejected
+    so the caller falls back to another route."""
+
+    def test_trim_keeping_the_whole_mesh_is_rejected(self, monkeypatch):
+        V, F = _grid()
+        tr = MeshTrimmer(V, F, 0.05)
+        cut = MeshTrimmer._cut
+
+        def bridged(self, mesh, ring, seed, max_snap):
+            state, snap = cut(self, mesh, ring, seed, max_snap)
+            n_face = state["n_face"]
+            state["inside"] = np.concatenate([
+                np.flatnonzero(np.isin(np.arange(n_face), state["unit_face"],
+                                       invert=True)),
+                n_face + np.arange(len(state["unit_face"]))])
+            return state, snap
+
+        monkeypatch.setattr(MeshTrimmer, "_cut", bridged)
+
+        class Diag:
+            trim_reject = None
+            snap_m = None
+
+        diag = Diag()
+        assert tr.trim(_square(2.3, 6.7, 3.1, 7.9), [], None,
+                       diag=diag) is None
+        assert "area" in diag.trim_reject
+
+    def test_curved_trim_is_kept(self):
+        V, F = _grid()
+        ring = _square(0.0, 10.0, 0.0, 10.0)     # the whole curved sheet
+        assert MeshTrimmer(V, F, 0.05).trim(ring, [], None) is not None
