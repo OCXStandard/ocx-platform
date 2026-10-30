@@ -168,3 +168,40 @@ class TestUncutBridge:
             t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0)))
         assert vector_area == pytest.approx(_ring_area(ring), rel=0.02)
         assert _area(v, f) < 1.1 * _ring_area(ring)
+
+
+class TestAreaGuard:
+    """A cut that keeps far more than the ring encloses (e.g. ropax
+    nplcid4222, where the ring jumps to an overlapping sheet and back and
+    the skipped stretch of the first sheet bridges both sides) is rejected
+    so the caller falls back to another route."""
+
+    def test_trim_keeping_the_whole_mesh_is_rejected(self, monkeypatch):
+        V, F = _grid()
+        tr = MeshTrimmer(V, F, 0.05)
+        cut = MeshTrimmer._cut
+
+        def bridged(self, mesh, ring, seed, max_snap):
+            state, snap = cut(self, mesh, ring, seed, max_snap)
+            n_face = state["n_face"]
+            state["inside"] = np.concatenate([
+                np.flatnonzero(np.isin(np.arange(n_face), state["unit_face"],
+                                       invert=True)),
+                n_face + np.arange(len(state["unit_face"]))])
+            return state, snap
+
+        monkeypatch.setattr(MeshTrimmer, "_cut", bridged)
+
+        class Diag:
+            trim_reject = None
+            snap_m = None
+
+        diag = Diag()
+        assert tr.trim(_square(2.3, 6.7, 3.1, 7.9), [], None,
+                       diag=diag) is None
+        assert "area" in diag.trim_reject
+
+    def test_curved_trim_is_kept(self):
+        V, F = _grid()
+        ring = _square(0.0, 10.0, 0.0, 10.0)     # the whole curved sheet
+        assert MeshTrimmer(V, F, 0.05).trim(ring, [], None) is not None

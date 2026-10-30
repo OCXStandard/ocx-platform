@@ -32,6 +32,15 @@
   outside pieces into one component and unseeded plates rendered as the
   whole chart (ropax `nplcid5964` on `DK8_E_S`: 312 m² instead of 24 m²;
   `nplcid4241` on `SHELL_P`: 5171 m² instead of 12 m²).
+- Mesh trimming (`MeshTrimmer.trim`): a cut whose kept vector area exceeds
+  1.5 × the outer ring's is rejected (`trim_reject` records both areas), so
+  the renderer falls back to its next route instead of keeping a leaked
+  cut. A correct cut's vector area equals the ring's however curved the
+  surface. Safety net for charts whose member sheets overlap rather than
+  meet: where the ring jumps to an overlapping sheet and back, the stretch
+  of the first sheet it skips is never cut and joins inside to outside
+  (ropax `nplcid4222` on `SHELL_P` rendered as the whole 5163 m² side).
+  The proper fix belongs in the chart construction.
 - UV tessellation (`UvTessellator`): hole cut-outs are now removed with an
   explicit boolean difference (shell − holes) instead of constructing a
   holed polygon and repairing it with `make_valid`. Cut-outs crossing the

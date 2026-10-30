@@ -27,6 +27,7 @@ _MAX_REFINE = 12
 _MIN_GAP = 1e-4         # smallest ring step worth refining across a slit
 _PULL = 1.5e-3          # cut ends this close to a face border are pulled onto it
 _PROBE = 1e-6           # offset of the side probes either side of a cut segment
+_MAX_AREA_RATIO = 1.5   # kept / ring vector area beyond which a cut is rejected
 _SEAM_WELD = 2 * _PULL  # per-face pulls can separate a shared cut point by 2x
 
 
@@ -193,6 +194,18 @@ def _is_ring_vertex(pts: np.ndarray, ring: np.ndarray) -> np.ndarray:
                    np.round(ring, 9).view([("", float)] * 3).ravel())
 
 
+def _ring_vector_area(ring: np.ndarray) -> float:
+    r = np.asarray(ring, dtype=float)
+    return 0.5 * float(np.linalg.norm(
+        np.cross(r, np.roll(r, -1, axis=0)).sum(axis=0)))
+
+
+def _vector_area(V: np.ndarray, F: np.ndarray) -> float:
+    t = V[F]
+    return 0.5 * float(np.linalg.norm(
+        np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0)))
+
+
 def _walk_ring(mesh: _Mesh, ring: np.ndarray, step: float):
     """Snap a closed ring onto the mesh and cut it at triangle borders.
 
@@ -328,9 +341,7 @@ class MeshTrimmer:
     def _cut(self, mesh: _Mesh, ring: np.ndarray, seed: np.ndarray | None,
              max_snap: float):
         step = max(0.25, 5.0 * self._tol)
-        r = np.asarray(ring, dtype=float)
-        ring_area = max(0.5 * float(np.linalg.norm(
-            np.cross(r, np.roll(r, -1, axis=0)).sum(axis=0))), 1e-9)
+        ring_area = max(_ring_vector_area(ring), 1e-9)
         segs, snap = _walk_ring(mesh, ring, step)
         if snap > max_snap:
             return None, snap
@@ -630,6 +641,17 @@ class MeshTrimmer:
         if mesh is None:
             if diag is not None:
                 diag.trim_reject = "assembly failed"
+            return None
+        # A correct cut's vector area equals the ring's, however curved the
+        # surface; far more means the cut leaked (e.g. via overlapping
+        # sheets the ring jumps between) and kept the outside too.
+        kept, ring_area = _vector_area(mesh.V, mesh.F), _ring_vector_area(outer)
+        if kept > _MAX_AREA_RATIO * ring_area:
+            if diag is not None:
+                diag.trim_reject = (f"kept area {kept:.3g} m2 exceeds ring "
+                                    f"area {ring_area:.3g} m2")
+            logger.debug("Mesh trim: kept area {:.3g} m2 exceeds ring area "
+                         "{:.3g} m2", kept, ring_area)
             return None
         for h in holes:
             if len(h) < 3:
