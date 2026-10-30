@@ -194,6 +194,27 @@ def _is_ring_vertex(pts: np.ndarray, ring: np.ndarray) -> np.ndarray:
                    np.round(ring, 9).view([("", float)] * 3).ravel())
 
 
+def _enters(mesh: _Mesh, ring: np.ndarray, tol: float) -> bool:
+    """Whether ``ring`` reaches into the mesh interior: some point lies on
+    the mesh farther than ``tol`` (the chord sag between two samplings of
+    one edge) from its boundary.  A hole the plate outline runs around
+    shares a stretch of the boundary but never enters."""
+    pts = np.asarray(ring, dtype=float)
+    on = trimesh.proximity.closest_point(mesh.tm, pts)[1] <= tol
+    if not on.any():
+        return False
+    bnd = [k for k, fs in mesh.edge_faces.items() if len(fs) == 1]
+    if not bnd:
+        return True
+    a = mesh.V[[k[0] for k in bnd]]
+    d = mesh.V[[k[1] for k in bnd]] - a
+    p = pts[on][:, None, :]
+    t = np.clip(np.einsum("pkj,kj->pk", p - a, d)
+                / np.maximum(np.einsum("kj,kj->k", d, d), 1e-30), 0.0, 1.0)
+    gap = np.linalg.norm(a + t[..., None] * d - p, axis=2).min(axis=1)
+    return bool((gap > tol).any())
+
+
 def _ring_vector_area(ring: np.ndarray) -> float:
     r = np.asarray(ring, dtype=float)
     return 0.5 * float(np.linalg.norm(
@@ -660,6 +681,8 @@ class MeshTrimmer:
                 mesh.tm, h[:: max(1, len(h) // 12)])[1]
             if float(np.median(probe)) > 4.0 * self._tol:
                 continue                       # hole is not in this plate
+            if not _enters(mesh, h, self._tol):
+                continue                       # only touches the plate edge
             state, snap = self._cut(mesh, h, None, max_snap)
             if state is None:
                 continue

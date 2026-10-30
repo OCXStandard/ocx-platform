@@ -54,6 +54,24 @@ class TestMeshTrim:
                         seed=np.array([2.0, 2.0, 0.0]))
         assert _area(*holed[:2]) < _area(*full[:2]) - 1.7 ** 2
 
+    def test_hole_touching_the_plate_edge_from_outside_is_ignored(self):
+        """Regression (tr05_tc18 ropax nplcid4252/2971 bow-thruster
+        opening, nplcid5699/5763 DK8 hatches): the plate outline runs
+        around a panel hole, so the hole shares a stretch of the plate edge
+        but lies wholly outside.  Its cut ran only along the edge,
+        separated nothing, and the side choice removed the whole plate."""
+        V, F = _grid()
+        tr = MeshTrimmer(V, F, 0.05)
+        outer = _square(2.0, 8.0, 2.0, 8.0)
+        # densely sampled like a real contour, sharing y = 2 for x in 3..5
+        corners = _square(3.0, 5.0, 1.7, 2.0)
+        hole = np.vstack([np.linspace(p, q, 40, endpoint=False) for p, q
+                          in zip(corners, np.roll(corners, -1, axis=0))])
+        full = tr.trim(outer, [])
+        holed = tr.trim(outer, [hole])
+        assert holed is not None
+        assert _area(*holed[:2]) == pytest.approx(_area(*full[:2]), rel=1e-6)
+
     def test_ring_off_mesh_returns_none(self):
         V, F = _grid()
         tr = MeshTrimmer(V, F, 0.05)

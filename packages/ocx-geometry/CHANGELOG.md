@@ -23,6 +23,14 @@
 
 ### Fixed
 
+- Mesh trimming (`MeshTrimmer.trim`): a hole is cut only when it reaches
+  into the plate's interior (some point on the mesh farther than the
+  tolerance from its boundary). Panel holes the plate outline runs
+  around share a stretch of the plate edge but lie wholly outside; the
+  median-distance test still took them as the plate's, their cut ran
+  only along the edge and separated nothing, and the side choice removed
+  the whole plate (ropax bow-thruster openings `nplcid4252`/`nplcid2971`,
+  DK8 hatches `nplcid5699`/`nplcid5763` rendered empty).
 - LSCM chart construction (`_facet_member`): flat directions of bounded
   (NURBS) members are now faceted on a grid of ~max(20 × tol, 0.5 m)
   cells instead of a single cell. A one-cell flat patch next to a densely
