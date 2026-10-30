@@ -14,6 +14,15 @@
   `write_glb(..., legend=)` stores in the glTF scene `extras`.
 - HTML viewer: thickness legend with plate counts; clicking an entry
   isolates that thickness (other parts turn translucent and unpickable).
+- Parallel plate tessellation: `TessellationOptions.workers` (library
+  default 1) and `--workers/-j` (CLI default: all cores). Panels are
+  tessellated in worker processes, charted (multi-member) panels in
+  chunks of 8 plates; results are merged in plate order, so output is
+  byte-identical to a serial render. Worker log records are re-logged in
+  the parent under its configuration. Diagnostics (`diag`) force serial
+  mode; a failed task or broken pool falls back to serial rendering.
+  VLCC hold model: render 13.3 s -> 6.8 s, CLI end-to-end 17.6 s -> ~11 s
+  (parse/build, 3.5 s, stays serial).
 - Part metadata gains `thickness_mm` (plates, brackets) and `section`
   (stiffeners, pillars).
 - Brackets are rendered as extruded solids using the plate thickness

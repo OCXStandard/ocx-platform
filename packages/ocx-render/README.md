@@ -9,7 +9,12 @@ and normals to glTF's right-handed Y-up convention: `(x, y, z)` becomes
 `(x, z, -y)`. The HTML viewer uses these same exported coordinates.
 
     ocx-render model.3docx [--destination out.glb] [--tolerance MM]
-                           [--color-by thickness|part] [--no-html]
+                           [--color-by thickness|part] [--workers N] [--no-html]
+
+Plates are tessellated in parallel worker processes (`--workers`, default:
+all CPU cores; `-j 1` renders serially); the output is identical either
+way. Panels whose plates share an LSCM chart dominate render time and are
+split into chunks of 8 plates across workers.
 
 By default plates and brackets get one distinct colour per plate thickness
 (grey when the thickness is unknown) and stiffeners/pillars one shade per

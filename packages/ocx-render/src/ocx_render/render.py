@@ -2,11 +2,15 @@
 
 ``render_model(vessel, options)`` tessellates all renderable parts of an
 ``IrVessel`` into ``PartMesh`` objects.  Single-part failures are recorded
-in ``RenderResult.skipped`` and never abort the render.
+in ``RenderResult.skipped`` and never abort the render.  Plate tessellation
+runs in ``options.workers`` processes, one panel per task; the result is
+identical to a serial render.
 """
 from __future__ import annotations
 
+import pickle
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from loguru import logger
@@ -230,23 +234,55 @@ def _tessellate_plates(vessel: IrVessel,
         prepared.append((plate, panel_id, candidates, contour))
         hints.setdefault(panel_id, []).append(contour)
 
-    # Pass 2: one LSCM chart mesh per multi-member panel, shared by its
-    # plates; each plate flattens only its local submesh (a whole-panel
-    # conformal flattening degenerates on doubly-curved panels).
+    groups: dict[str, list[tuple]] = {}
+    for plate, panel_id, _, contour in prepared:
+        groups.setdefault(panel_id, []).append((plate, contour))
+    logger.debug("Timing: pass 1 prepared {} plates in {} panels ({} with "
+                 "charts needed)", len(prepared), len(groups),
+                 sum(1 for pid in groups if len(params[pid]) > 1))
+
+    charted = {pid for pid in groups if len(params[pid]) > 1}
+    outputs = _tessellate_panels_parallel(vessel, groups, charted, options)
+    for panel_id, items in groups.items():
+        if panel_id not in outputs:
+            outputs[panel_id] = RenderResult()
+            _tessellate_panel(vessel, panel_id, params[panel_id], items, tess,
+                              length, options, outputs[panel_id])
+
+    # Merge in plate order so the output does not depend on scheduling.
+    mesh_of = {m.part_id: m for out in outputs.values() for m in out.meshes}
+    for plate, *_ in prepared:
+        if plate.id in mesh_of:
+            result.meshes.append(mesh_of[plate.id])
+    for panel_id in groups:
+        result.skipped.update(outputs[panel_id].skipped)
+        result.hole_failures.update(outputs[panel_id].hole_failures)
+
+
+def _tessellate_panel(vessel: IrVessel, panel_id: str,
+                      candidates: list[SurfaceParam], items: list[tuple],
+                      tess: ITessellator, length: LengthResolver,
+                      options: TessellationOptions, result: RenderResult,
+                      hints: list[np.ndarray] | None = None) -> None:
+    """Pass 2 for ``(plate, contour)`` items of one panel into ``result``.
+
+    ``hints`` (default: the items' contours) are all plate contours of the
+    panel; they bound otherwise-unbounded chart members, so a chunk of a
+    panel's plates passes the full list to build the same chart.
+    """
+    hints = {panel_id: hints if hints is not None
+             else [contour for _, contour in items]}
+    # One LSCM chart mesh per multi-member panel, shared by its plates;
+    # each plate flattens only its local submesh (a whole-panel conformal
+    # flattening degenerates on doubly-curved panels).
     chart_cache: dict[str, object] = {}
     # Panel-level holes are resolved once per panel and offered to every
     # plate of it; the UV polygon clean-up clips or drops holes outside
     # each plate region.
     panel_holes: dict[str, list[np.ndarray]] = {}
     trim_cache: dict[str, MeshTrimmer] = {}
-    n_total = len(prepared)
-    t_pass2 = time.perf_counter()
-    logger.debug("Timing: pass 1 prepared {} plates ({} panels with charts "
-                 "needed)", n_total,
-                 sum(1 for p in prepared if len(p[2]) > 1))
-    def tessellate_plate(idx: int, plate, panel_id: str,
-                         candidates: list[SurfaceParam],
-                         contour: np.ndarray) -> None:
+
+    def tessellate_plate(plate, contour: np.ndarray) -> None:
         t_plate = time.perf_counter()
         sink = options.diag
         pdiag = None
@@ -338,10 +374,9 @@ def _tessellate_plates(vessel: IrVessel,
                               "thickness_mm": _thickness_mm(length,
                                                             plate.thickness)})
             result.meshes.append(pm)
-            logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
-                         "(elapsed {:.0f}s)", idx, n_total, plate.id,
-                         t_param - t_plate, time.perf_counter() - t_plate,
-                         time.perf_counter() - t_pass2)
+            logger.debug("Timing: plate {} param {:.2f}s, total {:.2f}s",
+                         plate.id, t_param - t_plate,
+                         time.perf_counter() - t_plate)
         except Exception as exc:  # noqa: BLE001 — isolate per-part failures
             _record_error(result, plate.id, exc)
         finally:
@@ -353,8 +388,111 @@ def _tessellate_plates(vessel: IrVessel,
                 pdiag.seconds = time.perf_counter() - t_plate
                 pdiag.failure = result.skipped.get(plate.id)
 
-    for idx, item in enumerate(prepared, 1):
-        tessellate_plate(idx, *item)
+    for plate, contour in items:
+        tessellate_plate(plate, contour)
+
+
+# Per-process state of a plate worker, set once by _init_worker.
+_WORKER: dict = {}
+
+
+def _init_worker(vessel_bytes: bytes, options: TessellationOptions) -> None:
+    vessel = pickle.loads(vessel_bytes)
+    logs: list[tuple[str, str]] = []
+    _WORKER.update(vessel=vessel, options=options, logs=logs,
+                   length=LengthResolver(vessel.unit_registry),
+                   tess=UvTessellator())
+    # Collect records for the parent to re-log under its own configuration.
+    logger.remove()
+    logger.add(lambda m: logs.append((m.record["level"].name,
+                                      m.record["message"])), level="DEBUG")
+
+
+def _panel_task(panel_id: str, items: list[tuple[str, np.ndarray]],
+                hints: list[np.ndarray]
+                ) -> tuple[RenderResult, list[tuple[str, str]]]:
+    """Worker side: tessellate plates of one panel; passed by plate id."""
+    w = _WORKER
+    w["logs"].clear()
+    vessel = w["vessel"]
+    out = RenderResult()
+    candidates = _panel_params(vessel.panels[panel_id], vessel, w["length"],
+                               w["options"])
+    _tessellate_panel(vessel, panel_id, candidates,
+                      [(vessel.plates[pid], c) for pid, c in items],
+                      w["tess"], w["length"], w["options"], out, hints)
+    return out, list(w["logs"])
+
+
+# Plates per task on charted (multi-member) panels: these dominate render
+# time, so they are split; each chunk rebuilds the panel chart (~0.1 s).
+_CHART_CHUNK = 8
+
+
+def _tessellate_panels_parallel(vessel: IrVessel,
+                                groups: dict[str, list[tuple]],
+                                charted: set[str],
+                                options: TessellationOptions
+                                ) -> dict[str, RenderResult]:
+    """Tessellate panels in worker processes.  Panels missing from the
+    returned dict (pool not used, or any of its tasks failed) are left for
+    the caller to render serially."""
+    tasks = []   # (panel_id, chunk index, items)
+    for pid, items in groups.items():
+        size = _CHART_CHUNK if pid in charted else len(items)
+        for k, i in enumerate(range(0, len(items), size)):
+            tasks.append((pid, k, items[i:i + size]))
+    workers = min(options.workers, len(tasks))
+    if workers <= 1 or options.diag is not None:
+        return {}
+    try:
+        payload = pickle.dumps(vessel, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as exc:  # noqa: BLE001 — fall back to serial
+        logger.warning("Cannot ship model to workers ({}); rendering plates "
+                       "serially", exc)
+        return {}
+    chunks: dict[tuple[str, int], RenderResult] = {}
+    failed: set[str] = set()
+    logged: set[tuple[str, str]] = set()
+    # Charted chunks first, then larger panels: long tasks start early.
+    tasks.sort(key=lambda t: (t[0] not in charted, -len(t[2])))
+    try:
+        with ProcessPoolExecutor(workers, initializer=_init_worker,
+                                 initargs=(payload, options)) as pool:
+            futures = {pool.submit(_panel_task, pid, [(p.id, c) for p, c in items],
+                                   [c for _, c in groups[pid]]): (pid, k)
+                       for pid, k, items in tasks}
+            for fut in as_completed(futures):
+                pid, k = futures[fut]
+                try:
+                    out, logs = fut.result()
+                except Exception as exc:  # noqa: BLE001 — caller retries serially
+                    if pid not in failed:
+                        logger.warning("Plate worker failed on panel {} ({}); "
+                                       "rendering it serially", pid, exc)
+                    failed.add(pid)
+                    continue
+                # Chunks of a panel repeat its panel-hole warnings: log once.
+                for record in logs:
+                    if record not in logged:
+                        logged.add(record)
+                        logger.log(*record)
+                chunks[(pid, k)] = out
+    except Exception as exc:  # noqa: BLE001 — pool itself broke
+        # e.g. workers cannot start: an unguarded ``__main__`` under spawn.
+        logger.warning("Plate worker pool failed ({}); rendering plates "
+                       "serially", exc)
+        return {}
+
+    outputs: dict[str, RenderResult] = {}
+    for (pid, k) in sorted(chunks, key=lambda key: key[1]):
+        if pid in failed:
+            continue
+        out = outputs.setdefault(pid, RenderResult())
+        out.meshes += chunks[(pid, k)].meshes
+        out.skipped.update(chunks[(pid, k)].skipped)
+        out.hole_failures.update(chunks[(pid, k)].hole_failures)
+    return outputs
 
 
 def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
@@ -455,6 +593,18 @@ def _tessellate_bracket(br, panel_id: str | None, length: LengthResolver,
     result.meshes.append(pm)
 
 
+def _panel_params(panel: IrPanel, vessel: IrVessel, length: LengthResolver,
+                  options: TessellationOptions) -> list[SurfaceParam]:
+    """Surface parametrizations of a panel (empty when none resolve)."""
+    try:
+        surfs = _resolve_panel_surfaces(panel, vessel)
+        built = (make_param(s, length, options.tolerance_m) for s in surfs)
+        return [p for p in built if p is not None]
+    except Exception as exc:  # noqa: BLE001 — its plates are skipped
+        logger.warning("Surface for panel {} failed: {}", panel.id, exc)
+        return []
+
+
 def render_model(vessel: IrVessel,
                  options: TessellationOptions | None = None) -> RenderResult:
     """Tessellate all renderable parts of ``vessel``; never raises per-part."""
@@ -468,13 +618,7 @@ def render_model(vessel: IrVessel,
     for pid, panel in vessel.panels.items():
         if _excluded(pid, options):
             continue
-        try:
-            surfs = _resolve_panel_surfaces(panel, vessel)
-            built = (make_param(s, length, options.tolerance_m) for s in surfs)
-            params[pid] = [p for p in built if p is not None]
-        except Exception as exc:  # noqa: BLE001 — its plates are skipped
-            logger.warning("Surface for panel {} failed: {}", pid, exc)
-            params[pid] = []
+        params[pid] = _panel_params(panel, vessel, length, options)
     t_params = time.perf_counter()
     logger.debug("Timing: surface params for {} panels in {:.2f}s",
                  len(params), t_params - t_start)

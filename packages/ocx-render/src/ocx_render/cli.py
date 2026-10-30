@@ -1,6 +1,7 @@
 """ocx-render — tessellate a .3docx model into GLB + a self-contained HTML viewer."""
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -39,6 +40,10 @@ def render(
         "thickness", "--color-by",
         help="Colour plates/brackets by 'thickness' (stiffeners by section) "
              "or each part individually ('part')."),
+    workers: int | None = typer.Option(
+        None, "--workers", "-j", min=1,
+        help="Processes for plate tessellation (default: all CPU cores; "
+             "1 = serial)."),
     no_html: bool = typer.Option(
         False, "--no-html", help="Skip writing the HTML viewer page."),
     log_level: str = typer.Option(
@@ -69,7 +74,8 @@ def render(
 
     try:
         result = render_model(
-            vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))
+            vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0,
+                                        workers=workers or os.cpu_count() or 1))
     except Exception as exc:  # noqa: BLE001 — a whole-model failure renders nothing
         logger.error("Cannot render {}: {}", model, exc)
         raise typer.Exit(code=1) from exc

@@ -19,6 +19,11 @@ class TessellationOptions:
     # Render only parts parented to these panels (plates, stiffeners,
     # brackets, pillars); parts not under a panel are then left out.
     only_panels: frozenset[str] | None = None
+    # Processes for plate tessellation (1 = serial); serial whenever diag
+    # is set, since diagnostics are recorded into the caller's sink.  With
+    # >1, scripts must guard their entry point (``if __name__ ==
+    # "__main__":``) as for any process pool under the spawn start method.
+    workers: int = 1
 
 
 @dataclass

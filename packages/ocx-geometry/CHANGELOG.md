@@ -9,6 +9,8 @@
   into a closed prism (`Offset` honoured, else symmetric), or a flat
   sheet when thickness is unknown.
 - `KIND_COLORS` gains a `"bracket"` entry (orange).
+- `TessellationOptions.workers`: processes for plate tessellation
+  (1 = serial; ignored when `diag` is set).
 - `PlateDiag.failure`: the skip reason when the plate did not render
   (`None` when it did).
 - `RenderResult.hole_failures` (`<plate_or_panel_id>/hole:<id>` → reason): CutBy
