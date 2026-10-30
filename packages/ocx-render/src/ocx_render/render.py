@@ -2,11 +2,15 @@
 
 ``render_model(vessel, options)`` tessellates all renderable parts of an
 ``IrVessel`` into ``PartMesh`` objects.  Single-part failures are recorded
-in ``RenderResult.skipped`` and never abort the render.
+in ``RenderResult.skipped`` and never abort the render.  Plate tessellation
+runs in ``options.workers`` processes, one panel per task; the result is
+identical to a serial render.
 """
 from __future__ import annotations
 
+import pickle
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 from loguru import logger
@@ -42,6 +46,31 @@ __all__ = ["render_model", "RenderResult", "TessellationOptions", "PartMesh"]
 
 
 _AXIS_VECTORS = {"x": (1.0, 0.0, 0.0), "y": (0.0, 1.0, 0.0), "z": (0.0, 0.0, 1.0)}
+
+
+def _panel_of(part) -> str | None:
+    """Id of the panel a part is parented to, or None."""
+    return part.parent_ref.id if part.parent_ref.kind == ParentKind.PANEL else None
+
+
+def _excluded(panel_id: str | None, options: TessellationOptions) -> bool:
+    """True when ``only_panels`` is set and the part is not in those panels
+    (parts not parented to a panel are then excluded too)."""
+    return options.only_panels is not None and panel_id not in options.only_panels
+
+
+def _thickness_mm(length: LengthResolver, thickness) -> float | None:
+    """Plate thickness in mm (2 decimals) for metadata/colouring, or None."""
+    t = length.qty(thickness) if thickness is not None else None
+    return round(t * 1000.0, 2) if t is not None else None
+
+
+def _record_error(result: RenderResult, part_id: str, exc: Exception) -> None:
+    """Skip a part whose geometry raised; one bad part never aborts a render."""
+    logger.warning("Rendering {} failed: {}: {}", part_id,
+                   type(exc).__name__, exc)
+    logger.opt(exception=exc).debug("Traceback for {}", part_id)
+    result.skipped[part_id] = f"error: {exc}"
 
 
 def _plane_from_ref_plane(rp: IrRefPlane, vessel: IrVessel) -> IrPlane3D | None:
@@ -117,37 +146,30 @@ def _best_param(candidates: list[SurfaceParam],
     return best
 
 
-def _hole_polylines(plate, panel, vessel: IrVessel, length: LengthResolver,
+def _hole_polylines(owner, vessel: IrVessel, length: LengthResolver,
                     options: TessellationOptions
                     ) -> tuple[list[np.ndarray], dict[str, str]]:
-    """All hole polylines for one plate: inline contours + resolved CutBy holes.
+    """Hole polylines cut by one owner (a plate or a panel): inline
+    contours + resolved CutBy holes.
 
     Returns (hole polylines in metres, failures keyed
-    ``<plate_id>/hole:<id>``).
-    Panel-level holes are offered to every plate of the panel; the UV
-    polygon clean-up clips or drops holes outside the plate region.
+    ``<owner_id>/hole:<id>`` for ``RenderResult.hole_failures``).
     """
     holes: list[np.ndarray] = []
     failures: dict[str, str] = {}
 
-    inline = list(plate.cut_by_contours)
-    if panel is not None:
-        inline += panel.cut_by_contours
-    for c in inline:
+    for c in owner.cut_by_contours:
         h = sample_contour(c, length, options.tolerance_m,
                            options.snap_tolerance_m)
         if h is not None:
             holes.append(h)
 
-    entries = list(plate.cut_by_holes)
-    if panel is not None:
-        entries += panel.cut_by_holes
-    if not entries:
+    if not owner.cut_by_holes:
         return holes, failures
 
     cat = vessel.hole_shape_catalogue
-    for hc in entries:
-        key = (f"{plate.id}/hole:"
+    for hc in owner.cut_by_holes:
+        key = (f"{owner.id}/hole:"
                f"{hc.id or (hc.hole_ref.local_ref if hc.hole_ref else '?')}")
         shape = None
         if cat is not None and hc.hole_ref is not None:
@@ -186,12 +208,11 @@ def _tessellate_plates(vessel: IrVessel,
     prepared = []
     hints: dict[str, list[np.ndarray]] = {}
     for plate in vessel.plates.values():
-        panel_id = (plate.parent_ref.id
-                    if plate.parent_ref.kind == ParentKind.PANEL else None)
+        panel_id = _panel_of(plate)
+        if _excluded(panel_id, options):
+            continue
         if panel_id is None:
             result.skipped[plate.id] = "not parented to a panel"
-            continue
-        if options.only_panels is not None and panel_id not in options.only_panels:
             continue
         candidates = params.get(panel_id) or []
         if not candidates:
@@ -200,25 +221,68 @@ def _tessellate_plates(vessel: IrVessel,
         if plate.outer_contour is None:
             result.skipped[plate.id] = "no outer contour"
             continue
-        contour = sample_contour(plate.outer_contour, length,
-                                 options.tolerance_m, options.snap_tolerance_m)
+        try:
+            contour = sample_contour(plate.outer_contour, length,
+                                     options.tolerance_m,
+                                     options.snap_tolerance_m)
+        except Exception as exc:  # noqa: BLE001 — isolate per-part failures
+            _record_error(result, plate.id, exc)
+            continue
         if contour is None:
             result.skipped[plate.id] = "contour unsampleable or open"
             continue
         prepared.append((plate, panel_id, candidates, contour))
         hints.setdefault(panel_id, []).append(contour)
 
-    # Pass 2: one LSCM chart mesh per multi-member panel, shared by its
-    # plates; each plate flattens only its local submesh (a whole-panel
-    # conformal flattening degenerates on doubly-curved panels).
+    groups: dict[str, list[tuple]] = {}
+    for plate, panel_id, _, contour in prepared:
+        groups.setdefault(panel_id, []).append((plate, contour))
+    logger.debug("Timing: pass 1 prepared {} plates in {} panels ({} with "
+                 "charts needed)", len(prepared), len(groups),
+                 sum(1 for pid in groups if len(params[pid]) > 1))
+
+    charted = {pid for pid in groups if len(params[pid]) > 1}
+    outputs = _tessellate_panels_parallel(vessel, groups, charted, options)
+    for panel_id, items in groups.items():
+        if panel_id not in outputs:
+            outputs[panel_id] = RenderResult()
+            _tessellate_panel(vessel, panel_id, params[panel_id], items, tess,
+                              length, options, outputs[panel_id])
+
+    # Merge in plate order so the output does not depend on scheduling.
+    mesh_of = {m.part_id: m for out in outputs.values() for m in out.meshes}
+    for plate, *_ in prepared:
+        if plate.id in mesh_of:
+            result.meshes.append(mesh_of[plate.id])
+    for panel_id in groups:
+        result.skipped.update(outputs[panel_id].skipped)
+        result.hole_failures.update(outputs[panel_id].hole_failures)
+
+
+def _tessellate_panel(vessel: IrVessel, panel_id: str,
+                      candidates: list[SurfaceParam], items: list[tuple],
+                      tess: ITessellator, length: LengthResolver,
+                      options: TessellationOptions, result: RenderResult,
+                      hints: list[np.ndarray] | None = None) -> None:
+    """Pass 2 for ``(plate, contour)`` items of one panel into ``result``.
+
+    ``hints`` (default: the items' contours) are all plate contours of the
+    panel; they bound otherwise-unbounded chart members, so a chunk of a
+    panel's plates passes the full list to build the same chart.
+    """
+    hints = {panel_id: hints if hints is not None
+             else [contour for _, contour in items]}
+    # One LSCM chart mesh per multi-member panel, shared by its plates;
+    # each plate flattens only its local submesh (a whole-panel conformal
+    # flattening degenerates on doubly-curved panels).
     chart_cache: dict[str, object] = {}
+    # Panel-level holes are resolved once per panel and offered to every
+    # plate of it; the UV polygon clean-up clips or drops holes outside
+    # each plate region.
+    panel_holes: dict[str, list[np.ndarray]] = {}
     trim_cache: dict[str, MeshTrimmer] = {}
-    n_total = len(prepared)
-    t_pass2 = time.perf_counter()
-    logger.debug("Timing: pass 1 prepared {} plates ({} panels with charts "
-                 "needed)", n_total,
-                 sum(1 for p in prepared if len(p[2]) > 1))
-    for idx, (plate, panel_id, candidates, contour) in enumerate(prepared, 1):
+
+    def tessellate_plate(plate, contour: np.ndarray) -> None:
         t_plate = time.perf_counter()
         sink = options.diag
         pdiag = None
@@ -230,83 +294,205 @@ def _tessellate_plates(vessel: IrVessel,
         route = "single"
         local = None
         pm = None
-        panel = vessel.panels.get(panel_id)
-        holes, hole_failures = _hole_polylines(plate, panel, vessel, length,
-                                               options)
-        for key, reason in hole_failures.items():
-            logger.warning("CutBy hole not applied to {} — {} ({})",
-                           plate.id, reason, key)
-        result.skipped.update(hole_failures)
-        if len(candidates) > 1:
-            if panel_id not in chart_cache:
-                t_chart = time.perf_counter()
-                cdiag = (sink.charts.setdefault(panel_id, ChartDiag())
-                         if sink is not None else None)
-                chart_cache[panel_id] = make_lscm_chart(
-                    candidates, options.tolerance_m,
-                    hints[panel_id], diag=cdiag)
-                if cdiag is not None:
-                    cdiag.build_s = time.perf_counter() - t_chart
-                logger.debug("Timing: LSCM chart for panel {} "
-                             "({} members) in {:.2f}s", panel_id,
-                             len(candidates), time.perf_counter() - t_chart)
-            chart = chart_cache[panel_id]
-            if chart is not None:
-                if panel_id not in trim_cache:
-                    trim_cache[panel_id] = MeshTrimmer(*chart.mesh,
-                                                       options.tolerance_m)
-                seed = (length.point(plate.point_on_surface)
-                        if plate.point_on_surface is not None else None)
-                try:
-                    out = trim_cache[panel_id].trim(contour, holes, seed,
-                                                    diag=pdiag)
-                except Exception as exc:  # noqa: BLE001 — fall back below
-                    logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
-                    if pdiag is not None:
-                        pdiag.trim_reject = f"exception: {exc}"
-                    out = None
-                if out is not None and len(out[1]):
-                    pm = PartMesh(part_id=plate.id,
-                                  name=plate.name or plate.id, kind="plate",
-                                  vertices=out[0], triangles=out[1],
-                                  normals=out[2])
-                    route = "mesh-trim"
+        try:
+            panel = vessel.panels.get(panel_id)
+            holes, hole_failures = _hole_polylines(plate, vessel, length, options)
+            if panel is not None:
+                if panel_id not in panel_holes:
+                    panel_holes[panel_id], failures = _hole_polylines(
+                        panel, vessel, length, options)
+                    hole_failures.update(failures)
+                holes += panel_holes[panel_id]
+            for key, reason in hole_failures.items():
+                logger.warning("CutBy hole not applied — {} ({})", reason, key)
+            result.hole_failures.update(hole_failures)
+            if len(candidates) > 1:
+                if panel_id not in chart_cache:
+                    t_chart = time.perf_counter()
+                    cdiag = (sink.charts.setdefault(panel_id, ChartDiag())
+                             if sink is not None else None)
+                    try:
+                        chart_cache[panel_id] = make_lscm_chart(
+                            candidates, options.tolerance_m,
+                            hints[panel_id], diag=cdiag)
+                    except Exception as exc:  # noqa: BLE001 — best member below
+                        logger.warning("LSCM chart for panel {} failed: {}",
+                                       panel_id, exc)
+                        chart_cache[panel_id] = None
+                    if cdiag is not None:
+                        cdiag.build_s = time.perf_counter() - t_chart
+                    logger.debug("Timing: LSCM chart for panel {} "
+                                 "({} members) in {:.2f}s", panel_id,
+                                 len(candidates), time.perf_counter() - t_chart)
+                chart = chart_cache[panel_id]
+                if chart is not None:
+                    if panel_id not in trim_cache:
+                        trim_cache[panel_id] = MeshTrimmer(*chart.mesh,
+                                                           options.tolerance_m)
+                    seed = (length.point(plate.point_on_surface)
+                            if plate.point_on_surface is not None else None)
+                    try:
+                        out = trim_cache[panel_id].trim(contour, holes, seed,
+                                                        diag=pdiag)
+                    except Exception as exc:  # noqa: BLE001 — fall back below
+                        logger.debug("Mesh trim failed for {}: {}", plate.id, exc)
+                        if pdiag is not None:
+                            pdiag.trim_reject = f"exception: {exc}"
+                        out = None
+                    if out is not None and len(out[1]):
+                        pm = PartMesh(part_id=plate.id,
+                                      name=plate.name or plate.id, kind="plate",
+                                      vertices=out[0], triangles=out[1],
+                                      normals=out[2])
+                        route = "mesh-trim"
+                if pm is None:
+                    local = chart.param_for(contour) if chart is not None else None
+                    if pdiag is not None and chart is not None:
+                        pdiag.chart_stage = chart.last_stage
+                    param = local or _best_param(candidates, contour)
+                    route = "lscm" if local is not None else "best-member"
+            else:
+                param = candidates[0]
+            t_param = time.perf_counter()
             if pm is None:
-                local = chart.param_for(contour) if chart is not None else None
-                if pdiag is not None and chart is not None:
-                    pdiag.chart_stage = chart.last_stage
-                param = local or _best_param(candidates, contour)
-                route = "lscm" if local is not None else "best-member"
-        else:
-            param = candidates[0]
-        t_param = time.perf_counter()
-        if pm is None:
-            pm = tess.tessellate_trimmed_surface(
-                plate.id, plate.name or plate.id, "plate", contour, holes,
-                param, options)
-        if pm is None and local is not None:
-            # chart built but this contour would not triangulate on it:
-            # retry once on the best single member before giving up
-            pm = tess.tessellate_trimmed_surface(
-                plate.id, plate.name or plate.id, "plate", contour, holes,
-                _best_param(candidates, contour), options)
-            route = "best-member"
-        if pm is None:
-            result.skipped[plate.id] = "triangulation failed"
+                pm = tess.tessellate_trimmed_surface(
+                    plate.id, plate.name or plate.id, "plate", contour, holes,
+                    param, options)
+            if pm is None and local is not None:
+                # chart built but this contour would not triangulate on it:
+                # retry once on the best single member before giving up
+                pm = tess.tessellate_trimmed_surface(
+                    plate.id, plate.name or plate.id, "plate", contour, holes,
+                    _best_param(candidates, contour), options)
+                route = "best-member"
+            if pm is None:
+                result.skipped[plate.id] = "triangulation failed"
+                return
+            pm.extras.update({"id": plate.id, "guid": plate.guidref,
+                              "kind": "plate", "functionType": plate.function_type,
+                              "panel_id": panel_id,
+                              "thickness_mm": _thickness_mm(length,
+                                                            plate.thickness)})
+            result.meshes.append(pm)
+            logger.debug("Timing: plate {} param {:.2f}s, total {:.2f}s",
+                         plate.id, t_param - t_plate,
+                         time.perf_counter() - t_plate)
+        except Exception as exc:  # noqa: BLE001 — isolate per-part failures
+            _record_error(result, plate.id, exc)
+        finally:
+            # Recorded on every outcome so failed plates are diagnosable too.
+            if pdiag is not None:
+                pdiag.route = route
+                pdiag.local_param = local
+                pdiag.chart = sink.charts.get(panel_id)
+                pdiag.seconds = time.perf_counter() - t_plate
+                pdiag.failure = result.skipped.get(plate.id)
+
+    for plate, contour in items:
+        tessellate_plate(plate, contour)
+
+
+# Per-process state of a plate worker, set once by _init_worker.
+_WORKER: dict = {}
+
+
+def _init_worker(vessel_bytes: bytes, options: TessellationOptions) -> None:
+    vessel = pickle.loads(vessel_bytes)
+    logs: list[tuple[str, str]] = []
+    _WORKER.update(vessel=vessel, options=options, logs=logs,
+                   length=LengthResolver(vessel.unit_registry),
+                   tess=UvTessellator())
+    # Collect records for the parent to re-log under its own configuration.
+    logger.remove()
+    logger.add(lambda m: logs.append((m.record["level"].name,
+                                      m.record["message"])), level="DEBUG")
+
+
+def _panel_task(panel_id: str, items: list[tuple[str, np.ndarray]],
+                hints: list[np.ndarray]
+                ) -> tuple[RenderResult, list[tuple[str, str]]]:
+    """Worker side: tessellate plates of one panel; passed by plate id."""
+    w = _WORKER
+    w["logs"].clear()
+    vessel = w["vessel"]
+    out = RenderResult()
+    candidates = _panel_params(vessel.panels[panel_id], vessel, w["length"],
+                               w["options"])
+    _tessellate_panel(vessel, panel_id, candidates,
+                      [(vessel.plates[pid], c) for pid, c in items],
+                      w["tess"], w["length"], w["options"], out, hints)
+    return out, list(w["logs"])
+
+
+# Plates per task on charted (multi-member) panels: these dominate render
+# time, so they are split; each chunk rebuilds the panel chart (~0.1 s).
+_CHART_CHUNK = 8
+
+
+def _tessellate_panels_parallel(vessel: IrVessel,
+                                groups: dict[str, list[tuple]],
+                                charted: set[str],
+                                options: TessellationOptions
+                                ) -> dict[str, RenderResult]:
+    """Tessellate panels in worker processes.  Panels missing from the
+    returned dict (pool not used, or any of its tasks failed) are left for
+    the caller to render serially."""
+    tasks = []   # (panel_id, chunk index, items)
+    for pid, items in groups.items():
+        size = _CHART_CHUNK if pid in charted else len(items)
+        for k, i in enumerate(range(0, len(items), size)):
+            tasks.append((pid, k, items[i:i + size]))
+    workers = min(options.workers, len(tasks))
+    if workers <= 1 or options.diag is not None:
+        return {}
+    try:
+        payload = pickle.dumps(vessel, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as exc:  # noqa: BLE001 — fall back to serial
+        logger.warning("Cannot ship model to workers ({}); rendering plates "
+                       "serially", exc)
+        return {}
+    chunks: dict[tuple[str, int], RenderResult] = {}
+    failed: set[str] = set()
+    logged: set[tuple[str, str]] = set()
+    # Charted chunks first, then larger panels: long tasks start early.
+    tasks.sort(key=lambda t: (t[0] not in charted, -len(t[2])))
+    try:
+        with ProcessPoolExecutor(workers, initializer=_init_worker,
+                                 initargs=(payload, options)) as pool:
+            futures = {pool.submit(_panel_task, pid, [(p.id, c) for p, c in items],
+                                   [c for _, c in groups[pid]]): (pid, k)
+                       for pid, k, items in tasks}
+            for fut in as_completed(futures):
+                pid, k = futures[fut]
+                try:
+                    out, logs = fut.result()
+                except Exception as exc:  # noqa: BLE001 — caller retries serially
+                    if pid not in failed:
+                        logger.warning("Plate worker failed on panel {} ({}); "
+                                       "rendering it serially", pid, exc)
+                    failed.add(pid)
+                    continue
+                # Chunks of a panel repeat its panel-hole warnings: log once.
+                for record in logs:
+                    if record not in logged:
+                        logged.add(record)
+                        logger.log(*record)
+                chunks[(pid, k)] = out
+    except Exception as exc:  # noqa: BLE001 — pool itself broke
+        # e.g. workers cannot start: an unguarded ``__main__`` under spawn.
+        logger.warning("Plate worker pool failed ({}); rendering plates "
+                       "serially", exc)
+        return {}
+
+    outputs: dict[str, RenderResult] = {}
+    for (pid, k) in sorted(chunks, key=lambda key: key[1]):
+        if pid in failed:
             continue
-        pm.extras.update({"id": plate.id, "guid": plate.guidref,
-                          "kind": "plate", "functionType": plate.function_type,
-                          "panel_id": panel_id})
-        result.meshes.append(pm)
-        if pdiag is not None:
-            pdiag.route = route
-            pdiag.local_param = local
-            pdiag.chart = sink.charts.get(panel_id)
-            pdiag.seconds = time.perf_counter() - t_plate
-        logger.debug("Timing: plate {}/{} {} param {:.2f}s, total {:.2f}s "
-                     "(elapsed {:.0f}s)", idx, n_total, plate.id,
-                     t_param - t_plate, time.perf_counter() - t_plate,
-                     time.perf_counter() - t_pass2)
+        out = outputs.setdefault(pid, RenderResult())
+        out.meshes += chunks[(pid, k)].meshes
+        out.skipped.update(chunks[(pid, k)].skipped)
+        out.hole_failures.update(chunks[(pid, k)].hole_failures)
+    return outputs
 
 
 def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
@@ -340,51 +526,83 @@ def _sweep_part(part, kind: str, vessel: IrVessel, length: LengthResolver,
         result.skipped[part.id] = "sweep failed"
         return
     verts, faces = out
-    panel_id = (part.parent_ref.id
-                if part.parent_ref.kind == ParentKind.PANEL else None)
+    panel_id = _panel_of(part)
     pm = PartMesh(part_id=part.id, name=part.name or part.id, kind=kind,
                   vertices=verts, triangles=faces,
                   extras={"id": part.id, "guid": part.guidref, "kind": kind,
                           "functionType": part.function_type,
-                          "panel_id": panel_id})
+                          "panel_id": panel_id,
+                          "section": (part.section_ref.local_ref
+                                      if part.section_ref is not None else None)})
     result.meshes.append(pm)
+
+
+def _guarded_sweep(part, kind: str, vessel: IrVessel, length: LengthResolver,
+                   options: TessellationOptions, result: RenderResult) -> None:
+    if _excluded(_panel_of(part), options):
+        return
+    try:
+        _sweep_part(part, kind, vessel, length, options, result)
+    except Exception as exc:  # noqa: BLE001 — isolate per-part failures
+        _record_error(result, part.id, exc)
 
 
 def _tessellate_brackets(vessel: IrVessel, length: LengthResolver,
                          options: TessellationOptions,
                          result: RenderResult) -> None:
     for br in vessel.brackets.values():
-        panel_id = (br.parent_ref.id
-                    if br.parent_ref.kind == ParentKind.PANEL else None)
-        if options.only_panels is not None and panel_id not in options.only_panels:
+        panel_id = _panel_of(br)
+        if _excluded(panel_id, options):
             continue
-        if br.outer_contour is None:
-            result.skipped[br.id] = "no outer contour"
-            continue
-        pts = sample_contour(br.outer_contour, length, options.tolerance_m,
-                             options.snap_tolerance_m)
-        if pts is None or len(pts) < 3:
-            result.skipped[br.id] = "contour unsampleable or open"
-            continue
-        plane = None
-        if (br.plane is not None and br.plane.normal is not None
-                and br.plane.point_on_surface is not None):
-            plane = (length.point(br.plane.point_on_surface),
-                     np.array([br.plane.normal.x, br.plane.normal.y,
-                               br.plane.normal.z], dtype=np.float64))
-        thickness = length.qty(br.thickness)
-        offset = length.qty(br.offset)
-        out = tessellate_bracket(pts, plane, thickness, offset,
-                                 options.tolerance_m)
-        if out is None:
-            result.skipped[br.id] = "degenerate or non-planar contour"
-            continue
-        verts, faces, normals = out
-        pm = PartMesh(part_id=br.id, name=br.name or br.id, kind="bracket",
-                      vertices=verts, triangles=faces, normals=normals,
-                      extras={"id": br.id, "guid": br.guidref,
-                              "kind": "bracket", "panel_id": panel_id})
-        result.meshes.append(pm)
+        try:
+            _tessellate_bracket(br, panel_id, length, options, result)
+        except Exception as exc:  # noqa: BLE001 — isolate per-part failures
+            _record_error(result, br.id, exc)
+
+
+def _tessellate_bracket(br, panel_id: str | None, length: LengthResolver,
+                        options: TessellationOptions,
+                        result: RenderResult) -> None:
+    if br.outer_contour is None:
+        result.skipped[br.id] = "no outer contour"
+        return
+    pts = sample_contour(br.outer_contour, length, options.tolerance_m,
+                         options.snap_tolerance_m)
+    if pts is None or len(pts) < 3:
+        result.skipped[br.id] = "contour unsampleable or open"
+        return
+    plane = None
+    if (br.plane is not None and br.plane.normal is not None
+            and br.plane.point_on_surface is not None):
+        plane = (length.point(br.plane.point_on_surface),
+                 np.array([br.plane.normal.x, br.plane.normal.y,
+                           br.plane.normal.z], dtype=np.float64))
+    thickness = length.qty(br.thickness)
+    offset = length.qty(br.offset)
+    out = tessellate_bracket(pts, plane, thickness, offset,
+                             options.tolerance_m)
+    if out is None:
+        result.skipped[br.id] = "degenerate or non-planar contour"
+        return
+    verts, faces, normals = out
+    pm = PartMesh(part_id=br.id, name=br.name or br.id, kind="bracket",
+                  vertices=verts, triangles=faces, normals=normals,
+                  extras={"id": br.id, "guid": br.guidref,
+                          "kind": "bracket", "panel_id": panel_id,
+                          "thickness_mm": _thickness_mm(length, br.thickness)})
+    result.meshes.append(pm)
+
+
+def _panel_params(panel: IrPanel, vessel: IrVessel, length: LengthResolver,
+                  options: TessellationOptions) -> list[SurfaceParam]:
+    """Surface parametrizations of a panel (empty when none resolve)."""
+    try:
+        surfs = _resolve_panel_surfaces(panel, vessel)
+        built = (make_param(s, length, options.tolerance_m) for s in surfs)
+        return [p for p in built if p is not None]
+    except Exception as exc:  # noqa: BLE001 — its plates are skipped
+        logger.warning("Surface for panel {} failed: {}", panel.id, exc)
+        return []
 
 
 def render_model(vessel: IrVessel,
@@ -398,11 +616,9 @@ def render_model(vessel: IrVessel,
 
     params: dict[str, list[SurfaceParam]] = {}
     for pid, panel in vessel.panels.items():
-        if options.only_panels is not None and pid not in options.only_panels:
+        if _excluded(pid, options):
             continue
-        surfs = _resolve_panel_surfaces(panel, vessel)
-        built = (make_param(s, length, options.tolerance_m) for s in surfs)
-        params[pid] = [p for p in built if p is not None]
+        params[pid] = _panel_params(panel, vessel, length, options)
     t_params = time.perf_counter()
     logger.debug("Timing: surface params for {} panels in {:.2f}s",
                  len(params), t_params - t_start)
@@ -411,12 +627,12 @@ def render_model(vessel: IrVessel,
     t_plates = time.perf_counter()
     logger.debug("Timing: plates done in {:.2f}s", t_plates - t_params)
     for stiffener in vessel.stiffeners.values():
-        _sweep_part(stiffener, "stiffener", vessel, length, options, result)
+        _guarded_sweep(stiffener, "stiffener", vessel, length, options, result)
     t_stiff = time.perf_counter()
     logger.debug("Timing: {} stiffeners in {:.2f}s",
                  len(vessel.stiffeners), t_stiff - t_plates)
     for pillar in vessel.pillars.values():
-        _sweep_part(pillar, "pillar", vessel, length, options, result)
+        _guarded_sweep(pillar, "pillar", vessel, length, options, result)
     logger.debug("Timing: {} pillars in {:.2f}s", len(vessel.pillars),
                  time.perf_counter() - t_stiff)
     t_pillars = time.perf_counter()
@@ -426,11 +642,9 @@ def render_model(vessel: IrVessel,
     logger.debug("Timing: render_model total {:.2f}s",
                  time.perf_counter() - t_start)
 
-    # Hole failures (keys containing "/hole:") are not skipped parts.
-    part_skips = sum(1 for k in result.skipped if "/hole:" not in k)
-    logger.info("Render: {} parts tessellated, {} skipped",
-                result.rendered_count, part_skips)
-    if result.skipped:
-        for part_id, reason in result.skipped.items():
-            logger.debug("Skipped {}: {}", part_id, reason)
+    logger.info("Render: {} parts tessellated, {} skipped, {} holes not "
+                "applied", result.rendered_count, result.skipped_count,
+                len(result.hole_failures))
+    for part_id, reason in result.skipped.items():
+        logger.debug("Skipped {}: {}", part_id, reason)
     return result

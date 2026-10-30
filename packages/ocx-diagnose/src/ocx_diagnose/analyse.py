@@ -124,7 +124,8 @@ def analyse_model(vessel, panel_ids: set[str] | None, tolerance_mm: float,
                      if getattr(p.parent_ref, "id", None) == panel_id}
         panel = PanelResult(
             panel_id=panel_id, chart=sink.charts.get(panel_id), plates=plates,
-            skipped={k: v for k, v in skips.items() if k.split("/")[0] in plate_ids},
+            skipped={k: v for k, v in skips.items()
+                     if k.split("/")[0] in plate_ids | {panel_id}},
             sweep=run_sweep(vessel, {panel_id}, sweep_mm) if sweep_mm else [],
             seconds=sum(p.seconds for p in plates), tol_m=tol_m)
         t_adv = time.perf_counter()

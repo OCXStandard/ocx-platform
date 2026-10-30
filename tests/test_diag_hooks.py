@@ -77,3 +77,61 @@ def test_param_for_sets_last_stage():
         assert chart.last_stage in {"gates", "no-gates", "tutte"}
         V, F, uv = param.chart
         assert len(uv) == len(V)
+
+
+def test_plate_skips_include_panel_level_hole_failures():
+    from ocx_diagnose.sweep import plate_skips
+    from ocx_geometry.backend import RenderResult
+
+    vessel = make_vessel()
+    res = RenderResult()
+    res.hole_failures["pan1/hole:hc1"] = "unresolvable HoleRef"
+    res.hole_failures["other/hole:hc9"] = "unresolvable HoleRef"
+    assert plate_skips(vessel, res, {"pan1"}) == {
+        "pan1/hole:hc1": "unresolvable HoleRef"}
+    assert "pan1/hole:hc1" in plate_skips(vessel, res, None)
+
+
+def test_only_panels_restricts_every_part_kind():
+    vessel = make_vessel()   # pl1 + st1 on pan1, vessel-level pillar pi1
+    res = render_model(vessel, TessellationOptions(only_panels=frozenset({"pan1"})))
+    assert sorted(m.part_id for m in res.meshes) == ["pl1", "st1"]
+    assert "pi1" not in res.skipped
+
+
+def test_only_panels_excluding_all_panels_renders_nothing():
+    res = render_model(make_vessel(),
+                       TessellationOptions(only_panels=frozenset({"nope"})))
+    assert res.meshes == [] and res.skipped == {}
+
+
+def _render_with_tessellator(monkeypatch, fake):
+    import ocx_render.render as render_mod
+    monkeypatch.setattr(render_mod.UvTessellator, "tessellate_trimmed_surface",
+                        fake)
+    sink = DiagSink()
+    res = render_model(make_vessel(), TessellationOptions(diag=sink))
+    return res, sink.plates["pl1"]
+
+
+def test_triangulation_failure_is_recorded_in_plate_diag(monkeypatch):
+    res, pd = _render_with_tessellator(monkeypatch, lambda *a, **k: None)
+    assert res.skipped["pl1"] == "triangulation failed"
+    assert pd.failure == "triangulation failed"
+    assert pd.route == "single" and pd.seconds > 0
+
+
+def test_plate_exception_is_recorded_in_plate_diag(monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    res, pd = _render_with_tessellator(monkeypatch, boom)
+    assert res.skipped["pl1"] == "error: boom"
+    assert pd.failure == "error: boom"
+    assert pd.route == "single" and pd.seconds > 0
+
+
+def test_rendered_plate_has_no_failure():
+    sink = DiagSink()
+    render_model(make_vessel(), TessellationOptions(diag=sink))
+    assert sink.plates["pl1"].failure is None

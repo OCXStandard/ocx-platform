@@ -1,6 +1,7 @@
 """ocx-render — tessellate a .3docx model into GLB + a self-contained HTML viewer."""
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -14,6 +15,12 @@ app = typer.Typer(add_completion=False)
 def configure_logging(level: str = "INFO") -> None:
     logger.remove()
     logger.add(sys.stderr, level=level)
+
+
+def _positive(value: float) -> float:
+    if value <= 0:
+        raise typer.BadParameter("must be greater than 0")
+    return value
 
 
 def _load_vessel(model: Path):
@@ -33,8 +40,19 @@ def render(
         None, "--destination", "-d",
         help="Output .glb path (default: next to the model)."),
     tolerance_mm: float = typer.Option(
-        50.0, "--tolerance",
-        help="Linear deflection tolerance in millimetres."),
+        50.0, "--tolerance", callback=_positive,
+        help="Linear deflection tolerance in millimetres (> 0)."),
+    panel: list[str] | None = typer.Option(
+        None, "--panel", "-p",
+        help="Render only parts of this panel id (repeatable)."),
+    color_by: str = typer.Option(
+        "thickness", "--color-by",
+        help="Colour plates/brackets by 'thickness' (stiffeners by section) "
+             "or each part individually ('part')."),
+    workers: int | None = typer.Option(
+        None, "--workers", "-j", min=1,
+        help="Processes for plate tessellation (default: all CPU cores; "
+             "1 = serial)."),
     no_html: bool = typer.Option(
         False, "--no-html", help="Skip writing the HTML viewer page."),
     log_level: str = typer.Option(
@@ -46,11 +64,15 @@ def render(
     Exit codes: 0 rendered (parts may be skipped), 1 nothing renderable,
     2 cannot parse/build the model, 3 cannot write output.
     """
+    from ocx_render.colors import COLOR_SCHEMES, apply_color_scheme
     from ocx_render.gltf_writer import write_glb
     from ocx_render.html_viewer import write_html
     from ocx_render.render import TessellationOptions, render_model
 
     configure_logging(log_level.upper())
+    if color_by not in COLOR_SCHEMES:
+        raise typer.BadParameter(
+            f"expected one of {', '.join(COLOR_SCHEMES)}", param_hint="--color-by")
     t0 = time.perf_counter()
     try:
         vessel = _load_vessel(model)
@@ -58,25 +80,36 @@ def render(
         logger.error("Cannot parse/build {}: {}", model, exc)
         raise typer.Exit(code=2) from exc
     logger.debug("Timing: parse+build in {:.2f}s", time.perf_counter() - t0)
+    only_panels = frozenset(panel) if panel else None
+    if only_panels is not None:
+        unknown = sorted(only_panels - vessel.panels.keys())
+        if unknown:
+            logger.warning("Unknown panel id(s), ignored: {}", ", ".join(unknown))
 
-    result = render_model(
-        vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0))
-    # Hole failures ("<plate_id>/hole:<id>" keys) are not skipped parts.
-    part_skips = sum(1 for k in result.skipped if "/hole:" not in k)
+    try:
+        result = render_model(
+            vessel, TessellationOptions(tolerance_m=tolerance_mm / 1000.0,
+                                        only_panels=only_panels,
+                                        workers=workers or os.cpu_count() or 1))
+    except Exception as exc:  # noqa: BLE001 — a whole-model failure renders nothing
+        logger.error("Cannot render {}: {}", model, exc)
+        raise typer.Exit(code=1) from exc
     if not result.meshes:
         logger.error("No renderable geometry in {} ({} parts skipped)",
-                     model, part_skips)
+                     model, result.skipped_count)
         raise typer.Exit(code=1)
 
     glb = destination if destination is not None else model.with_suffix(".glb")
     try:
-        write_glb(result.meshes, glb)
+        write_glb(result.meshes, glb,
+                  legend=apply_color_scheme(result.meshes, color_by))
         typer.echo(f"GLB written to {glb} "
-                   f"({result.rendered_count} parts, {part_skips} skipped)")
+                   f"({result.rendered_count} parts, "
+                   f"{result.skipped_count} skipped)")
         if not no_html:
             html = write_html(glb)
             typer.echo(f"Viewer written to {html}")
-    except OSError as exc:
+    except Exception as exc:  # noqa: BLE001 — any write/export failure is exit 3
         logger.error("Cannot write output for {}: {}", model, exc)
         raise typer.Exit(code=3) from exc
 

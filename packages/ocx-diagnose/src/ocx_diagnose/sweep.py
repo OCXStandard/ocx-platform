@@ -25,16 +25,19 @@ class SweepPoint:
 
 
 def plate_meshes(result, sink: DiagSink) -> list:
-    """Plate meshes only (only_panels filters plates, not stiffeners)."""
+    """Plate meshes only (only_panels also renders the panels' stiffeners)."""
     return [m for m in result.meshes
             if m.extras.get("kind") == "plate" and m.part_id in sink.plates]
 
 
 def plate_skips(vessel, result, panel_ids: set[str] | None) -> dict[str, str]:
-    """Skip log entries belonging to plates of the analysed panels."""
+    """Skip-log and hole-failure entries for plates of the analysed panels
+    (panel-level hole failures are keyed by the panel id)."""
     ids = {p.id for p in vessel.plates.values()
            if panel_ids is None or getattr(p.parent_ref, "id", None) in panel_ids}
-    return {k: v for k, v in result.skipped.items() if k.split("/")[0] in ids}
+    ids |= set(vessel.panels) if panel_ids is None else set(panel_ids)
+    entries = {**result.skipped, **result.hole_failures}
+    return {k: v for k, v in entries.items() if k.split("/")[0] in ids}
 
 
 def deviations(result, sink: DiagSink) -> np.ndarray:

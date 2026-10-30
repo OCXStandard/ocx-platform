@@ -295,10 +295,55 @@ class TestCutByHoles:
         vessel.hole_shape_catalogue.holes.clear()
         result = render_model(vessel)
         assert any(m.kind == "plate" for m in result.meshes)
-        assert result.skipped.get("pl1/hole:hc1") == "unresolvable HoleRef"
+        assert result.hole_failures == {"pan1/hole:hc1": "unresolvable HoleRef"}
 
     def test_missing_transformation_is_logged_not_fatal(self):
         result = render_model(self._vessel_with_hole(with_transformation=False))
         assert any(m.kind == "plate" for m in result.meshes)
-        assert result.skipped.get("pl1/hole:hc1") == "missing or degenerate transformation"
+        assert result.hole_failures == {
+            "pan1/hole:hc1": "missing or degenerate transformation"}
 
+
+
+class TestPanelHolesResolvedOncePerPanel:
+    @staticmethod
+    def _two_plate_vessel(with_transformation=True):
+        vessel = TestCutByHoles()._vessel_with_hole(with_transformation)
+        vessel.plates["pl2"] = IrPlate(
+            id="pl2", parent_ref=ParentRef(ParentKind.PANEL, "pan1"),
+            name="Plate 2",
+            outer_contour=IrPolyLine3D(None, vertices=[
+                pt(4, 0, 0), pt(8, 0, 0), pt(8, 2, 0), pt(4, 2, 0), pt(4, 0, 0)]))
+        vessel.panels["pan1"].plate_ids.append("pl2")
+        return vessel
+
+    def test_panel_hole_placed_once_for_all_plates(self, monkeypatch):
+        import ocx_render.render as render_mod
+
+        calls = []
+        real = render_mod.place_hole
+
+        def counting(*args, **kwargs):
+            calls.append(1)
+            return real(*args, **kwargs)
+
+        monkeypatch.setattr(render_mod, "place_hole", counting)
+        result = render_model(self._two_plate_vessel())
+        assert sum(m.kind == "plate" for m in result.meshes) == 2
+        assert len(calls) == 1
+
+    def test_panel_hole_failure_reported_once_under_panel_id(self):
+        result = render_model(self._two_plate_vessel(with_transformation=False))
+        assert sum(m.kind == "plate" for m in result.meshes) == 2
+        assert result.hole_failures == {
+            "pan1/hole:hc1": "missing or degenerate transformation"}
+
+    def test_plate_hole_failure_keyed_by_plate_id(self):
+        from ocx_model_core.model.ir.structural import IrHole2DContour
+
+        vessel = self._two_plate_vessel()
+        vessel.panels["pan1"].cut_by_holes.clear()
+        vessel.plates["pl2"].cut_by_holes.append(
+            IrHole2DContour(id="hc2", hole_ref=Ref("missing")))
+        result = render_model(vessel)
+        assert result.hole_failures == {"pl2/hole:hc2": "unresolvable HoleRef"}

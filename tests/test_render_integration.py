@@ -42,8 +42,7 @@ def test_tr04_tc13_renders_with_cutouts():
 
     result = render_model(vessel, TessellationOptions())
     assert any(m.kind == "plate" for m in result.meshes)
-    hole_failures = {k: v for k, v in result.skipped.items() if "/hole:" in k}
-    assert hole_failures == {}
+    assert result.hole_failures == {}
     area_holed = _plate_area(result.meshes)
 
     # Rendering with the holes stripped must give a measurably larger area.
@@ -115,8 +114,7 @@ def test_tr04_tc13_ai3dx_contour_holes_are_cut():
 
     result = render_model(vessel, TessellationOptions())
     assert any(m.kind == "plate" for m in result.meshes)
-    hole_failures = {k: v for k, v in result.skipped.items() if "/hole:" in k}
-    assert hole_failures == {}
+    assert result.hole_failures == {}
     area_holed = _plate_area(result.meshes)
 
     for key, p in list(vessel.panels.items()):

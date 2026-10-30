@@ -23,6 +23,9 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short -m \"not integration\""
+addopts = "-v --tb=short -m \"not integration and not browser\""
 pythonpath = ["."]
-markers = ["integration: requires the real OCX reference model"]
+markers = [
+    "integration: requires the real OCX reference model",
+    "browser: drives headless Chrome; needs network access to unpkg.com",
+]
