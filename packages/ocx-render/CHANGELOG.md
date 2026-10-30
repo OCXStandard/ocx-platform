@@ -9,6 +9,16 @@
   brackets without a usable thickness render as flat sheets. Brackets
   were previously ignored by the renderer.
 
+### Added
+
+- HTML viewer: parts tree grouped by panel (rows built lazily on first
+  open), a filter box matching name / id / guid / panel id / function
+  type (first 500 hits), show/hide checkboxes on panels and parts, and
+  click-to-select in the 3D view (drags still orbit; hidden parts are
+  not pickable). Selecting from the 3D view reveals the part's tree row.
+- `browser` pytest marker (deselected by default) for a headless-Chrome
+  viewer test.
+
 ### Changed
 
 - CutBy hole failures are reported in the new `RenderResult.hole_failures`
@@ -32,6 +42,17 @@
 - The CLI maps every failure to its documented exit code: an unexpected
   `render_model` failure exits 1 and any write/export error exits 3
   (previously only `OSError`; other errors printed a traceback).
+- HTML viewer:
+  - shows "needs network access" instead of a blank page when three.js
+    cannot be loaded from the CDN; the README now states the dependency;
+  - decodes the embedded GLB via a `data:` URL fetch instead of `atob`
+    plus a per-byte copy (much faster and leaner on large models);
+  - restores and disposes the highlight material on deselect (each
+    selection previously leaked a material clone);
+  - HTML-escapes the page title, and placeholder text in a file name is
+    no longer substituted;
+  - camera near/far planes follow the view distance instead of a fixed
+    0.01–1e6 range that z-fought on ship-sized models.
 - `--destination` without a `.glb` suffix is written as GLB instead of
   failing with "unsupported export format".
 
