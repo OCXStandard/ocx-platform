@@ -124,7 +124,11 @@ def _facet_member(member: SurfaceParam, dom, tol_m: float):
 
     def n_cells(span_m: float) -> int:
         if edge is None or edge <= 0.0:
-            return 1                    # flat direction: one cell suffices
+            # flat direction: one cell would be exact, but a seam with a
+            # densely sampled neighbour is then stitched into a fan of
+            # needle triangles the mesh trimmer cannot walk through
+            return int(np.clip(math.ceil(span_m / max(20.0 * tol_m, 0.5)),
+                               1, _MAX_GRID))
         return int(np.clip(math.ceil(span_m / edge), 1, _MAX_GRID))
 
     nu, nv = n_cells((u1 - u0) * su), n_cells((v1 - v0) * sv)
@@ -403,6 +407,11 @@ def _stitch(V: np.ndarray, F: np.ndarray, src: list[dict],
                     continue
                 gap = float(np.linalg.norm(V[a] + t * d - V[w]))
                 if gap > snap_tol:
+                    continue
+                # A T-junction lies along the edge.  A vertex merely beside
+                # an endpoint (e.g. a pole's thin row, 1 cm off) is not
+                # one: splitting there folds the patch over itself.
+                if gap > min(t, 1.0 - t) * seg:
                     continue
                 if best is None or gap < best[0]:
                     best = (gap, w, t)

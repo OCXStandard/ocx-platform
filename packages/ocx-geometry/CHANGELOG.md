@@ -23,6 +23,21 @@
 
 ### Fixed
 
+- LSCM chart construction (`_facet_member`): flat directions of bounded
+  (NURBS) members are now faceted on a grid of ~max(20 × tol, 0.5 m)
+  cells instead of a single cell. A one-cell flat patch next to a densely
+  sampled neighbour was stitched into a fan of needle triangles along the
+  shared seam (15 m long, sub-millimetre wide on the ropax side shell),
+  which the mesh trimmer cannot walk through: plate outlines along the
+  seam jumped between faces and the trims kept the whole hull side or
+  only fragments (ropax `nplcid2934`, `nplcid2938`, `nplcid4218`,
+  `nplcid4222`).
+- LSCM chart construction (`_stitch`): a boundary vertex is no longer
+  taken as a T-junction when it lies merely beside an edge's endpoint
+  (farther off the edge than along it from the nearer end). A triangular
+  patch's thin pole row puts a vertex 1 cm from the end of its top edge,
+  inside the snap tolerance; splitting the edge there folded the patch
+  over its seam sliver.
 - Mesh trimming (`MeshTrimmer._cut`): each cut piece's inside/outside side
   is now read at the ring itself — probes just left and right of every
   ring segment's midpoint vote for the piece they fall in, weighted by

@@ -153,10 +153,10 @@ class TestBuildMesh:
         from ocx_geometry.lscm import _build_mesh
         cm = _build_mesh(_grid_members(), tol_m=0.01, hint_pts=None)
         assert cm is not None
-        # 4 one-cell patches = 16 raw corners; welding shared corners
-        # leaves the 3x3 lattice of 9 distinct vertices
-        assert len(cm.V) == 9
-        assert len(cm.F) == 8
+        # 4 flat patches of 4x4 cells (0.5 m) = 100 raw grid points;
+        # welding the shared seams leaves one 9x9 lattice
+        assert len(cm.V) == 81
+        assert len(cm.F) == 128
         # every triangle knows its source member
         assert (cm.tri_member >= 0).all()
 
@@ -181,6 +181,29 @@ class TestBuildMesh:
                     continue
                 gap = np.linalg.norm(cm.V[a] + t * d - cm.V[w])
                 assert gap > 1e-4, f"T-junction left at vertex {w}"
+
+    def test_stitch_does_not_fold_a_patch_at_its_pole_row(self):
+        """Regression (tr05_tc18 ropax SHELL_S/SHELL_P member 181): a
+        triangular patch's thin pole row puts a vertex 1 cm beside the end
+        of its top edge, inside the snap tolerance.  That is no T-junction:
+        splitting the edge there folded the patch over its seam sliver, and
+        the overlapping layers leaked plate trims along the seam."""
+        from ocx_geometry.lscm import _stitch
+        V = np.array([[133.9266, 0.0, 10.0],     # thin pole row, v0
+                      [133.9265, 0.0, 9.99],     # thin pole row, v1
+                      [119.0262, 0.0, 10.0],
+                      [119.0262, 0.0, 7.834]])
+        F = np.array([[0, 2, 3], [0, 3, 1]])
+        src = [{0: (0.0, 0.0)} for _ in V]
+
+        def area(F):
+            t = V[F]
+            return 0.5 * np.linalg.norm(np.cross(
+                t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]), axis=1).sum()
+
+        out = _stitch(V, F, src, snap_tol=0.025)
+        assert area(out) == pytest.approx(area(F), rel=1e-9)
+        assert len(out) == 2
 
     def test_source_backpointers_evaluate_onto_their_vertices(self):
         """Every stored (member, local uv) must evaluate back onto its
@@ -718,3 +741,71 @@ class TestHullModelChart:
             gaps = shapely.distance(coverage, probes2[inside])
             assert gaps.max() < 2 * options.tolerance_m, (
                 f"{mesh.name}: uncovered plate region {gaps.max():.3f} m wide")
+
+
+def _ropax_seam_members():
+    """tr05_tc18 ropax side-shell patches nplcid2522 (flat, triangular:
+    the u0 edge collapses to a pole) and nplcid2525 (curved, pole at the
+    other end), sharing the diagonal seam (119.03, 7.834)-(134, 10)."""
+    def bicubic(pid, rows):
+        return IrNurbsSurface(
+            id=pid, u_degree=3, v_degree=3,
+            u_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1],
+            v_knot_vector=[0, 0, 0, 0, 1, 1, 1, 1],
+            control_points=[[pt(*p) for p in row] for row in rows])
+
+    flat = bicubic("nplcid2522", [
+        [(134.0, -13.2, 10.0)] * 4,
+        [(129.00874, -13.2, 10.0), (129.00712, -13.2, 9.77224),
+         (129.0055, -13.2, 9.5445), (129.00388, -13.2, 9.3202)],
+        [(124.0175, -13.2, 10.0), (124.01425, -13.2, 9.5445),
+         (124.011, -13.2, 9.08898), (124.00776, -13.2, 8.64038)],
+        [(119.02623, -13.2, 10.0), (119.02623, -13.2, 9.27454),
+         (119.02623, -13.2, 8.54908), (119.02623, -13.2, 7.834)]])
+    curved = bicubic("nplcid2525", [
+        [(119.02623, -13.2, 7.834)] * 4,
+        [(124.02794, -13.152, 7.834), (124.0204, -13.17397, 8.1023),
+         (124.0152, -13.17082, 8.3639), (124.00776, -13.2, 8.64038)],
+        [(129.02888, -13.0232, 7.834), (129.01924, -13.16227, 8.32263),
+         (129.01243, -13.23586, 8.81457), (129.00388, -13.2, 9.3202)],
+        [(134.0, -12.55783, 7.834), (134.0, -12.8845, 8.53352),
+         (134.0, -13.2, 9.26676), (134.0, -13.2, 10.0)]])
+    members = [make_param(s, LR, tol_m=0.05) for s in (flat, curved)]
+    assert all(m is not None for m in members)
+    return members
+
+
+class TestRopaxSeamChart:
+    """Regression (tr05_tc18 ropax SHELL_S/SHELL_P, plates nplcid2934,
+    nplcid2938, nplcid4218, nplcid4222): along this seam the flat patch
+    was faceted as a single cell whose seam side, after stitching, became
+    a folded fan of 15 m needle triangles.  Plate outlines running along
+    the seam jumped between the layers and the trims kept the whole hull
+    side or only fragments."""
+
+    def test_outline_across_the_seam_trims_to_its_own_area(self):
+        from ocx_geometry.lscm import make_lscm_chart
+        from ocx_geometry.mesh_trim import MeshTrimmer
+        flat, curved = _ropax_seam_members()
+        # a 6 m x 0.8 m outline centred on the seam: the upper half lies
+        # on the flat patch, the lower half projected onto the curved one
+        x = np.linspace(123.0, 129.0, 61)
+        seam = 7.834 + (x - 119.02623) * (10.0 - 7.834) / (134.0 - 119.02623)
+        top = np.column_stack([x, np.full_like(x, -13.2), seam + 0.4])
+        low = np.column_stack([x, np.full_like(x, -13.2), seam - 0.4])
+        low = np.asarray(curved.evaluate(curved.inverse(low)))
+        side = lambda p, q: np.linspace(p, q, 9)[1:-1]   # noqa: E731
+        ring = np.vstack([low, side(low[-1], top[-1]), top[::-1],
+                          side(top[0], low[0])])
+        ring[len(low):len(low) + 7] = np.asarray(curved.evaluate(
+            curved.inverse(ring[len(low):len(low) + 7])))
+        chart = make_lscm_chart([flat, curved], 0.05, [ring])
+        assert chart is not None
+        out = MeshTrimmer(*chart.mesh, 0.05).trim(ring, [], None)
+        assert out is not None
+        t = out[0][out[1]]
+        kept = 0.5 * np.linalg.norm(np.cross(
+            t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]).sum(axis=0))
+        want = 0.5 * np.linalg.norm(np.cross(
+            ring, np.roll(ring, -1, axis=0)).sum(axis=0))
+        assert kept == pytest.approx(want, rel=0.02)
