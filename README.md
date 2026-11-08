@@ -54,6 +54,12 @@ making downstream tools independent of any particular OCX schema version.
   was inferred from metrics. Findings are also written to the JSON output.
   `ocx-diagnose top-001` plots the unresolved LimitedBy contours of panels
   failing rule OCX-TOP-001 (panel boundary must close).
+- **Integrity manifest - EXPERIMENTAL** (`ocx-integrity`): stable part IDs and
+  canonical, salted per-aspect hashes (identity, material, scantlings,
+  geometry, physical) rolled up in an RFC 9162 Merkle tree to one manifest
+  root. `verify` and `diff` report exactly which parts and aspects changed.
+  `prove` writes a selective-disclosure bundle that class can `check` without
+  the yard key (profile `ocx-hash/1`).
 
 ---
 
@@ -193,6 +199,13 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   │       ├── manager.py         ← RuleManager: entry-point discovery + execution
 │   │       ├── config.py          ← user TOML config (disable/severity/params)
 │   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks/ package
+│   ├── ocx-integrity/             ← salted aspect hashes + Merkle manifest (core only)
+│   │   └── src/ocx_integrity/
+│   │       ├── profile.py / quantize.py / canon_geom.py ← ocx-hash/1 canonicalisation
+│   │       ├── records/           ← per-kind canonical aspect records
+│   │       ├── salts.py / hashing.py / merkle.py ← HMAC salts, JCS hashing, RFC 9162
+│   │       ├── manifest.py / diff.py / verify.py / proof.py
+│   │       └── cli.py             ← ocx-integrity entrypoint
 │   └── ocx-model-validator/       ← validation, reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── cli.py             ← validator / ocx-validate CLI entrypoint
@@ -217,7 +230,7 @@ ocx-platform/                      ← workspace root (virtual — no package he
 
 Dependency direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
 `ocx-render` → `ocx-geometry` → `ocx-model-core`,
-`ocx-diagnose` → `ocx-render` + `ocx-rules`, and
+`ocx-diagnose` → `ocx-render` + `ocx-rules`, `ocx-integrity` → `ocx-model-core`, and
 `ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
 geometry lazily when installed).
 A tessellation render/viewer can depend on core + geometry without ever being
@@ -268,6 +281,14 @@ ocx-diagnose diagnose model.3docx [--panel ID] [--tolerance 50] \
 
 # plot the unresolved LimitedBy contours of panels failing OCX-TOP-001
 ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
+
+# integrity manifest: salted aspect hashes + Merkle root (exit 0 ok / 1 changed or invalid / 2 cannot run / 3 cannot write)
+ocx-integrity keygen -o yard.key
+ocx-integrity manifest model.3docx --key yard.key -o manifest.json
+ocx-integrity verify model.3docx manifest.json --key yard.key
+ocx-integrity prove model.3docx manifest.json --key yard.key --part ID [--aspect A]... -o bundle.json
+ocx-integrity check bundle.json [--root HEX]
+ocx-integrity diff old.json new.json [--format text|json]
 
 # generate xsdata stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs
