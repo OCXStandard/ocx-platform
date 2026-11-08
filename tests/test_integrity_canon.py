@@ -8,6 +8,7 @@ from decimal import Decimal
 from ocx_integrity.canon_geom import _reverse_seg, curve_record
 from ocx_integrity.jsonutil import prune, sort_jcs, type_name
 from ocx_integrity.quantize import Quantizer, fmt_decimal
+from ocx_integrity.records import iter_parts
 from ocx_integrity.records.common import (
     Context,
     hole_placement,
@@ -419,3 +420,95 @@ def test_generic_section_extra_drops_nested_xml_ids():
     rec = section_value(Ref("S9"), Context(v))
     assert rec["part_id"] == "G-S9"
     assert rec["extra"] == {"catalogue_reference": "c"}
+
+
+def _parts(vessel):
+    ctx = Context(vessel)
+    return {p.part_id: p for p in iter_parts(vessel, ctx)}, ctx
+
+
+def test_iter_parts_yields_every_kind_once():
+    parts, ctx = _parts(make_vessel())
+    assert {pid: p.kind for pid, p in parts.items()} == {
+        "vessel:V1": "vessel",
+        "G-PL-1": "plate",
+        "ST1": "stiffener",
+        "G-PAN-1": "panel",
+        "SE1": "seam",
+        "G-COMP-1": "compartment",
+    }
+    assert ctx.warnings == []
+
+
+def test_plate_aspects():
+    parts, _ = _parts(make_vessel())
+    plate = parts["G-PL-1"]
+    assert list(plate.aspects) == ["identity", "material", "scantlings", "geometry", "physical"]
+    assert plate.aspects["scantlings"] == {"kind": "plate", "thickness": "0.012000"}
+    assert plate.aspects["physical"]["curve_lengths"] == {"outer_contour": "8.000000"}
+    holes = plate.aspects["geometry"]["cut_by_holes"]
+    assert [h["transformation"]["origin"][0] for h in holes] == ["0.500000", "1.500000"]
+
+
+def test_stiffener_inlines_section_and_material():
+    parts, _ = _parts(make_vessel())
+    st = parts["ST1"]
+    assert st.id_source == "xml_id"
+    assert st.aspects["scantlings"]["section"]["part_id"] == "S1"
+    assert st.aspects["material"]["material"]["part_id"] == "G-MAT-1"
+    assert st.aspects["geometry"]["orientation_rule"] == "ocx:Up"
+    assert st.aspects["physical"]["curve_lengths"] == {"trace": "2.000000"}
+
+
+def test_panel_identity_and_geometry():
+    parts, _ = _parts(make_vessel())
+    pan = parts["G-PAN-1"]
+    assert pan.aspects["identity"]["children"] == {
+        "plates": ["G-PL-1"],
+        "stiffeners": ["ST1"],
+        "seams": ["SE1"],
+    }
+    assert "material" not in pan.aspects and "scantlings" not in pan.aspects
+    assert pan.aspects["geometry"]["limited_by"] == [
+        {"ref_type": "SeamRef", "target": "SE1"},
+        {"ref_type": "StiffenerRef", "target": "ST1"},
+    ]
+    assert pan.aspects["geometry"]["unbounded_geometry"]["surface"]["type"] == "plane3d"
+    assert pan.aspects["physical"]["mass_properties"]["moulded_dry_weight"] == "1800.000"
+
+
+def test_seam_compartment_vessel_records():
+    parts, _ = _parts(make_vessel())
+    assert parts["SE1"].aspects["physical"]["curve_lengths"] == {"trace_line": "2.000000"}
+    comp = parts["G-COMP-1"]
+    assert comp.aspects["geometry"] == {"kind": "compartment", "face_refs": ["G-PAN-1"]}
+    assert comp.aspects["physical"] == {"kind": "compartment", "volume": "250.000000"}
+    v = parts["vessel:V1"]
+    assert list(v.aspects) == ["identity"]
+    assert v.aspects["identity"]["ship_designation"] == {
+        "type": "shipdesignation",
+        "ship_name": "TEST",
+        "number_imo": "1234567",
+    }
+    assert v.aspects["identity"]["principal_particulars"] == {
+        "type": "principalparticulars",
+        "lpp": "100.000000",
+    }
+
+
+def test_records_invariant_to_collection_order():
+    a, b = make_vessel(), make_vessel()
+    b.plates["PL1"].cut_by_holes.reverse()
+    b.panels["P1"].limited_by.reverse()
+    pa, _ = _parts(a)
+    pb, _ = _parts(b)
+    assert pa["G-PL-1"].aspects == pb["G-PL-1"].aspects
+    assert pa["G-PAN-1"].aspects == pb["G-PAN-1"].aspects
+
+
+def test_unresolved_section_becomes_warning():
+    v = make_vessel()
+    v.stiffeners["ST1"].section_ref = Ref("S404")
+    parts, ctx = _parts(v)
+    assert parts["ST1"].aspects["scantlings"]["section"] == {"unresolved": "S404"}
+    assert ctx.warnings == ["unresolved section reference 'S404' on stiffener ST1"]

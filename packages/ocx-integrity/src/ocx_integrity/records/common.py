@@ -210,3 +210,17 @@ def curve_lengths(ctx: Context, **curves: Any) -> dict[str, Any]:
         elif value is not None and value.curve_length is not None:
             out[name] = ctx.canon(value.curve_length)
     return prune(out)
+
+
+def bar_scantlings(kind: str, part: Any, ctx: Context, **extra: Any) -> dict[str, Any] | None:
+    """Scantlings shared by stiffeners, pillars and edge reinforcements."""
+    c = ctx.canon
+    return make_record(
+        kind,
+        section=section_value(part.section_ref, ctx),
+        web_renewal_thickness=c(part.web_renewal_thickness),
+        flange_renewal_thickness=c(part.flange_renewal_thickness),
+        voluntary_web_thickness_addition=c(part.voluntary_web_thickness_addition),
+        voluntary_flange_thickness_addition=c(part.voluntary_flange_thickness_addition),
+        **{k: c(v) for k, v in extra.items()},
+    )
