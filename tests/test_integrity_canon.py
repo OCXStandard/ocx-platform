@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import decimal
 from decimal import Decimal
 
 from ocx_integrity.quantize import Quantizer, fmt_decimal
@@ -29,6 +30,22 @@ def test_fmt_decimal_non_finite():
     assert fmt_decimal(float("nan"), 6) == "NaN"
     assert fmt_decimal(float("inf"), 6) == "Infinity"
     assert fmt_decimal(float("-inf"), 6) == "-Infinity"
+
+
+def test_fmt_decimal_large_finite_values():
+    assert fmt_decimal(1e22, 6) == "10000000000000000000000.000000"
+    assert fmt_decimal(1e19, 9) == "10000000000000000000.000000000"
+    assert fmt_decimal(1e300, 6) == "1" + "0" * 300 + ".000000"
+
+
+def test_quantize_independent_of_global_decimal_context():
+    q, _ = _quantizer()
+    expected = (fmt_decimal(Decimal("123.4567885"), 6), q.quantity(Quantity(1234.5, "Ucm4")))
+    with decimal.localcontext() as ctx:
+        ctx.prec = 5
+        ctx.rounding = decimal.ROUND_DOWN
+        actual = (fmt_decimal(Decimal("123.4567885"), 6), q.quantity(Quantity(1234.5, "Ucm4")))
+    assert actual == expected == ("123.456788", "0.000012345")
 
 
 def test_quantity_mm_and_m_are_identical():

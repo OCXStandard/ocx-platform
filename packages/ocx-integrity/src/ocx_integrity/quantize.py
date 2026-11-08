@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from decimal import ROUND_HALF_EVEN, Decimal
+from decimal import ROUND_HALF_EVEN, Context, Decimal, InvalidOperation
 
 from ocx_model_core.model.ir import IrUnit, IrVector3D, Quantity
 
 from ocx_integrity.profile import DEFAULT_DECIMALS, decimals_for
+
+# Fixed context, independent of the mutable global one: float64 tops out at ~1.8e308
+# (309 integer digits) plus up to 9 decimals, so 400 digits never rounds or overflows.
+_CTX = Context(prec=400, rounding=ROUND_HALF_EVEN, traps=[InvalidOperation])
 
 
 def _dec(value: float | Decimal) -> Decimal:
@@ -22,7 +26,7 @@ def fmt_decimal(value: float | Decimal, decimals: int) -> str:
         return "NaN"
     if d.is_infinite():
         return "-Infinity" if d < 0 else "Infinity"
-    q = d.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_EVEN)
+    q = d.quantize(Decimal(1).scaleb(-decimals, context=_CTX), context=_CTX)
     if q == 0:
         q = q.copy_abs()
     return format(q, "f")
@@ -40,7 +44,9 @@ class Quantizer:
         if unit is None:
             self._warn(f"unknown unit {q.unit!r}")
             return {"value": fmt_decimal(q.value, DEFAULT_DECIMALS), "unit": q.unit}
-        return fmt_decimal(_dec(q.value) * _dec(unit.to_si_factor), decimals_for(unit.si_symbol))
+        return fmt_decimal(
+            _CTX.multiply(_dec(q.value), _dec(unit.to_si_factor)), decimals_for(unit.si_symbol)
+        )
 
     def point(self, p) -> list[str]:
         """``IrPoint3D`` or ``IrCog`` → ``[x, y, z]`` (``[x, y, z, unit]`` if unit unknown)."""
@@ -51,7 +57,7 @@ class Quantizer:
             return [fmt_decimal(c, DEFAULT_DECIMALS) for c in coords] + [p.unit]
         factor = _dec(unit.to_si_factor)
         decimals = decimals_for(unit.si_symbol)
-        return [fmt_decimal(_dec(c) * factor, decimals) for c in coords]
+        return [fmt_decimal(_CTX.multiply(_dec(c), factor), decimals) for c in coords]
 
     def scalar(self, value: float) -> str:
         return fmt_decimal(value, DEFAULT_DECIMALS)
