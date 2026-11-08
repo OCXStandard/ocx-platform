@@ -148,6 +148,14 @@ nested XML `id`/`guidref` dropped), including descriptive fields such as
    Unknown unit → value kept raw with `"unit": <id>` and a manifest warning.
 2. **References** → part IDs (guid-or-id policy), never XML ids.
    Unresolvable → `{"unresolved": <raw local_ref/guid>}` + manifest warning.
+   SurfaceCollections and their member surfaces are indexed parts (their part
+   ID is the XML id, as they carry no GUID in the IR). A panel
+   `UnboundedGeometry/SurfaceRef` is resolved against top-level surfaces, then
+   SurfaceCollections (inlined as `{type, part_id, name, surfaces}` with the
+   member surface records sorted by JCS bytes — membership is a set), then
+   collection members. `LimitedBy/EdgeCurveRef` targets curves, which are not
+   indexed: the GUID is committed as `target` when present, otherwise only the
+   ref type and bounds — never the local XML id, and no warning.
 3. **Unordered collections** (cut_by_holes, cut_by_contours, limited_by,
    penetrations, child ids, trace_refs where unordered) sorted by their JCS
    bytes. **Ordered** collections (polyline vertices, composite segments,

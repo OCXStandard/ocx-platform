@@ -21,9 +21,14 @@ from ocx_integrity.records.common import (
 from ocx_model_core.model.ir import (
     IrCompositeCurve3D,
     IrCurve3D,
+    IrLimitedByRef,
     IrLine3D,
+    IrPlane3D,
     IrPoint3D,
     IrPolyLine3D,
+    IrSurface,
+    IrSurfaceCollection,
+    IrUnboundedGeometry,
     IrVector3D,
     ParentKind,
     ParentRef,
@@ -512,3 +517,70 @@ def test_unresolved_section_becomes_warning():
     parts, ctx = _parts(v)
     assert parts["ST1"].aspects["scantlings"]["section"] == {"unresolved": "S404"}
     assert ctx.warnings == ["unresolved section reference 'S404' on stiffener ST1"]
+
+
+def _collection_vessel():
+    v = make_vessel()
+    plane = v.panels["P1"].unbounded_geometry.surface
+    other = IrPlane3D(
+        point_on_surface=IrPoint3D(0.0, 0.0, 5.0, "Umm"), normal=IrVector3D(0.0, 0.0, 1.0)
+    )
+    v.surface_collections["COL1"] = IrSurfaceCollection(
+        id="COL1",
+        name="hull",
+        surfaces=[IrSurface(id="NS1", geometry=plane), IrSurface(id="NS2", geometry=other)],
+    )
+    return v
+
+
+def test_panel_surface_ref_to_collection_inlines_collection():
+    v, w = _collection_vessel(), _collection_vessel()
+    w.surface_collections["COL1"].surfaces.reverse()
+    for vessel in (v, w):
+        vessel.panels["P1"].unbounded_geometry = IrUnboundedGeometry(surface_ref="COL1")
+    (pa, ctx), (pb, _) = _parts(v), _parts(w)
+    ug = pa["G-PAN-1"].aspects["geometry"]["unbounded_geometry"]
+    coll = ug["surface_ref"]
+    assert coll["type"] == "surfacecollection" and coll["part_id"] == "COL1"
+    assert [s["part_id"] for s in coll["surfaces"]] == ["NS1", "NS2"]
+    assert all(s["geometry"]["type"] == "plane3d" for s in coll["surfaces"])
+    assert ug == pb["G-PAN-1"].aspects["geometry"]["unbounded_geometry"]
+    assert ctx.warnings == []
+
+
+def test_panel_surface_ref_to_nested_surface_resolves():
+    v = _collection_vessel()
+    v.panels["P1"].unbounded_geometry = IrUnboundedGeometry(surface_ref="NS2")
+    parts, ctx = _parts(v)
+    rec = parts["G-PAN-1"].aspects["geometry"]["unbounded_geometry"]["surface_ref"]
+    assert rec["part_id"] == "NS2"
+    assert rec["geometry"]["point_on_surface"] == ["0.000000", "0.000000", "0.005000"]
+    assert ctx.warnings == []
+
+
+def test_limited_by_surface_ref_to_collection_resolves():
+    v = _collection_vessel()
+    v.panels["P1"].limited_by = [
+        IrLimitedByRef("SurfaceRef", "COL1"),
+        IrLimitedByRef("SurfaceRef", "NS1"),
+    ]
+    parts, ctx = _parts(v)
+    assert parts["G-PAN-1"].aspects["geometry"]["limited_by"] == [
+        {"ref_type": "SurfaceRef", "target": "COL1"},
+        {"ref_type": "SurfaceRef", "target": "NS1"},
+    ]
+    assert ctx.warnings == []
+
+
+def test_edge_curve_ref_limits_commit_guid_never_xml_id():
+    v = make_vessel()
+    v.panels["P1"].limited_by = [
+        IrLimitedByRef("EdgeCurveRef", "EC1", guidref="G-EC-1"),
+        IrLimitedByRef("EdgeCurveRef", "EC2", contour_start=IrPoint3D(0.0, 0.0, 0.0, "Umm")),
+    ]
+    parts, ctx = _parts(v)
+    assert parts["G-PAN-1"].aspects["geometry"]["limited_by"] == [
+        {"ref_type": "EdgeCurveRef", "contour_start": ["0.000000", "0.000000", "0.000000"]},
+        {"ref_type": "EdgeCurveRef", "target": "G-EC-1"},
+    ]
+    assert ctx.warnings == []

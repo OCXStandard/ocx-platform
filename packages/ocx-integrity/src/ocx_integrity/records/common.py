@@ -64,10 +64,14 @@ class Context:
             vessel.sections,
             vessel.surfaces,
             vessel.ref_planes,
+            vessel.surface_collections,
             self.holes,
         )
-        for table in tables:
-            for obj in table.values():
+        nested = [s for coll in vessel.surface_collections.values() for s in coll.surfaces]
+        for objs in [*(t.values() for t in tables), nested]:
+            for obj in objs:
+                if not obj.id:
+                    continue
                 pid, _ = part_id(obj)
                 self._by_xml_id.setdefault(obj.id, pid)
                 if getattr(obj, "guidref", None):
