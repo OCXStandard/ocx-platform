@@ -66,3 +66,10 @@ def test_generate_key_roundtrips():
     text = generate_key()
     assert len(text) == 64
     assert len(parse_key(text)) == 32
+
+
+def test_load_key_non_utf8_file(tmp_path):
+    key_file = tmp_path / "bad.key"
+    key_file.write_bytes(b"\xff\xfe\x00")
+    with pytest.raises(InvalidKeyError):
+        load_key(key_file, env={})

@@ -44,6 +44,8 @@ def load_key(path: Path | None = None, env: Mapping[str, str] | None = None) -> 
             text = Path(path).read_text(encoding="utf-8")
         except OSError as exc:
             raise InvalidKeyError(f"cannot read key file {path}: {exc}") from exc
+        except UnicodeDecodeError as exc:
+            raise InvalidKeyError(f"key file {path} is not UTF-8 hex text") from exc
         return parse_key(text)
     value = (os.environ if env is None else env).get(KEY_ENV)
     if not value:
