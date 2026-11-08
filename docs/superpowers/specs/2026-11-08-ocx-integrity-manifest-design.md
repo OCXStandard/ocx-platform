@@ -247,6 +247,10 @@ class. `created` and `source` are informational and not part of the root.
 record + salt, confirm it equals `aspect_hashes[aspect]`, recompute
 `part_hash` from `aspect_hashes`, then recompute the root from `leaf_index`,
 `tree_size` and `audit_path`; compare to `root` (and to `--root` if given).
+A bundle must disclose at least one aspect (otherwise `part_id`/`kind` are
+unauthenticated) and is refused if its `profile` is unsupported. `tree_size`
+and `leaf_index` are bundle-supplied and not fully authenticated by the root
+alone; pin the part count from an authenticated manifest if exact size matters.
 
 ## Verify and diff
 

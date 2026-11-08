@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 
 import pytest
-from ocx_integrity.errors import PartDriftError, ProfileMismatchError, UnknownPartError
+from ocx_integrity.errors import (
+    IntegrityError,
+    PartDriftError,
+    ProfileMismatchError,
+    UnknownPartError,
+)
 from ocx_integrity.manifest import build_manifest
 from ocx_integrity.profile import ASPECTS
 from ocx_integrity.proof import BundleCheck, DisclosureBundle, check_bundle, prove
@@ -92,9 +98,8 @@ def test_tampered_bundle_fails(tamper, fragment):
 )
 def test_structurally_malformed_bundle_reported_not_raised(field, value, typ):
     v, m = _setup()
-    d = prove(v, m, KEY, "G-PL-1", ["scantlings"]).to_dict()
-    d[field] = value
-    result = check_bundle(DisclosureBundle.from_dict(d))
+    b = dataclasses.replace(prove(v, m, KEY, "G-PL-1", ["scantlings"]), **{field: value})
+    result = check_bundle(b)
     assert result.errors == [f"malformed bundle: {field!r} must be {typ}"]
 
 
@@ -128,3 +133,43 @@ def test_drifted_part_refused_but_other_parts_still_provable():
         prove(drifted, m, KEY, "G-PL-1")
     b = prove(drifted, m, KEY, "ST1")
     assert check_bundle(b, root=m.root).valid
+
+
+def test_bundle_without_disclosed_aspects_is_invalid():
+    v, m = _setup()
+    b = prove(v, m, KEY, "G-PL-1", ["scantlings"])
+    b.disclosed, b.part_id, b.kind = {}, "NONEXISTENT", "stiffener"
+    result = check_bundle(b, m.root)
+    assert not result.valid
+    assert any("discloses no aspects" in e for e in result.errors), result.errors
+
+
+def test_prove_with_empty_aspect_list_refused():
+    v, m = _setup()
+    with pytest.raises(IntegrityError):
+        prove(v, m, KEY, "G-PL-1", [])
+
+
+def test_check_bundle_rejects_unsupported_profile():
+    v, m = _setup()
+    b = prove(v, m, KEY, "G-PL-1")
+    b.profile = "ocx-hash/2"
+    result = check_bundle(b)
+    assert not result.valid
+    assert "unsupported profile 'ocx-hash/2'" in result.errors
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda d: d.pop("root"),
+        lambda d: d.update(audit_path=None),
+        lambda d: d.update(tree_size="6"),
+    ],
+)
+def test_from_dict_malformed_raises_integrity_error(mutate):
+    v, m = _setup()
+    d = prove(v, m, KEY, "G-PL-1").to_dict()
+    mutate(d)
+    with pytest.raises(IntegrityError, match="malformed bundle"):
+        DisclosureBundle.from_dict(d)

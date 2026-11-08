@@ -8,11 +8,27 @@ from typing import Any
 
 from ocx_model_core.model.ir import IrVessel
 
-from ocx_integrity.errors import PartDriftError, ProfileMismatchError, UnknownPartError
+from ocx_integrity.errors import (
+    IntegrityError,
+    PartDriftError,
+    ProfileMismatchError,
+    UnknownPartError,
+)
 from ocx_integrity.hashing import aspect_hash
 from ocx_integrity.manifest import Manifest, hash_vessel
 from ocx_integrity.merkle import inclusion_path, mth, root_from_path
 from ocx_integrity.profile import ASPECTS, PROFILE
+
+_FIELD_TYPES: dict[str, type] = {
+    "root": str,
+    "tree_size": int,
+    "leaf_index": int,
+    "part_id": str,
+    "kind": str,
+    "disclosed": dict,
+    "aspect_hashes": dict,
+    "audit_path": list,
+}
 
 
 @dataclass
@@ -42,20 +58,20 @@ class DisclosureBundle:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DisclosureBundle:
+        if not isinstance(data, dict):
+            raise IntegrityError("malformed bundle: expected a JSON object")
         profile = data.get("profile")
         if profile != PROFILE:
             raise ProfileMismatchError(f"unsupported profile {profile!r} (expected {PROFILE!r})")
-        return cls(
-            root=data["root"],
-            tree_size=data["tree_size"],
-            leaf_index=data["leaf_index"],
-            part_id=data["part_id"],
-            kind=data["kind"],
-            disclosed=data["disclosed"],
-            aspect_hashes=data["aspect_hashes"],
-            audit_path=list(data["audit_path"]),
-            profile=profile,
-        )
+        missing = sorted(set(_FIELD_TYPES) - set(data))
+        if missing:
+            raise IntegrityError(f"malformed bundle: missing field(s) {', '.join(missing)}")
+        bundle = cls(**{name: data[name] for name in _FIELD_TYPES}, profile=profile)
+        errors: list[str] = []
+        _check_structure(bundle, errors)
+        if errors:
+            raise IntegrityError("; ".join(errors))
+        return bundle
 
 
 @dataclass(frozen=True)
@@ -76,6 +92,8 @@ def prove(
     if entry is None:
         raise UnknownPartError(f"part {part_id!r} is not in the manifest")
     wanted = set(entry.aspects) if aspects is None else set(aspects)
+    if not wanted:
+        raise IntegrityError("at least one aspect must be disclosed (omit aspects for all)")
     unknown = sorted(wanted - set(entry.aspects))
     if unknown:
         raise UnknownPartError(f"part {part_id!r} has no aspect(s): {', '.join(unknown)}")
@@ -138,28 +156,26 @@ def _check_path(bundle: DisclosureBundle, errors: list[str]) -> None:
 
 def _check_structure(bundle: DisclosureBundle, errors: list[str]) -> None:
     # Bundles are untrusted input: report wrong field types instead of raising.
-    expected = {
-        "root": str,
-        "tree_size": int,
-        "leaf_index": int,
-        "part_id": str,
-        "kind": str,
-        "disclosed": dict,
-        "aspect_hashes": dict,
-        "audit_path": list,
-    }
-    for name, typ in expected.items():
+    for name, typ in _FIELD_TYPES.items():
         value = getattr(bundle, name)
         if not isinstance(value, typ) or isinstance(value, bool):
             errors.append(f"malformed bundle: {name!r} must be {typ.__name__}")
 
 
 def check_bundle(bundle: DisclosureBundle, root: str | None = None) -> BundleCheck:
-    """Verify a bundle without the key; optionally pin it to an independently known root."""
+    """Verify a bundle without the key; optionally pin it to an independently known root.
+
+    ``tree_size`` and ``leaf_index`` are bundle-supplied and not fully authenticated by
+    the root alone; pin the part count from an authenticated manifest if exact size matters.
+    """
     errors: list[str] = []
+    if bundle.profile != PROFILE:
+        errors.append(f"unsupported profile {bundle.profile!r}")
     _check_structure(bundle, errors)
     if errors:
         return BundleCheck(False, errors)
+    if not bundle.disclosed:
+        errors.append("bundle discloses no aspects: part id and kind are not authenticated")
     _check_disclosed(bundle, errors)
     _check_path(bundle, errors)
     if root is not None and root.lower() != bundle.root.lower():
