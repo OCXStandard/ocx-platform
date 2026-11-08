@@ -8,6 +8,7 @@ import json
 import pytest
 from ocx_integrity.errors import DuplicatePartIdError, IntegrityError, ProfileMismatchError
 from ocx_integrity.manifest import (
+    Manifest,
     build_manifest,
     hash_vessel,
     load_manifest,
@@ -123,3 +124,82 @@ def test_source_info(tmp_path):
         "sha256": hashlib.sha256(b"<ocx/>").hexdigest(),
         "schema_version": "3.1.0",
     }
+
+
+def _good():
+    return build_manifest(make_vessel(), KEY).to_dict()
+
+
+def _mutate(fn):
+    data = json.loads(json.dumps(_good()))
+    fn(data)
+    return data
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda d: d.pop("root"),
+        lambda d: d.update(root=None),
+        lambda d: d.update(root="00"),
+        lambda d: d.update(parts=[]),
+        lambda d: d["parts"].update({"X": "nope"}),
+        lambda d: d["parts"]["G-PL-1"].pop("kind"),
+        lambda d: d["parts"]["G-PL-1"].update(kind=[]),
+        lambda d: d["parts"]["G-PL-1"].update(id_source=1),
+        lambda d: d["parts"]["G-PL-1"].update(aspects=[]),
+        lambda d: d["parts"]["G-PL-1"].update(part_hash="00"),
+        lambda d: d["parts"]["G-PL-1"]["aspects"].update(scantlings="zz"),
+        lambda d: d["parts"]["G-PL-1"]["aspects"].update(scantlings=None),
+        lambda d: d["parts"]["G-PL-1"]["aspects"].update(scantlings="AB" * 32),
+        lambda d: d.update(warnings="w"),
+        lambda d: d.update(warnings=[1]),
+        lambda d: d.update(created=5),
+        lambda d: d.update(source=[]),
+    ],
+)
+def test_from_dict_rejects_malformed(mutate):
+    with pytest.raises(IntegrityError):
+        Manifest.from_dict(_mutate(mutate))
+
+
+@pytest.mark.parametrize("data", [[], "x", None])
+def test_from_dict_rejects_non_object(data):
+    with pytest.raises(IntegrityError):
+        Manifest.from_dict(data)
+
+
+def test_from_dict_wrong_profile_still_profile_mismatch():
+    with pytest.raises(ProfileMismatchError):
+        Manifest.from_dict(_mutate(lambda d: (d.update(profile="x"), d.pop("root"))))
+
+
+@pytest.mark.parametrize("count", [None, "6", 6.0, True, 5, 7])
+def test_from_dict_checks_part_count(count):
+    def set_count(d):
+        if count is None:
+            d.pop("part_count")
+        else:
+            d["part_count"] = count
+
+    with pytest.raises(IntegrityError, match="part_count"):
+        Manifest.from_dict(_mutate(set_count))
+
+
+@pytest.mark.parametrize("raw", [b"{not json", b"\xff\xfe\x00garbage"])
+def test_load_rejects_invalid_json_or_encoding(tmp_path, raw):
+    path = tmp_path / "m.json"
+    path.write_bytes(raw)
+    with pytest.raises(IntegrityError):
+        load_manifest(path)
+
+
+def test_load_rejects_duplicate_part_ids(tmp_path):
+    text = json.dumps(_good(), indent=2)
+    entry = json.dumps(_good()["parts"]["G-PL-1"])
+    text = text.replace('"parts": {', '"parts": {\n    "G-PL-1": ' + entry + ",", 1)
+    path = tmp_path / "m.json"
+    path.write_text(text, encoding="utf-8")
+    assert text.count('"G-PL-1"') == 2
+    with pytest.raises(IntegrityError, match="duplicate"):
+        load_manifest(path)

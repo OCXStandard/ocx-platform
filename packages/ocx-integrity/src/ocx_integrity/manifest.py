@@ -130,24 +130,67 @@ class Manifest:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Manifest:
+    def from_dict(cls, data: Any) -> Manifest:
+        """Build from untrusted JSON data; raise IntegrityError unless fully consistent."""
+        if not isinstance(data, dict):
+            raise IntegrityError("manifest must be a JSON object")
         profile = data.get("profile")
         if profile != PROFILE:
             raise ProfileMismatchError(f"unsupported profile {profile!r} (expected {PROFILE!r})")
-        parts = {
-            pid: PartEntry(e["kind"], e["id_source"], e["part_hash"], dict(e["aspects"]))
-            for pid, e in data["parts"].items()
-        }
+        raw_parts = _field(data, "parts", dict, "manifest")
+        parts: dict[str, PartEntry] = {}
+        for pid, e in raw_parts.items():
+            where = f"part {pid!r}"
+            if not isinstance(e, dict):
+                raise IntegrityError(f"{where}: entry must be an object")
+            aspects = _field(e, "aspects", dict, where)
+            for aspect, digest in aspects.items():
+                _check_digest(digest, f"{where} aspect {aspect!r}")
+            parts[pid] = PartEntry(
+                _field(e, "kind", str, where),
+                _field(e, "id_source", str, where),
+                _check_digest(e.get("part_hash"), f"{where} part_hash"),
+                dict(aspects),
+            )
+        part_count = data.get("part_count")
+        if type(part_count) is not int or part_count != len(parts):
+            raise IntegrityError(f"part_count {part_count!r} does not match {len(parts)} parts")
+        warnings = data.get("warnings", [])
+        if not isinstance(warnings, list) or not all(isinstance(w, str) for w in warnings):
+            raise IntegrityError("manifest 'warnings' must be a list of strings")
+        created = data.get("created")
+        if created is not None and not isinstance(created, str):
+            raise IntegrityError("manifest 'created' must be a string or null")
+        source = data.get("source")
+        if source is not None and not isinstance(source, dict):
+            raise IntegrityError("manifest 'source' must be an object or null")
         manifest = cls(
-            root=data["root"],
+            root=_check_digest(data.get("root"), "manifest root"),
             parts=parts,
-            warnings=list(data.get("warnings", [])),
+            warnings=list(warnings),
             profile=profile,
-            created=data.get("created"),
-            source=data.get("source"),
+            created=created,
+            source=source,
         )
         manifest.check_consistency()
         return manifest
+
+
+_HEX = frozenset("0123456789abcdef")
+
+
+def _field(obj: dict[str, Any], name: str, typ: type, where: str) -> Any:
+    value = obj.get(name)
+    if not isinstance(value, typ):
+        raise IntegrityError(f"{where}: {name!r} must be a {typ.__name__}, got {value!r}")
+    return value
+
+
+def _check_digest(value: Any, where: str) -> str:
+    """A digest is exactly what to_dict emits: 64 lowercase hex characters."""
+    if not isinstance(value, str) or len(value) != 64 or not set(value) <= _HEX:
+        raise IntegrityError(f"{where}: expected 64 lowercase hex characters, got {value!r}")
+    return value
 
 
 def manifest_from_hashed(
@@ -192,5 +235,20 @@ def save_manifest(manifest: Manifest, path: Path) -> None:
     )
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise IntegrityError(f"duplicate JSON key {key!r} in manifest")
+        obj[key] = value
+    return obj
+
+
 def load_manifest(path: Path) -> Manifest:
-    return Manifest.from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
+    """Load and validate a manifest file. OSError propagates; bad content -> IntegrityError."""
+    raw = Path(path).read_bytes()
+    try:
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise IntegrityError(f"manifest is not valid UTF-8 JSON: {exc}") from exc
+    return Manifest.from_dict(data)
