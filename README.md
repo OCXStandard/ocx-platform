@@ -59,7 +59,9 @@ making downstream tools independent of any particular OCX schema version.
   geometry, physical) rolled up in an RFC 9162 Merkle tree to one manifest
   root. `verify` and `diff` report exactly which parts and aspects changed.
   `prove` writes a selective-disclosure bundle that class can `check` without
-  the yard key (profile `ocx-hash/1`).
+  the yard key (profile `ocx-hash/1`). See
+  [packages/ocx-integrity/README.md](packages/ocx-integrity/README.md) and the
+  [design spec](docs/superpowers/specs/2026-11-08-ocx-integrity-manifest-design.md).
 
 ---
 
