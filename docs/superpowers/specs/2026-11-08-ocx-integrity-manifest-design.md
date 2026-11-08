@@ -97,13 +97,13 @@ Curve `curve_length` values are excluded from `geometry` and committed under
 |---|---|---|---|---|---|
 | plate | kind, part_id, id_source, name, function_type, parent part_id | resolved material | thickness, renewal_thickness, voluntary_thickness_addition | outer_contour, cut_by_contours, cut_by_holes (resolved hole shape + transformation), point_on_surface | mass_properties, net_area, curve lengths |
 | stiffener | as plate | resolved material | resolved section, web/flange renewal + voluntary additions, end_cut_end1/2 | trace, trace_refs (part ids), inclinations, orientation_rule, penetrations | mass_properties, trace length |
-| bracket | as plate | resolved material | thickness, renewal, voluntary, arm_length_u/v, unose/vnose, free_edge_radius, edge reinforcement flags, flange_width/radius, feature_cope | origin, u/vdirection, outer_contour, plane, offset | mass_properties |
-| pillar | as plate | resolved material | resolved section, renewal + voluntary additions | trace, inclinations, penetrations | mass_properties |
+| bracket | as plate, without function_type (not in `IrBracket`) | resolved material | thickness, renewal, voluntary, arm_length_u/v, unose/vnose, free_edge_radius, edge reinforcement flags, flange_width/radius, feature_cope | origin, u/vdirection, outer_contour, plane, offset | mass_properties, outer_contour length |
+| pillar | as plate | resolved material | resolved section, renewal + voluntary additions | trace, inclinations, penetrations | mass_properties, trace length |
 | edge_reinforcement | as plate | resolved material | resolved section, renewal + voluntary additions | trace_refs, orientation_rule | mass_properties |
-| panel | kind, part_id, id_source, name, function_type, tightness, child part ids (sorted per kind) | — | — | unbounded_geometry, limited_by (part ids + type + bounds), outer_contours, cut_by_* , point_on_surface | mass_properties |
+| panel | kind, part_id, id_source, name, function_type, tightness, child part ids (sorted per kind) | — | — | unbounded_geometry, limited_by (part ids + type + bounds), outer_contours, cut_by_* , point_on_surface | mass_properties, outer_contours + cut_by_contours lengths |
 | seam | kind, part_id, id_source, name | — | — | trace_line, trace_refs | trace_line length |
 | compartment | kind, part_id, id_source, name, compartment_purpose, filling_height, air_pipe_height, relief_valve_pressure | — | — | face_refs (part ids, sorted), face_boundary_curves (canonical, sorted) | volume, cog, curve lengths |
-| vessel | kind, part_id, ship_designation, principal_particulars, builder_info, statutory_data, tonnage_data | — | — | — | — |
+| vessel | kind, part_id, id_source, name, ship_designation, principal_particulars, builder_info, statutory_data, tonnage_data | — | — | — | — |
 
 The vessel part ID is `vessel:<IrVessel.id>` (`id_source: "vessel"`).
 `IrHeader` (timestamps, author, originating system) is deliberately **not**
