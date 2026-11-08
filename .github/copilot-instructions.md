@@ -7,7 +7,7 @@ A **uv workspace** (virtual root — the root `pyproject.toml` holds only
 direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
 `ocx-render` → `ocx-geometry` → `ocx-model-core`, and
 `ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
-geometry lazily when installed).
+geometry lazily when installed), and `ocx-integrity` → `ocx-model-core`.
 
 ```
 ocx-platform/                  ← repo / workspace root
@@ -76,6 +76,16 @@ ocx-platform/                  ← repo / workspace root
 │   │       ├── sweep.py / analyse.py / checks.py / probes.py / advice.py
 │   │       ├── figures.py       ← plotly figures (incl. limitedby_fig)
 │   │       └── report.py        ← self-contained HTML report
+│   ├── ocx-integrity/          ← salted aspect hashes + Merkle manifest (core only)
+│   │   └── src/ocx_integrity/
+│   │       ├── profile.py       ← PROFILE "ocx-hash/1", ASPECTS, precision table
+│   │       ├── quantize.py / canon_geom.py / jsonutil.py ← canonical values + contours
+│   │       ├── records/         ← per-kind extractors → per-aspect canonical records
+│   │       ├── salts.py / hashing.py ← HMAC salts, SHA-256(salt ‖ JCS payload)
+│   │       ├── merkle.py        ← RFC 9162 MTH + inclusion proofs
+│   │       ├── manifest.py      ← hash_vessel, Manifest build/save/load
+│   │       ├── diff.py / verify.py / proof.py ← ChangeReport, disclosure bundles
+│   │       └── cli.py           ← ocx-integrity entrypoint
 │   └── ocx-model-validator/    ← reports, CLI, MCP server
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
@@ -91,7 +101,8 @@ ocx-platform/                  ← repo / workspace root
 
 Import rule: parser/builder/IR/units/schema-validation code lives under
 `ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`;
-tessellation/rendering code under `ocx_render.*`. The validator never reaches
+tessellation/rendering code under `ocx_render.*`; integrity hashing/manifest/proof
+code under `ocx_integrity.*` (core only — never imports geometry/render). The validator never reaches
 into render/tessellation code — `ocx-render` depends on core + geometry, not
 the other way around.
 
@@ -143,6 +154,14 @@ ocx-diagnose diagnose model.3docx
 
 # TOP-001 LimitedBy closure diagnostics (exit 0 all plotted panels close / 1 at least one does not / 2 cannot parse/build/diagnose incl. unknown --panel ids / 3 cannot write output)
 ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
+
+# Integrity manifest (profile ocx-hash/1; exit 0 ok / 1 changed or invalid / 2 cannot run / 3 cannot write)
+ocx-integrity keygen -o yard.key
+ocx-integrity manifest model.3docx --key yard.key -o manifest.json
+ocx-integrity verify model.3docx manifest.json --key yard.key
+ocx-integrity prove model.3docx manifest.json --key yard.key --part ID [--aspect A]... -o bundle.json
+ocx-integrity check bundle.json [--root HEX]
+ocx-integrity diff old.json new.json [--format text|json]
 
 # Generate XML test stubs from .3docx models in ./models/ (repo-internal script)
 uv run python -m ocx_model_core.generate_stubs

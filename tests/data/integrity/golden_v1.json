@@ -1,0 +1,362 @@
+{
+  "profile": "ocx-hash/1",
+  "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "root": "101d45e7a5021b25aceacaf9b326361030874177820cdb102ac3c25120a4776b",
+  "parts": {
+    "G-COMP-1": {
+      "kind": "compartment",
+      "records": {
+        "identity": {
+          "kind": "compartment",
+          "id_source": "guid",
+          "name": "WBT1",
+          "compartment_purpose": "Ballast"
+        },
+        "geometry": {
+          "kind": "compartment",
+          "face_refs": [
+            "G-PAN-1"
+          ]
+        },
+        "physical": {
+          "kind": "compartment",
+          "volume": "250.000000"
+        }
+      },
+      "aspects": {
+        "identity": "205fb24731685725db0b92787d14829e24ad878a9116f859c4ff32e1f592c88a",
+        "geometry": "39468f702d311c61d8c2da1f2a70f268be77d2ad5e78bb27b157ffe033483f85",
+        "physical": "3a91e727af8921dc2e294888073451f31e47cce4f6c4b22b22e5ab2eba888b1e"
+      },
+      "part_hash": "b947d00d4153420b2561be3838c9d91933040eade9f6d9f75f591a2c5e48b69e"
+    },
+    "G-PAN-1": {
+      "kind": "panel",
+      "records": {
+        "identity": {
+          "kind": "panel",
+          "id_source": "guid",
+          "name": "Deck",
+          "tightness": "WaterTight",
+          "children": {
+            "plates": [
+              "G-PL-1"
+            ],
+            "stiffeners": [
+              "ST1"
+            ],
+            "seams": [
+              "SE1"
+            ]
+          }
+        },
+        "geometry": {
+          "kind": "panel",
+          "unbounded_geometry": {
+            "surface": {
+              "type": "plane3d",
+              "point_on_surface": [
+                "0.000000",
+                "0.000000",
+                "0.000000"
+              ],
+              "normal": [
+                "0.000000",
+                "0.000000",
+                "1.000000"
+              ]
+            }
+          },
+          "limited_by": [
+            {
+              "ref_type": "SeamRef",
+              "target": "SE1"
+            },
+            {
+              "ref_type": "StiffenerRef",
+              "target": "ST1"
+            }
+          ]
+        },
+        "physical": {
+          "kind": "panel",
+          "mass_properties": {
+            "type": "massproperties",
+            "moulded_dry_weight": "1800.000"
+          }
+        }
+      },
+      "aspects": {
+        "identity": "a66464af9de6ee1fcb8f10c8a7c06a764adbdf65e3765715c0db2e3ab0523284",
+        "geometry": "fd3d8dbb7d1d084ccf9c50eea79988aae74a8cf25437192f11c485ce045e9b88",
+        "physical": "26e678de882110eecae8b47fde6846d3309ea580d64547156660d3fa4fa59593"
+      },
+      "part_hash": "acf31bc8c168d17c8f1f068555d347922dbbed8ad6b546adba096fdd82d94c16"
+    },
+    "G-PL-1": {
+      "kind": "plate",
+      "records": {
+        "identity": {
+          "kind": "plate",
+          "id_source": "guid",
+          "name": "Deck plate",
+          "parent": "G-PAN-1"
+        },
+        "material": {
+          "kind": "plate",
+          "material": {
+            "part_id": "G-MAT-1",
+            "type": "material",
+            "grade": "AH36",
+            "density": "7850.000",
+            "yield_stress": "355000000",
+            "youngs_modulus": "206000000000"
+          }
+        },
+        "scantlings": {
+          "kind": "plate",
+          "thickness": "0.012000"
+        },
+        "geometry": {
+          "kind": "plate",
+          "outer_contour": {
+            "type": "polyline3d",
+            "vertices": [
+              [
+                "0.000000",
+                "0.000000",
+                "0.000000"
+              ],
+              [
+                "2.000000",
+                "0.000000",
+                "0.000000"
+              ],
+              [
+                "2.000000",
+                "2.000000",
+                "0.000000"
+              ],
+              [
+                "0.000000",
+                "2.000000",
+                "0.000000"
+              ]
+            ],
+            "is_closed": true
+          },
+          "cut_by_holes": [
+            {
+              "type": "hole2dcontour",
+              "hole": {
+                "part_id": "G-HOLE-1",
+                "type": "hole2d",
+                "parametric": {
+                  "type": "parametrichole",
+                  "variant": "circle",
+                  "diameter": "0.100000"
+                }
+              },
+              "transformation": {
+                "type": "transformation",
+                "origin": [
+                  "0.500000",
+                  "0.500000",
+                  "0.000000"
+                ],
+                "primary_axis": [
+                  "1.000000",
+                  "0.000000",
+                  "0.000000"
+                ],
+                "secondary_axis": [
+                  "0.000000",
+                  "1.000000",
+                  "0.000000"
+                ]
+              }
+            },
+            {
+              "type": "hole2dcontour",
+              "hole": {
+                "part_id": "G-HOLE-1",
+                "type": "hole2d",
+                "parametric": {
+                  "type": "parametrichole",
+                  "variant": "circle",
+                  "diameter": "0.100000"
+                }
+              },
+              "transformation": {
+                "type": "transformation",
+                "origin": [
+                  "1.500000",
+                  "1.500000",
+                  "0.000000"
+                ],
+                "primary_axis": [
+                  "1.000000",
+                  "0.000000",
+                  "0.000000"
+                ],
+                "secondary_axis": [
+                  "0.000000",
+                  "1.000000",
+                  "0.000000"
+                ]
+              }
+            }
+          ]
+        },
+        "physical": {
+          "kind": "plate",
+          "mass_properties": {
+            "type": "massproperties",
+            "moulded_dry_weight": "1500.000",
+            "moulded_cog": [
+              "1.000000",
+              "1.000000",
+              "0.000000"
+            ]
+          },
+          "curve_lengths": {
+            "outer_contour": "8.000000"
+          }
+        }
+      },
+      "aspects": {
+        "identity": "eb05f2c2611d60ea6db96ceb50ba06a9b883bb8ab8014e902da83cd296bc06f9",
+        "material": "7dbd0fbb93c2bb5c2d7dfbe36636d9c53fa98dc710ad11a2791cdd164eeb71cb",
+        "scantlings": "0dbc67bd440310e59320b1add417bccd6c67fdca3ffb8ab8aef5bb1e79d83806",
+        "geometry": "b6da9ea26124197662a2b0cbf043d49d09814199367abd96072427a2c5575689",
+        "physical": "b3ec7c0d53b03810ef5b43a8f67b8350e784cfedf63637af373ad85fdb19e618"
+      },
+      "part_hash": "8e51e6fb06ad8887da41491adceb7f5dedf5d3e6da05b867979b51620a151041"
+    },
+    "SE1": {
+      "kind": "seam",
+      "records": {
+        "identity": {
+          "kind": "seam",
+          "id_source": "xml_id",
+          "name": "Butt 1"
+        },
+        "geometry": {
+          "kind": "seam",
+          "trace_line": {
+            "type": "line3d",
+            "start": [
+              "1.000000",
+              "0.000000",
+              "0.000000"
+            ],
+            "end": [
+              "1.000000",
+              "2.000000",
+              "0.000000"
+            ]
+          }
+        },
+        "physical": {
+          "kind": "seam",
+          "curve_lengths": {
+            "trace_line": "2.000000"
+          }
+        }
+      },
+      "aspects": {
+        "identity": "189efe239fabd6a400cadce92e923092bcd8b4e5350727d2acc8303bb851725f",
+        "geometry": "b6fee00d78358bf8988e4ca4418b3d610c8cc22799d4abbf2937f7039d40a83e",
+        "physical": "980eab7b7f875563e5bfc5bc6ff15fbbd0406cc3ba160356c3344184713cf51a"
+      },
+      "part_hash": "e17394f40c13bf59e4149670ec0b952f83ebaa3b062894c1bc73b12cde4387ab"
+    },
+    "ST1": {
+      "kind": "stiffener",
+      "records": {
+        "identity": {
+          "kind": "stiffener",
+          "id_source": "xml_id",
+          "name": "L1",
+          "parent": "G-PAN-1"
+        },
+        "material": {
+          "kind": "stiffener",
+          "material": {
+            "part_id": "G-MAT-1",
+            "type": "material",
+            "grade": "AH36",
+            "density": "7850.000",
+            "yield_stress": "355000000",
+            "youngs_modulus": "206000000000"
+          }
+        },
+        "scantlings": {
+          "kind": "stiffener",
+          "section": {
+            "part_id": "S1",
+            "type": "flatbarsection",
+            "name": "FB200x12",
+            "section_type": "FlatBar",
+            "height": "0.200000",
+            "width": "0.012000"
+          }
+        },
+        "geometry": {
+          "kind": "stiffener",
+          "trace": {
+            "type": "line3d",
+            "start": [
+              "0.000000",
+              "1.000000",
+              "0.000000"
+            ],
+            "end": [
+              "2.000000",
+              "1.000000",
+              "0.000000"
+            ]
+          },
+          "orientation_rule": "ocx:Up"
+        },
+        "physical": {
+          "kind": "stiffener",
+          "curve_lengths": {
+            "trace": "2.000000"
+          }
+        }
+      },
+      "aspects": {
+        "identity": "ae747404856073ed783cd63c331a271b65b145631d46ade84ed040d0bfff3585",
+        "material": "0d602da65264f78c879b0de37aad051ba39d12b1332b4a302e5332c921d70f26",
+        "scantlings": "f34b3805bbfae0c5a13c9c75e26349ea9f2cd12a7c32724745560e456c05c9a6",
+        "geometry": "f12428399f9b4920850185f755f5755881d2c67da92df2249a7402a43743e326",
+        "physical": "4a3857d31cfdcece432e2a24bea21e9ba894b45c33dc0c11442495f954b5ea26"
+      },
+      "part_hash": "ec74be31b926f0484c6c379316a5bed57851b10661f9b737447b0677ba2cb869"
+    },
+    "vessel:V1": {
+      "kind": "vessel",
+      "records": {
+        "identity": {
+          "kind": "vessel",
+          "id_source": "vessel",
+          "name": "Test vessel",
+          "ship_designation": {
+            "type": "shipdesignation",
+            "ship_name": "TEST",
+            "number_imo": "1234567"
+          },
+          "principal_particulars": {
+            "type": "principalparticulars",
+            "lpp": "100.000000"
+          }
+        }
+      },
+      "aspects": {
+        "identity": "bfa23a795dbe81c7658494606e51320e9df82c06293a3f9ed4b6cdf861b70575"
+      },
+      "part_hash": "2486681db11a36eccd29d29b302bdd38f7542c5048178025bcc5c55008e24de2"
+    }
+  }
+}

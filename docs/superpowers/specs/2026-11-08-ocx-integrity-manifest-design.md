@@ -97,13 +97,13 @@ Curve `curve_length` values are excluded from `geometry` and committed under
 |---|---|---|---|---|---|
 | plate | kind, part_id, id_source, name, function_type, parent part_id | resolved material | thickness, renewal_thickness, voluntary_thickness_addition | outer_contour, cut_by_contours, cut_by_holes (resolved hole shape + transformation), point_on_surface | mass_properties, net_area, curve lengths |
 | stiffener | as plate | resolved material | resolved section, web/flange renewal + voluntary additions, end_cut_end1/2 | trace, trace_refs (part ids), inclinations, orientation_rule, penetrations | mass_properties, trace length |
-| bracket | as plate | resolved material | thickness, renewal, voluntary, arm_length_u/v, unose/vnose, free_edge_radius, edge reinforcement flags, flange_width/radius, feature_cope | origin, u/vdirection, outer_contour, plane, offset | mass_properties |
-| pillar | as plate | resolved material | resolved section, renewal + voluntary additions | trace, inclinations, penetrations | mass_properties |
+| bracket | as plate, without function_type (not in `IrBracket`) | resolved material | thickness, renewal, voluntary, arm_length_u/v, unose/vnose, free_edge_radius, edge reinforcement flags, flange_width/radius, feature_cope | origin, u/vdirection, outer_contour, plane, offset | mass_properties, outer_contour length |
+| pillar | as plate | resolved material | resolved section, renewal + voluntary additions | trace, inclinations, penetrations | mass_properties, trace length |
 | edge_reinforcement | as plate | resolved material | resolved section, renewal + voluntary additions | trace_refs, orientation_rule | mass_properties |
-| panel | kind, part_id, id_source, name, function_type, tightness, child part ids (sorted per kind) | — | — | unbounded_geometry, limited_by (part ids + type + bounds), outer_contours, cut_by_* , point_on_surface | mass_properties |
+| panel | kind, part_id, id_source, name, function_type, tightness, child part ids (sorted per kind) | — | — | unbounded_geometry, limited_by (part ids + type + bounds), outer_contours, cut_by_* , point_on_surface | mass_properties, outer_contours + cut_by_contours lengths |
 | seam | kind, part_id, id_source, name | — | — | trace_line, trace_refs | trace_line length |
 | compartment | kind, part_id, id_source, name, compartment_purpose, filling_height, air_pipe_height, relief_valve_pressure | — | — | face_refs (part ids, sorted), face_boundary_curves (canonical, sorted) | volume, cog, curve lengths |
-| vessel | kind, part_id, ship_designation, principal_particulars, builder_info, statutory_data, tonnage_data | — | — | — | — |
+| vessel | kind, part_id, id_source, name, ship_designation, principal_particulars, builder_info, statutory_data, tonnage_data | — | — | — | — |
 
 The vessel part ID is `vessel:<IrVessel.id>` (`id_source: "vessel"`).
 `IrHeader` (timestamps, author, originating system) is deliberately **not**
@@ -112,14 +112,16 @@ standalone items and connection configurations get no leaves in v1; surfaces
 and ref planes are committed indirectly where a panel's `unbounded_geometry`
 resolves them (inlined canonical surface / ref-plane record).
 
-Resolved catalogue records (inlined, not separate leaves):
+Resolved catalogue records (inlined, not separate leaves) carry the
+catalogue object's own part ID plus **all** of its IR fields (canonicalised,
+nested XML `id`/`guidref` dropped), including descriptive fields such as
+`name` and `catalogue_reference`:
 - **material**: material_type, grade, density, yield_stress, ultimate_stress,
   youngs_modulus, poisson_ratio, thermal_expansion, aluminium strengths,
-  alloy_designation, plus the material's own part ID.
+  alloy_designation, name.
 - **section**: section type + all dimension quantities from `IrSection`,
-  plus its part ID.
-- **hole**: parametric variant + dimensions, or canonical contour, plus its
-  part ID.
+  name, catalogue_reference.
+- **hole**: parametric variant + dimensions, or canonical contour, name.
 
 ### Normalisation rules
 
@@ -146,6 +148,14 @@ Resolved catalogue records (inlined, not separate leaves):
    Unknown unit → value kept raw with `"unit": <id>` and a manifest warning.
 2. **References** → part IDs (guid-or-id policy), never XML ids.
    Unresolvable → `{"unresolved": <raw local_ref/guid>}` + manifest warning.
+   SurfaceCollections and their member surfaces are indexed parts (their part
+   ID is the XML id, as they carry no GUID in the IR). A panel
+   `UnboundedGeometry/SurfaceRef` is resolved against top-level surfaces, then
+   SurfaceCollections (inlined as `{type, part_id, name, surfaces}` with the
+   member surface records sorted by JCS bytes — membership is a set), then
+   collection members. `LimitedBy/EdgeCurveRef` targets curves, which are not
+   indexed: the GUID is committed as `target` when present, otherwise only the
+   ref type and bounds — never the local XML id, and no warning.
 3. **Unordered collections** (cut_by_holes, cut_by_contours, limited_by,
    penetrations, child ids, trace_refs where unordered) sorted by their JCS
    bytes. **Ordered** collections (polyline vertices, composite segments,
@@ -153,13 +163,19 @@ Resolved catalogue records (inlined, not separate leaves):
 4. **Closed contours** (closed polyline; composite whose last end == first
    start within 1 µm):
    - rotate so the segment/vertex starting at the lexicographically smallest
-     quantised point (x, y, z) comes first;
-   - compute Newell normal; if its dominant component (largest absolute
+     quantised point (x, y, z) comes first; ties between equal start points
+     are broken by the lexicographically smallest full rotated sequence
+     (per segment: start point, then the segment's JCS bytes);
+   - compute the Newell normal in exact decimal arithmetic on the quantised
+     coordinates; if its dominant component (largest absolute
      value; ties resolved x > y > z) is negative, reverse orientation (reverse
      vertex order / reverse segments and each segment's direction), then
      re-apply the start-point rotation.
-   Open curves and NURBS are kept as-is.
-5. `None`, empty strings, empty lists/dicts and `False` are **omitted**.
+   Open curves and standalone NURBS curves are kept as-is; a NURBS segment
+   inside a reversed closed composite is reversed with it (control points
+   and weights reversed, knots mirrored).
+5. `None`, empty strings, empty lists/dicts and `False` are **omitted** as
+   object members; list elements are positional and are kept.
 6. Every record carries `"kind"`; every nested IR object dict (curves,
    surfaces, sections, materials, mass properties, …) carries `"type"`
    (lowercase IR class name without `Ir` prefix). Nested XML `id`/`guidref`
@@ -231,6 +247,10 @@ class. `created` and `source` are informational and not part of the root.
 record + salt, confirm it equals `aspect_hashes[aspect]`, recompute
 `part_hash` from `aspect_hashes`, then recompute the root from `leaf_index`,
 `tree_size` and `audit_path`; compare to `root` (and to `--root` if given).
+A bundle must disclose at least one aspect (otherwise `part_id`/`kind` are
+unauthenticated) and is refused if its `profile` is unsupported. `tree_size`
+and `leaf_index` are bundle-supplied and not fully authenticated by the root
+alone; pin the part count from an authenticated manifest if exact size matters.
 
 ## Verify and diff
 

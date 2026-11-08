@@ -1,0 +1,25 @@
+[project]
+name = "ocx-integrity"
+version = "0.1.0"
+description = "Canonical salted per-aspect hashes + Merkle manifest for OCX models (ocx-hash/1)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ocx-model-core>=0.5,<0.6",
+    "rfc8785>=0.1.4",
+    "typer>=0.9",
+    "loguru>=0.7",
+]
+
+[project.scripts]
+ocx-integrity = "ocx_integrity.cli:entrypoint"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ocx_integrity"]
+
+[tool.uv.sources]
+ocx-model-core = { workspace = true }
