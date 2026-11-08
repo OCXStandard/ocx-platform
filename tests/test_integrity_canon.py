@@ -8,6 +8,15 @@ from decimal import Decimal
 from ocx_integrity.canon_geom import _reverse_seg, curve_record
 from ocx_integrity.jsonutil import prune, sort_jcs, type_name
 from ocx_integrity.quantize import Quantizer, fmt_decimal
+from ocx_integrity.records.common import (
+    Context,
+    hole_placement,
+    identity,
+    make_record,
+    material_aspect,
+    part_id,
+    section_value,
+)
 from ocx_model_core.model.ir import (
     IrCompositeCurve3D,
     IrCurve3D,
@@ -15,10 +24,13 @@ from ocx_model_core.model.ir import (
     IrPoint3D,
     IrPolyLine3D,
     IrVector3D,
+    ParentKind,
+    ParentRef,
     Quantity,
+    Ref,
 )
 
-from tests.integrity_fixtures import registry, square
+from tests.integrity_fixtures import hole, make_vessel, registry, square
 
 
 def _quantizer() -> tuple[Quantizer, list[str]]:
@@ -289,3 +301,103 @@ def test_closed_composite_with_repeated_min_start_is_rotation_invariant():
         for r in range(len(r_ring)):
             records.add(repr(curve_record(_ring_composite(r_ring[r:] + r_ring[:r]), canon)))
     assert len(records) == 1
+
+
+def test_part_id_prefers_guid():
+    v = make_vessel()
+    assert part_id(v.plates["PL1"]) == ("G-PL-1", "guid")
+    assert part_id(v.stiffeners["ST1"]) == ("ST1", "xml_id")
+
+
+def test_resolve_by_xml_id_then_guid_then_unresolved():
+    ctx = Context(make_vessel())
+    ctx.current = "plate G-PL-1"
+    assert ctx.resolve(Ref("P1")) == "G-PAN-1"
+    assert ctx.resolve(Ref("nope", "G-PAN-1")) == "G-PAN-1"
+    assert ctx.resolve(Ref("ST1")) == "ST1"
+    assert ctx.resolve(Ref("X9")) == {"unresolved": "X9"}
+    assert ctx.warnings == ["unresolved reference 'X9' on plate G-PL-1"]
+
+
+def test_resolve_keeps_ref_offset():
+    ctx = Context(make_vessel())
+    ref = Ref("P1", offset=Quantity(10.0, "Umm"), offset_direction=IrVector3D(0.0, 0.0, 1.0))
+    assert ctx.resolve(ref) == {
+        "ref": "G-PAN-1",
+        "offset": "0.010000",
+        "offset_direction": ["0.000000", "0.000000", "1.000000"],
+    }
+
+
+def test_parent_resolves_panel_and_vessel():
+    ctx = Context(make_vessel())
+    assert ctx.parent(ParentRef(ParentKind.PANEL, "P1")) == "G-PAN-1"
+    assert ctx.parent(ParentRef(ParentKind.VESSEL, "V1")) == "vessel:V1"
+
+
+def test_canon_dataclass_drops_ids_and_adds_type():
+    ctx = Context(make_vessel())
+    rec = ctx.canon(make_vessel().plates["PL1"].mass_properties)
+    assert rec == {
+        "type": "massproperties",
+        "moulded_dry_weight": "1500.000",
+        "moulded_cog": ["1.000000", "1.000000", "0.000000"],
+    }
+
+
+def test_make_record_returns_none_when_empty():
+    assert make_record("plate", thickness=None, name="") is None
+    assert make_record("plate", thickness="0.012000") == {"kind": "plate", "thickness": "0.012000"}
+
+
+def test_identity_material_section_and_hole_records():
+    v = make_vessel()
+    ctx = Context(v)
+    plate = v.plates["PL1"]
+    assert identity(
+        "plate", plate, ctx, function_type=None, parent=ctx.parent(plate.parent_ref)
+    ) == {"kind": "plate", "id_source": "guid", "name": "Deck plate", "parent": "G-PAN-1"}
+    mat = material_aspect("plate", plate.material_ref, ctx)
+    assert mat == {
+        "kind": "plate",
+        "material": {
+            "part_id": "G-MAT-1",
+            "type": "material",
+            "grade": "AH36",
+            "density": "7850.000",
+            "yield_stress": "355000000",
+            "youngs_modulus": "206000000000",
+        },
+    }
+    assert material_aspect("plate", None, ctx) is None
+    assert section_value(Ref("S1"), ctx) == {
+        "part_id": "S1",
+        "type": "flatbarsection",
+        "name": "FB200x12",
+        "section_type": "FlatBar",
+        "height": "0.200000",
+        "width": "0.012000",
+    }
+    assert hole_placement(hole(500.0, 500.0), ctx) == {
+        "hole": {
+            "part_id": "G-HOLE-1",
+            "type": "hole2d",
+            "parametric": {"type": "parametrichole", "variant": "circle", "diameter": "0.100000"},
+        },
+        "transformation": {
+            "type": "transformation",
+            "origin": ["0.500000", "0.500000", "0.000000"],
+            "primary_axis": ["1.000000", "0.000000", "0.000000"],
+            "secondary_axis": ["0.000000", "1.000000", "0.000000"],
+        },
+    }
+
+
+def test_unresolved_material_is_recorded_not_dropped():
+    ctx = Context(make_vessel())
+    ctx.current = "plate X"
+    assert material_aspect("plate", Ref("M404"), ctx) == {
+        "kind": "plate",
+        "material": {"unresolved": "M404"},
+    }
+    assert ctx.warnings == ["unresolved material reference 'M404' on plate X"]
