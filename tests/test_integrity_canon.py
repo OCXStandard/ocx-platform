@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from ocx_integrity.canon_geom import _reverse_seg, curve_record
 from ocx_integrity.jsonutil import prune, sort_jcs, type_name
+from ocx_integrity.manifest import hash_vessel
 from ocx_integrity.quantize import Quantizer, fmt_decimal
 from ocx_integrity.records import iter_parts
 from ocx_integrity.records.common import (
@@ -19,10 +20,12 @@ from ocx_integrity.records.common import (
     section_value,
 )
 from ocx_model_core.model.ir import (
+    IrCog,
     IrCompositeCurve3D,
     IrCurve3D,
     IrLimitedByRef,
     IrLine3D,
+    IrMassProperties,
     IrPlane3D,
     IrPoint3D,
     IrPolyLine3D,
@@ -36,7 +39,7 @@ from ocx_model_core.model.ir import (
     Ref,
 )
 
-from tests.integrity_fixtures import hole, make_vessel, registry, square
+from tests.integrity_fixtures import KEY, hole, make_vessel, registry, square
 
 
 def _quantizer() -> tuple[Quantizer, list[str]]:
@@ -584,3 +587,44 @@ def test_edge_curve_ref_limits_commit_guid_never_xml_id():
         {"ref_type": "EdgeCurveRef", "target": "G-EC-1"},
     ]
     assert ctx.warnings == []
+
+
+def _aspect_hashes(vessel):
+    return {pid: p.aspect_hashes for pid, p in hash_vessel(vessel, KEY).parts.items()}
+
+
+def _changed(a, b):
+    out = {}
+    for pid in a:
+        diff = sorted(x for x in set(a[pid]) | set(b[pid]) if a[pid].get(x) != b[pid].get(x))
+        if diff:
+            out[pid] = diff
+    return out
+
+
+def test_thickness_change_only_touches_scantlings():
+    v = make_vessel()
+    v.plates["PL1"].thickness = Quantity(14.0, "Umm")
+    assert _changed(_aspect_hashes(make_vessel()), _aspect_hashes(v)) == {"G-PL-1": ["scantlings"]}
+
+
+def test_weight_change_only_touches_physical():
+    v = make_vessel()
+    v.plates["PL1"].mass_properties = IrMassProperties(
+        moulded_dry_weight=Quantity(1600.0, "Ukg"), moulded_cog=IrCog(1000.0, 1000.0, 0.0, "Umm")
+    )
+    assert _changed(_aspect_hashes(make_vessel()), _aspect_hashes(v)) == {"G-PL-1": ["physical"]}
+
+
+def test_hashes_invariant_to_units_order_contour_start_and_noise():
+    v = make_vessel()
+    v.plates["PL1"].outer_contour = square(unit="Um", size=2.0, start=2, reverse=True)
+    v.plates["PL1"].thickness = Quantity(0.012, "Um")
+    v.plates["PL1"].cut_by_holes.reverse()
+    v.panels["P1"].limited_by.reverse()
+    v.stiffeners["ST1"].trace = IrLine3D(
+        curve_length=Quantity(2.0000000001, "Um"),
+        start=IrPoint3D(0.0, 1.0000000001, 0.0, "Um"),
+        end=IrPoint3D(2.0, 1.0, 0.0, "Um"),
+    )
+    assert _aspect_hashes(v) == _aspect_hashes(make_vessel())
