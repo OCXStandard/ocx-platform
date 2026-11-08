@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -94,9 +95,18 @@ def keygen(
     ),
 ) -> None:
     """Create a new random 32-byte key (hex). Keep it secret; never share it."""
-    if output.exists():
-        raise _fail(2, "Refusing to overwrite existing key file {}", output)
-    _write_text(output, generate_key() + "\n")
+    try:
+        # Exclusive, owner-only creation: never replace an existing key, even under a race.
+        fd = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError as exc:
+        raise _fail(2, "Refusing to overwrite existing key file {}", output) from exc
+    except OSError as exc:
+        raise _fail(3, "Cannot write {}: {}", output, exc) from exc
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(generate_key() + "\n")
+    except OSError as exc:
+        raise _fail(3, "Cannot write {}: {}", output, exc) from exc
     typer.echo(f"Key written to {output} (keep it secret)")
 
 

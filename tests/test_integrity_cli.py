@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from types import SimpleNamespace
 
 import ocx_integrity.cli as cli_mod
@@ -52,6 +53,13 @@ def test_keygen_writes_key_and_refuses_overwrite(tmp_path):
     assert len(parse_key(out.read_text(encoding="utf-8"))) == 32
     assert out.read_text(encoding="utf-8").strip() not in result.stdout
     assert _invoke("keygen", "-o", out).exit_code == 2
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission bits")
+def test_keygen_creates_owner_only_file(tmp_path):
+    out = tmp_path / "yard.key"
+    assert _invoke("keygen", "-o", out).exit_code == 0
+    assert out.stat().st_mode & 0o077 == 0
 
 
 def test_manifest_then_verify_clean(env):
