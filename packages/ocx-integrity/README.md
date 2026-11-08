@@ -40,9 +40,10 @@ Exit codes:
 - `0`: ok, match, or bundle valid.
 - `1`: changes found, bundle invalid, or part drift on `prove`.
 - `2`: cannot run (parse/build failure, bad key, existing key file on `keygen`,
-  unsupported profile, malformed or tampered manifest/bundle (incl. duplicate
-  JSON keys or hashes that do not recompute), duplicate part IDs, unknown
-  part/aspect).
+  unsupported profile, malformed manifest or bundle (incl. duplicate JSON
+  keys), tampered manifest (hashes that do not recompute), duplicate part IDs,
+  unknown part/aspect). A bundle whose hashes do not check out is invalid
+  (exit `1`).
 - `3`: cannot write output.
 
 Diffing manifests built with different keys reports every part as changed.

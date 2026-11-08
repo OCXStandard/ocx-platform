@@ -235,11 +235,11 @@ def save_manifest(manifest: Manifest, path: Path) -> None:
     )
 
 
-def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     obj: dict[str, Any] = {}
     for key, value in pairs:
         if key in obj:
-            raise IntegrityError(f"duplicate JSON key {key!r} in manifest")
+            raise IntegrityError(f"duplicate JSON key {key!r}")
         obj[key] = value
     return obj
 
@@ -248,7 +248,7 @@ def load_manifest(path: Path) -> Manifest:
     """Load and validate a manifest file. OSError propagates; bad content -> IntegrityError."""
     raw = Path(path).read_bytes()
     try:
-        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=reject_duplicate_keys)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise IntegrityError(f"manifest is not valid UTF-8 JSON: {exc}") from exc
     return Manifest.from_dict(data)

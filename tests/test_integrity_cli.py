@@ -122,6 +122,10 @@ def test_prove_then_check(env):
     assert result.exit_code == 1
     assert result.stdout.startswith("INVALID")
 
+    text = bundle.read_text(encoding="utf-8")
+    bundle.write_text(text.replace("{", '{"root": "x", ', 1), encoding="utf-8")
+    assert _invoke("check", bundle).exit_code == 2  # duplicate JSON key
+
 
 def test_prove_unknown_part_exits_2_and_drift_exits_1(env, monkeypatch):
     _make_manifest(env)

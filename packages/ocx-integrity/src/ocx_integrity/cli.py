@@ -18,6 +18,7 @@ from ocx_integrity.manifest import (
     Manifest,
     build_manifest,
     load_manifest,
+    reject_duplicate_keys,
     save_manifest,
     source_info,
 )
@@ -68,7 +69,9 @@ def _vessel(model: Path):
 
 def _read_json(path: Path, loader: Callable[[dict[str, Any]], T]) -> T:
     try:
-        return loader(json.loads(path.read_text(encoding="utf-8")))
+        return loader(
+            json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys)
+        )
     except (OSError, ValueError, KeyError, TypeError, AttributeError, IntegrityError) as exc:
         raise _fail(2, "Cannot load {}: {}", path, exc) from exc
 

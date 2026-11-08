@@ -228,6 +228,25 @@ def test_closed_composite_invariant_to_start_and_orientation():
     assert curve_record(_square_composite(reverse=True, start=2), canon) == base
 
 
+def test_reverse_nurbs_knots_independent_of_global_decimal_context():
+    seg = {
+        "type": "nurbs3d",
+        "control_points": [["0", "0", "0"], ["1", "0", "0"]],
+        "knot_vector": ["0.000000", "0.000000", "12345.678901", "12345.678901"],
+    }
+    expected = _reverse_seg(seg)["knot_vector"]
+    with decimal.localcontext() as ctx:
+        ctx.prec = 6
+        assert _reverse_seg(seg)["knot_vector"] == expected
+
+
+def test_profile_kinds_match_extractors():
+    from ocx_integrity.profile import KINDS
+    from ocx_integrity.records import EXTRACTORS
+
+    assert set(EXTRACTORS) == set(KINDS)
+
+
 def test_reverse_nurbs_segment_mirrors_knots():
     seg = {
         "type": "nurbs3d",

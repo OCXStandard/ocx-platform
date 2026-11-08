@@ -47,7 +47,9 @@ def _same(a: Point | None, b: Point | None) -> bool:
     # Unknown-unit points carry a raw unit id at index 3; only equal ids are comparable.
     if a is None or b is None or a[3:] != b[3:]:
         return False
-    return all(abs(Decimal(x) - Decimal(y)) <= CLOSURE_TOL for x, y in zip(a[:3], b[:3]))
+    return all(
+        _CTX.abs(_CTX.subtract(Decimal(x), Decimal(y))) <= CLOSURE_TOL for x, y in zip(a[:3], b[:3])
+    )
 
 
 def _min_rotation(items: list[T], key: Callable[[T], Any]) -> list[T]:
@@ -80,7 +82,7 @@ def _newell(pts: list[Point]) -> tuple[Decimal, Decimal, Decimal]:
 
 
 def _dominant_negative(n: tuple[Decimal, Decimal, Decimal]) -> bool:
-    i = max(range(3), key=lambda k: (abs(n[k]), -k))  # ties resolved x > y > z
+    i = max(range(3), key=lambda k: (_CTX.abs(n[k]), -k))  # ties resolved x > y > z
     return n[i] < 0
 
 
@@ -146,7 +148,9 @@ def _reverse_seg(seg: dict[str, Any]) -> dict[str, Any] | None:
         if "knot_vector" in seg:
             kv = [Decimal(k) for k in seg["knot_vector"]]
             lo, hi = kv[0], kv[-1]
-            out["knot_vector"] = [fmt_decimal(lo + hi - k, DEFAULT_DECIMALS) for k in kv[::-1]]
+            out["knot_vector"] = [
+                fmt_decimal(_CTX.subtract(_CTX.add(lo, hi), k), DEFAULT_DECIMALS) for k in kv[::-1]
+            ]
         return out
     return None
 
