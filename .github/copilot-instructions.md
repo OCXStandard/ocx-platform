@@ -5,9 +5,10 @@
 A **uv workspace** (virtual root — the root `pyproject.toml` holds only
 `[tool.uv.workspace]`, shared dev deps, ruff and pytest config). Dependency
 direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
-`ocx-render` → `ocx-geometry` → `ocx-model-core`, and
 `ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
 geometry lazily when installed), and `ocx-integrity` → `ocx-model-core`.
+Rendering/tessellation (`ocx-render`, `ocx-diagnose`) lives in a separate
+private repository and must not be added back here.
 
 ```
 ocx-platform/                  ← repo / workspace root
@@ -39,20 +40,11 @@ ocx-platform/                  ← repo / workspace root
 │   ├── ocx-geometry/           ← geometry evaluation kernel (numpy, no display stack)
 │   │   └── src/ocx_geometry/
 │   │       ├── measure.py       ← length/area/closure measurements on the IR
-│   │       ├── backend.py       ← numpy backend helpers for tessellation
 │   │       ├── surfaces.py      ← IR surface → parametric surface evaluation
 │   │       ├── curves.py        ← IR curve sampling / evaluation
-│   │       ├── sweep.py         ← profile sweeps along traces (stiffeners, pillars)
 │   │       ├── sections_2d.py   ← 2-D section profile outlines
-│   │       ├── uv_tessellator.py← UV-domain triangulation of trimmed surfaces
-│   │       ├── holes.py         ← hole contour resolution + placement on surfaces
-│   │       └── mesh.py          ← triangle-mesh containers and utilities
-│   ├── ocx-render/             ← tessellated GLB/HTML renderer (depends on core + geometry)
-│   │   └── src/ocx_render/
-│   │       ├── render.py        ← render_model(vessel, options) → RenderResult
-│   │       ├── gltf_writer.py   ← write meshes to a .glb file
-│   │       ├── html_viewer.py   ← self-contained HTML viewer around the GLB
-│   │       └── cli.py           ← ocx-render entrypoint
+│   │       ├── topology2d.py    ← 2-D polygon validity and splitting helpers
+│   │       └── holes.py         ← hole contour resolution + placement on surfaces
 │   ├── ocx-rules/              ← configurable best-practice rule engine
 │   │   └── src/ocx_rules/
 │   │       ├── model.py         ← RuleSpec/RuleResult/Finding/Severity/RuleStatus
@@ -67,15 +59,6 @@ ocx-platform/                  ← repo / workspace root
 │   │                              (34 of 36 rules implemented — 24 content +
 │   │                              10 geometry; OCX-TOP-006/007 compartment
 │   │                              rules are deferred stubs in geometry_stubs.py)
-│   ├── ocx-diagnose/           ← render-pipeline + rule diagnostics CLI
-│   │   └── src/ocx_diagnose/
-│   │       ├── cli.py           ← ocx-diagnose entrypoint — two subcommands:
-│   │       │                      `diagnose` (tolerance sweeps) and `top-001`
-│   │       ├── top001.py        ← TOP-001 LimitedBy closure diagnostics
-│   │       │                      (diagnose_panel, select_panels, write_top001_report)
-│   │       ├── sweep.py / analyse.py / checks.py / probes.py / advice.py
-│   │       ├── figures.py       ← plotly figures (incl. limitedby_fig)
-│   │       └── report.py        ← self-contained HTML report
 │   ├── ocx-integrity/          ← salted aspect hashes + Merkle manifest (core only)
 │   │   └── src/ocx_integrity/
 │   │       ├── profile.py       ← PROFILE "ocx-hash/1", ASPECTS, precision table
@@ -101,10 +84,9 @@ ocx-platform/                  ← repo / workspace root
 
 Import rule: parser/builder/IR/units/schema-validation code lives under
 `ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`;
-tessellation/rendering code under `ocx_render.*`; integrity hashing/manifest/proof
-code under `ocx_integrity.*` (core only — never imports geometry/render). The validator never reaches
-into render/tessellation code — `ocx-render` depends on core + geometry, not
-the other way around.
+geometry evaluation/measurement under `ocx_geometry.*`; integrity
+hashing/manifest/proof code under `ocx_integrity.*` (core only — never
+imports geometry). No tessellation or rendering code belongs in this repo.
 
 ## Build, test, and lint
 
@@ -145,15 +127,6 @@ validator validate schema model.3docx [--max-errors N]
 
 # Run configurable best-practice rules (exit 0 clean / 1 error findings / 2 cannot run)
 validator validate rules model.3docx [--config FILE] [--category CAT] [--rule ID]
-
-# Tessellate to GLB + self-contained HTML viewer (exit 0 rendered / 1 nothing renderable / 2 cannot parse / 3 cannot write output)
-ocx-render model.3docx [--destination out.glb] [--tolerance MM] [--no-html]
-
-# Render-pipeline tolerance-sweep diagnostics with HTML report
-ocx-diagnose diagnose model.3docx
-
-# TOP-001 LimitedBy closure diagnostics (exit 0 all plotted panels close / 1 at least one does not / 2 cannot parse/build/diagnose incl. unknown --panel ids / 3 cannot write output)
-ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
 
 # Integrity manifest (profile ocx-hash/1; exit 0 ok / 1 changed or invalid / 2 cannot run / 3 cannot write)
 ocx-integrity keygen -o yard.key

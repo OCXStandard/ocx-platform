@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "ocx-model-core>=0.5,<0.6",
-    "ocx-geometry>=0.1,<0.2",
+    "ocx-geometry>=0.2,<0.3",
     "ocx-rules>=0.1,<0.2",
     "mcp>=1.0,<2",
     "loguru>=0.7",

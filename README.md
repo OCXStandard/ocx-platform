@@ -35,25 +35,8 @@ making downstream tools independent of any particular OCX schema version.
   other versions. 34 of the 36 rules are fully implemented (24 content
   rules + 10 geometry-dependent rules backed by the analytic geometry
   kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred
-- **3-D rendering - EXPERIMENTAL** (`ocx-render`): tessellates plates, brackets,
-  stiffeners and pillars to a GLB plus a self-contained HTML viewer. Multi-member
-  shell panels are built from one shared chart mesh that plates are trimmed out
-  of (`ocx_geometry.mesh_trim`), with CutBy holes cut out. Plates are coloured
-  by thickness by default (`--color-by part` for per-part shades); the viewer
-  has a thickness legend that isolates a thickness, a panel-grouped searchable
-  parts tree with show/hide, and click-to-select in 3D. `--panel` renders
-  selected panels only; plates are tessellated in parallel worker processes
-  (`--workers`); `--log-level DEBUG` prints per-stage timings
-- **Render diagnostics EXPERIMENTAL** (`ocx-diagnose diagnose`): runs the render with diagnostic
-  hooks and writes an interactive HTML report (plotly.js embedded) plus optional
-  JSON: per-plate route, mesh health, surface deviation, neighbour gaps/overlaps,
-  chart distortion and a tolerance sweep. The report also contains ranked
-  *Findings* per panel and a *Diagnosis* box per worst plate, each with
-  evidence, likely cause, "Improve the meshing" steps and "Improve the OCX
-  source" steps. Status `confirmed` means a probe proved it, `likely` means it
-  was inferred from metrics. Findings are also written to the JSON output.
-  `ocx-diagnose top-001` plots the unresolved LimitedBy contours of panels
-  failing rule OCX-TOP-001 (panel boundary must close).
+- **3-D rendering and render diagnostics** are developed in a separate,
+  private project and are not part of this platform.
 - **Integrity manifest - EXPERIMENTAL** (`ocx-integrity`): stable part IDs and
   canonical, salted per-aspect hashes (identity, material, scantlings,
   geometry, physical) rolled up in an RFC 9162 Merkle tree to one manifest
@@ -167,30 +150,9 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   │       ├── measure.py         ← length/area/closure measurements on the IR
 │   │       ├── curves.py          ← sample IR curves into 3-D polylines
 │   │       ├── surfaces.py        ← surface parametrizations (evaluate/inverse/normals)
-│   │       ├── lscm.py            ← LSCM chart mesh over multi-member panels
-│   │       ├── mesh_trim.py       ← trim plates (and holes) out of a chart mesh
-│   │       ├── uv_tessellator.py  ← UV-domain tessellation of single-surface plates
-│   │       ├── holes.py           ← CutBy hole profiles and placement
-│   │       ├── bracket.py         ← planar bracket solids
-│   │       ├── sweep.py           ← stiffener/pillar section sweeps
-│   │       ├── mesh.py            ← PartMesh output unit
-│   │       ├── backend.py         ← TessellationOptions, RenderResult, ITessellator
-│   │       └── diagnostics.py     ← optional DiagSink hooks used by ocx-diagnose
-│   ├── ocx-render/                ← tessellated GLB/HTML renderer (core + geometry)
-│   │   └── src/ocx_render/
-│   │       ├── render.py          ← render_model(vessel, options) → RenderResult
-│   │       ├── colors.py          ← thickness/section colour schemes + legend
-│   │       ├── gltf_writer.py     ← write meshes to a .glb file
-│   │       ├── html_viewer.py     ← self-contained HTML viewer around the GLB
-│   │       └── cli.py             ← ocx-render entrypoint
-│   ├── ocx-diagnose/              ← render-pipeline diagnostics (render + rules)
-│   │   └── src/ocx_diagnose/
-│   │       ├── analyse.py         ← render with a DiagSink, per-panel results
-│   │       ├── checks.py / probes.py / sweep.py ← metrics, source probes, tolerance sweep
-│   │       ├── advice.py          ← findings: evidence → cause → remedies
-│   │       ├── report.py / figures.py ← HTML (plotly) report and JSON stats
-│   │       ├── top001.py          ← OCX-TOP-001 LimitedBy closure diagnosis
-│   │       └── cli.py             ← ocx-diagnose diagnose / top-001
+│   │       ├── sections_2d.py     ← 2-D section profile outlines
+│   │       ├── topology2d.py      ← 2-D polygon validity and splitting helpers
+│   │       └── holes.py           ← CutBy hole profiles and placement
 │   ├── ocx-rules/                 ← configurable best-practice rule engine
 │   │   └── src/ocx_rules/
 │   │       ├── model.py           ← RuleSpec, RuleResult, Finding, Severity, RuleStatus
@@ -231,12 +193,9 @@ ocx-platform/                      ← workspace root (virtual — no package he
 ```
 
 Dependency direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
-`ocx-render` → `ocx-geometry` → `ocx-model-core`,
-`ocx-diagnose` → `ocx-render` + `ocx-rules`, `ocx-integrity` → `ocx-model-core`, and
+`ocx-integrity` → `ocx-model-core`, and
 `ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
 geometry lazily when installed).
-A tessellation render/viewer can depend on core + geometry without ever being
-deployed with the validator.
 
 ---
 
@@ -272,17 +231,6 @@ validator validate rules model.3docx --rule OCX-ID-002 --destination rules.md
 # and summarize them into a single two-part <model>_validation.md beside the
 # model: Part 1 — XSD errors grouped into root causes with proposed
 # improvements; Part 2 — per-rule findings summary with proposed changes
-
-# tessellate to GLB + HTML viewer (DEBUG log shows timing per stage)
-ocx-render model.3docx --destination out.glb --log-level DEBUG [--tolerance MM] \
-    [--panel ID ...] [--color-by thickness|part] [--workers N] [--no-html]
-
-# diagnose the render: HTML report (+ JSON), optional tolerance sweep in mm
-ocx-diagnose diagnose model.3docx [--panel ID] [--tolerance 50] \
-    [--tolerance-sweep 25,50,100] [--report out.html] [--json out.json] [--max-plates 12]
-
-# plot the unresolved LimitedBy contours of panels failing OCX-TOP-001
-ocx-diagnose top-001 model.3docx [--panel ID]... [--tolerance MM] [--report out.html]
 
 # integrity manifest: salted aspect hashes + Merkle root (exit 0 ok / 1 changed or invalid / 2 cannot run / 3 cannot write)
 ocx-integrity keygen -o yard.key
