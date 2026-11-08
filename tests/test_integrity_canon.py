@@ -5,10 +5,20 @@ from __future__ import annotations
 import decimal
 from decimal import Decimal
 
+from ocx_integrity.canon_geom import _reverse_seg, curve_record
+from ocx_integrity.jsonutil import prune, sort_jcs, type_name
 from ocx_integrity.quantize import Quantizer, fmt_decimal
-from ocx_model_core.model.ir import IrPoint3D, IrVector3D, Quantity
+from ocx_model_core.model.ir import (
+    IrCompositeCurve3D,
+    IrCurve3D,
+    IrLine3D,
+    IrPoint3D,
+    IrPolyLine3D,
+    IrVector3D,
+    Quantity,
+)
 
-from tests.integrity_fixtures import registry
+from tests.integrity_fixtures import registry, square
 
 
 def _quantizer() -> tuple[Quantizer, list[str]]:
@@ -76,3 +86,138 @@ def test_point_and_vector():
         "0.000000",
     ]
     assert q.vector(IrVector3D(0.0, 0.0, 1.0)) == ["0.000000", "0.000000", "1.000000"]
+
+
+def _geom_canon():
+    q, _ = _quantizer()
+
+    def canon(v):
+        if isinstance(v, IrPoint3D):
+            return q.point(v)
+        if isinstance(v, IrVector3D):
+            return q.vector(v)
+        if isinstance(v, bool) or v is None or isinstance(v, (int, str)):
+            return v
+        if isinstance(v, float):
+            return q.scalar(v)
+        if isinstance(v, Quantity):
+            return q.quantity(v)
+        if isinstance(v, IrCurve3D):
+            return curve_record(v, canon)
+        if isinstance(v, list):
+            return [canon(x) for x in v]
+        raise TypeError(type(v))
+
+    return canon
+
+
+def _square_composite(reverse: bool = False, start: int = 0) -> IrCompositeCurve3D:
+    c = [(0.0, 0.0), (2000.0, 0.0), (2000.0, 2000.0), (0.0, 2000.0)]
+    if reverse:
+        c = c[::-1]
+    c = c[start:] + c[:start]
+    segs = [
+        IrLine3D(
+            curve_length=None,
+            start=IrPoint3D(*c[i], 0.0, "Umm"),
+            end=IrPoint3D(*c[(i + 1) % 4], 0.0, "Umm"),
+        )
+        for i in range(4)
+    ]
+    return IrCompositeCurve3D(curve_length=None, segments=segs)
+
+
+def test_prune_drops_empty_values_recursively():
+    assert prune(
+        {
+            "a": None,
+            "b": "",
+            "c": [],
+            "d": {},
+            "e": False,
+            "f": {"g": None},
+            "h": 0,
+            "i": True,
+            "j": ["x", None],
+        }
+    ) == {"h": 0, "i": True, "j": ["x", None]}
+
+
+def test_type_name_strips_ir_prefix():
+    assert type_name(IrPolyLine3D(curve_length=None)) == "polyline3d"
+
+
+def test_sort_jcs_is_deterministic():
+    assert sort_jcs([{"b": "2"}, {"a": "1"}]) == [{"a": "1"}, {"b": "2"}]
+
+
+def test_closed_polyline_canonical_form():
+    canon = _geom_canon()
+    rec = curve_record(square(), canon)
+    assert rec == {
+        "type": "polyline3d",
+        "is_closed": True,
+        "vertices": [
+            ["0.000000", "0.000000", "0.000000"],
+            ["2.000000", "0.000000", "0.000000"],
+            ["2.000000", "2.000000", "0.000000"],
+            ["0.000000", "2.000000", "0.000000"],
+        ],
+    }
+
+
+def test_closed_polyline_invariant_to_start_orientation_units_and_closure():
+    canon = _geom_canon()
+    base = curve_record(square(), canon)
+    assert curve_record(square(start=2), canon) == base
+    assert curve_record(square(reverse=True, start=1), canon) == base
+    assert curve_record(square(repeat_first=True), canon) == base
+    assert curve_record(square(unit="Um", size=2.0), canon) == base
+    assert curve_record(square(size=2000.0000001), canon) == base  # sub-µm noise
+
+
+def test_open_polyline_keeps_order():
+    canon = _geom_canon()
+    pts = [IrPoint3D(0.0, 0.0, 0.0, "Umm"), IrPoint3D(1000.0, 0.0, 0.0, "Umm")]
+    fwd = curve_record(IrPolyLine3D(curve_length=None, vertices=pts), canon)
+    rev = curve_record(IrPolyLine3D(curve_length=None, vertices=pts[::-1]), canon)
+    assert fwd != rev
+    assert "is_closed" not in fwd
+
+
+def test_closed_composite_invariant_to_start_and_orientation():
+    canon = _geom_canon()
+    base = curve_record(_square_composite(), canon)
+    assert base["segments"][0]["start"] == ["0.000000", "0.000000", "0.000000"]
+    assert base["segments"][0]["end"] == ["2.000000", "0.000000", "0.000000"]
+    assert curve_record(_square_composite(start=3), canon) == base
+    assert curve_record(_square_composite(reverse=True, start=2), canon) == base
+
+
+def test_reverse_nurbs_segment_mirrors_knots():
+    seg = {
+        "type": "nurbs3d",
+        "control_points": [["0", "0", "0"], ["1", "1", "0"], ["2", "0", "0"]],
+        "weights": ["1.000000", "2.000000", "3.000000"],
+        "knot_vector": [
+            "0.000000",
+            "0.000000",
+            "0.000000",
+            "0.300000",
+            "1.000000",
+            "1.000000",
+            "1.000000",
+        ],
+    }
+    rev = _reverse_seg(seg)
+    assert rev["control_points"] == [["2", "0", "0"], ["1", "1", "0"], ["0", "0", "0"]]
+    assert rev["weights"] == ["3.000000", "2.000000", "1.000000"]
+    assert rev["knot_vector"] == [
+        "0.000000",
+        "0.000000",
+        "0.000000",
+        "0.700000",
+        "1.000000",
+        "1.000000",
+        "1.000000",
+    ]
