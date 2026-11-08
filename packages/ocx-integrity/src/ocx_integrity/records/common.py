@@ -20,7 +20,7 @@ from ocx_model_core.model.ir import (
 )
 
 from ocx_integrity.canon_geom import curve_record
-from ocx_integrity.jsonutil import dataclass_dict, prune, sort_jcs
+from ocx_integrity.jsonutil import dataclass_dict, prune, sort_jcs, type_name
 from ocx_integrity.quantize import Quantizer
 
 
@@ -188,6 +188,7 @@ def section_value(ref: Ref | None, ctx: Context) -> dict[str, Any] | None:
 def hole_placement(h: IrHole2DContour, ctx: Context) -> dict[str, Any]:
     return prune(
         {
+            "type": type_name(h),
             "name": h.name,
             "hole": _resolved_catalogue(h.hole_ref, ctx.holes, "hole shape", ctx),
             "transformation": ctx.canon(h.transformation),

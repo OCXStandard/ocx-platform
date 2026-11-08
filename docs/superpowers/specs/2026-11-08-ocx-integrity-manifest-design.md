@@ -112,14 +112,16 @@ standalone items and connection configurations get no leaves in v1; surfaces
 and ref planes are committed indirectly where a panel's `unbounded_geometry`
 resolves them (inlined canonical surface / ref-plane record).
 
-Resolved catalogue records (inlined, not separate leaves):
+Resolved catalogue records (inlined, not separate leaves) carry the
+catalogue object's own part ID plus **all** of its IR fields (canonicalised,
+nested XML `id`/`guidref` dropped), including descriptive fields such as
+`name` and `catalogue_reference`:
 - **material**: material_type, grade, density, yield_stress, ultimate_stress,
   youngs_modulus, poisson_ratio, thermal_expansion, aluminium strengths,
-  alloy_designation, plus the material's own part ID.
+  alloy_designation, name.
 - **section**: section type + all dimension quantities from `IrSection`,
-  plus its part ID.
-- **hole**: parametric variant + dimensions, or canonical contour, plus its
-  part ID.
+  name, catalogue_reference.
+- **hole**: parametric variant + dimensions, or canonical contour, name.
 
 ### Normalisation rules
 

@@ -379,6 +379,7 @@ def test_identity_material_section_and_hole_records():
         "width": "0.012000",
     }
     assert hole_placement(hole(500.0, 500.0), ctx) == {
+        "type": "hole2dcontour",
         "hole": {
             "part_id": "G-HOLE-1",
             "type": "hole2d",
