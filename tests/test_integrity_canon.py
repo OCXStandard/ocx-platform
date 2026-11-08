@@ -234,3 +234,58 @@ def test_reverse_nurbs_segment_mirrors_knots():
         "1.000000",
         "1.000000",
     ]
+
+
+def _p(x, y, z):
+    return IrPoint3D(x, y, z, "Um")
+
+
+def _ring_composite(pts: list[IrPoint3D]) -> IrCompositeCurve3D:
+    n = len(pts)
+    segs = [IrLine3D(curve_length=None, start=pts[i], end=pts[(i + 1) % n]) for i in range(n)]
+    return IrCompositeCurve3D(curve_length=None, segments=segs)
+
+
+_TIED_NORMAL = [
+    _p(39.302, 39.302, 10.062),
+    _p(19.234, 19.234, 27.478),
+    _p(-6.785, -6.785, -10.417),
+    _p(19.59, 19.59, -28.297),
+]
+
+
+def test_closed_polyline_with_tied_normal_components_is_orientation_invariant():
+    canon = _geom_canon()
+    fwd = IrPolyLine3D(curve_length=None, vertices=_TIED_NORMAL, is_closed=True)
+    rev = IrPolyLine3D(curve_length=None, vertices=_TIED_NORMAL[::-1], is_closed=True)
+    assert curve_record(fwd, canon) == curve_record(rev, canon)
+
+
+def test_closed_composite_with_tied_normal_components_is_orientation_invariant():
+    canon = _geom_canon()
+    fwd = curve_record(_ring_composite(_TIED_NORMAL), canon)
+    assert curve_record(_ring_composite(_TIED_NORMAL[::-1]), canon) == fwd
+
+
+def test_closed_polyline_with_repeated_min_vertex_is_rotation_invariant():
+    canon = _geom_canon()
+    a, b, c, d, e = _p(0, 0, 0), _p(1, 0, 0), _p(1, 1, 0), _p(0, 1, 0), _p(0.5, 0.5, 0)
+    ring = [a, b, c, a, e, d]
+    records = set()
+    for r_ring in (ring, ring[::-1]):
+        for r in range(len(r_ring)):
+            verts = r_ring[r:] + r_ring[:r]
+            pl = IrPolyLine3D(curve_length=None, vertices=verts, is_closed=True)
+            records.add(repr(curve_record(pl, canon)))
+    assert len(records) == 1
+
+
+def test_closed_composite_with_repeated_min_start_is_rotation_invariant():
+    canon = _geom_canon()
+    a, b, c, d, e = _p(0, 0, 0), _p(1, 0, 0), _p(1, 1, 0), _p(0, 1, 0), _p(0.5, 0.5, 0)
+    ring = [a, b, c, a, e, d]
+    records = set()
+    for r_ring in (ring, ring[::-1]):
+        for r in range(len(r_ring)):
+            records.add(repr(curve_record(_ring_composite(r_ring[r:] + r_ring[:r]), canon)))
+    assert len(records) == 1

@@ -1,8 +1,9 @@
 """Canonical curve dicts; closed-contour start-point and orientation normalisation.
 
 Points are lists of quantised decimal strings, as produced by ``Quantizer.point``.
-Closed rings start at the lexicographically smallest point. If the dominant
-Newell-normal component (ties x > y > z) is negative, the orientation is reversed.
+Closed rings start at the lexicographically smallest point (ties broken by the
+smallest whole rotated sequence). If the dominant component of the exact-decimal
+Newell normal (ties x > y > z) is negative, the orientation is reversed.
 Open curves and NURBS are kept as given.
 """
 
@@ -10,16 +11,18 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from decimal import Decimal
-from typing import Any
+from typing import Any, TypeVar
 
+import rfc8785
 from ocx_model_core.model.ir import IrCompositeCurve3D, IrCurve3D, IrPolyLine3D
 
 from ocx_integrity.jsonutil import dataclass_dict, prune
 from ocx_integrity.profile import DEFAULT_DECIMALS
-from ocx_integrity.quantize import fmt_decimal
+from ocx_integrity.quantize import _CTX, fmt_decimal
 
 Canon = Callable[[Any], Any]
 Point = list[str]
+T = TypeVar("T")
 
 CLOSURE_TOL = Decimal("0.000001")  # 1 µm in SI metres
 
@@ -35,8 +38,9 @@ def curve_record(curve: IrCurve3D, canon: Canon) -> dict[str, Any]:
 # --- point helpers -----------------------------------------------------------
 
 
-def _key(p: Point) -> tuple[Decimal, ...]:
-    return tuple(Decimal(c) for c in p[:3])
+def _key(p: Point) -> tuple[Decimal, Decimal, Decimal, tuple[str, ...]]:
+    x, y, z = (Decimal(c) for c in p[:3])
+    return x, y, z, tuple(p[3:])
 
 
 def _same(a: Point | None, b: Point | None) -> bool:
@@ -46,24 +50,36 @@ def _same(a: Point | None, b: Point | None) -> bool:
     return all(abs(Decimal(x) - Decimal(y)) <= CLOSURE_TOL for x, y in zip(a[:3], b[:3]))
 
 
+def _min_rotation(items: list[T], key: Callable[[T], Any]) -> list[T]:
+    """Rotation whose whole key sequence is lexicographically smallest (O(n²)).
+
+    It starts at an element with the smallest key; ties between equal keys are
+    broken by the rest of the rotated sequence, so the result is input-rotation free.
+    """
+    keys = [key(x) for x in items]
+    i = min(range(len(items)), key=lambda k: keys[k:] + keys[:k])
+    return items[i:] + items[:i]
+
+
 def _rotate_min(pts: list[Point]) -> list[Point]:
-    i = min(range(len(pts)), key=lambda k: _key(pts[k]))
-    return pts[i:] + pts[:i]
+    return _min_rotation(pts, _key)
 
 
-def _newell(pts: list[Point]) -> tuple[float, float, float]:
-    nx = ny = nz = 0.0
+def _newell(pts: list[Point]) -> tuple[Decimal, Decimal, Decimal]:
+    # Exact decimal arithmetic: independent of summation order, so a reversed or
+    # rotated ring yields an exactly negated or identical normal.
+    nx = ny = nz = Decimal(0)
     for i, cur in enumerate(pts):
         nxt = pts[(i + 1) % len(pts)]
-        x1, y1, z1 = (float(c) for c in cur[:3])
-        x2, y2, z2 = (float(c) for c in nxt[:3])
-        nx += (y1 - y2) * (z1 + z2)
-        ny += (z1 - z2) * (x1 + x2)
-        nz += (x1 - x2) * (y1 + y2)
+        x1, y1, z1 = (Decimal(c) for c in cur[:3])
+        x2, y2, z2 = (Decimal(c) for c in nxt[:3])
+        nx = _CTX.add(nx, _CTX.multiply(_CTX.subtract(y1, y2), _CTX.add(z1, z2)))
+        ny = _CTX.add(ny, _CTX.multiply(_CTX.subtract(z1, z2), _CTX.add(x1, x2)))
+        nz = _CTX.add(nz, _CTX.multiply(_CTX.subtract(x1, x2), _CTX.add(y1, y2)))
     return nx, ny, nz
 
 
-def _dominant_negative(n: tuple[float, float, float]) -> bool:
+def _dominant_negative(n: tuple[Decimal, Decimal, Decimal]) -> bool:
     i = max(range(3), key=lambda k: (abs(n[k]), -k))  # ties resolved x > y > z
     return n[i] < 0
 
@@ -136,8 +152,7 @@ def _reverse_seg(seg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _rotate_segs(segs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    i = min(range(len(segs)), key=lambda k: _key(_endpoints(segs[k])[0]))
-    return segs[i:] + segs[:i]
+    return _min_rotation(segs, lambda s: (_key(_endpoints(s)[0]), rfc8785.dumps(s)))
 
 
 def _composite(curve: IrCompositeCurve3D, canon: Canon) -> dict[str, Any]:

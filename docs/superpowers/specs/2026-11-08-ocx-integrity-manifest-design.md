@@ -153,8 +153,11 @@ Resolved catalogue records (inlined, not separate leaves):
 4. **Closed contours** (closed polyline; composite whose last end == first
    start within 1 µm):
    - rotate so the segment/vertex starting at the lexicographically smallest
-     quantised point (x, y, z) comes first;
-   - compute Newell normal; if its dominant component (largest absolute
+     quantised point (x, y, z) comes first; ties between equal start points
+     are broken by the lexicographically smallest full rotated sequence
+     (per segment: start point, then the segment's JCS bytes);
+   - compute the Newell normal in exact decimal arithmetic on the quantised
+     coordinates; if its dominant component (largest absolute
      value; ties resolved x > y > z) is negative, reverse orientation (reverse
      vertex order / reverse segments and each segment's direction), then
      re-apply the start-point rotation.
