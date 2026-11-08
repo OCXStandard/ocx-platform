@@ -138,7 +138,8 @@ class Context:
         if isinstance(value, (list, tuple)):
             return [self.canon(v) for v in value]
         if isinstance(value, dict):
-            return {str(k): self.canon(v) for k, v in value.items()}
+            # Nested XML ids are exporter-local (e.g. IrGenericSection.extra carries them).
+            return {str(k): self.canon(v) for k, v in value.items() if k not in ("id", "guidref")}
         if dataclasses.is_dataclass(value):
             return dataclass_dict(value, self.canon)
         raise TypeError(f"cannot canonicalise {type(value).__name__}")

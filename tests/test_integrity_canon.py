@@ -402,3 +402,20 @@ def test_unresolved_material_is_recorded_not_dropped():
         "material": {"unresolved": "M404"},
     }
     assert ctx.warnings == ["unresolved material reference 'M404' on plate X"]
+
+
+def test_generic_section_extra_drops_nested_xml_ids():
+    from ocx_model_core.model.ir import IrGenericSection
+
+    from tests.integrity_fixtures import make_vessel
+
+    v = make_vessel()
+    v.sections["S9"] = IrGenericSection(
+        id="S9",
+        guidref="G-S9",
+        section_type="Generic",
+        extra={"id": "S9", "guidref": "G-S9", "catalogue_reference": "c"},
+    )
+    rec = section_value(Ref("S9"), Context(v))
+    assert rec["part_id"] == "G-S9"
+    assert rec["extra"] == {"catalogue_reference": "c"}
