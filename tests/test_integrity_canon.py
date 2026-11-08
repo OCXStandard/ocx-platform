@@ -185,6 +185,19 @@ def test_open_polyline_keeps_order():
     assert "is_closed" not in fwd
 
 
+def test_repeated_endpoint_with_different_unknown_unit_is_kept():
+    canon = _geom_canon()
+    xy = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (0.0, 0.0)]
+
+    def ring(last_unit: str) -> IrPolyLine3D:
+        units = ["Ufoo"] * 4 + [last_unit]
+        pts = [IrPoint3D(x, y, 0.0, u) for (x, y), u in zip(xy, units)]
+        return IrPolyLine3D(curve_length=None, vertices=pts)
+
+    assert curve_record(ring("Ufoo"), canon) != curve_record(ring("Ubar"), canon)
+    assert curve_record(ring("Ubar"), canon)["vertices"][-1][3] == "Ubar"
+
+
 def test_closed_composite_invariant_to_start_and_orientation():
     canon = _geom_canon()
     base = curve_record(_square_composite(), canon)

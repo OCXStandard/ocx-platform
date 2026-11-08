@@ -40,7 +40,8 @@ def _key(p: Point) -> tuple[Decimal, ...]:
 
 
 def _same(a: Point | None, b: Point | None) -> bool:
-    if a is None or b is None or len(a) != len(b):
+    # Unknown-unit points carry a raw unit id at index 3; only equal ids are comparable.
+    if a is None or b is None or a[3:] != b[3:]:
         return False
     return all(abs(Decimal(x) - Decimal(y)) <= CLOSURE_TOL for x, y in zip(a[:3], b[:3]))
 

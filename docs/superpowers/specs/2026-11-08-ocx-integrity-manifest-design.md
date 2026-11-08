@@ -158,8 +158,11 @@ Resolved catalogue records (inlined, not separate leaves):
      value; ties resolved x > y > z) is negative, reverse orientation (reverse
      vertex order / reverse segments and each segment's direction), then
      re-apply the start-point rotation.
-   Open curves and NURBS are kept as-is.
-5. `None`, empty strings, empty lists/dicts and `False` are **omitted**.
+   Open curves and standalone NURBS curves are kept as-is; a NURBS segment
+   inside a reversed closed composite is reversed with it (control points
+   and weights reversed, knots mirrored).
+5. `None`, empty strings, empty lists/dicts and `False` are **omitted** as
+   object members; list elements are positional and are kept.
 6. Every record carries `"kind"`; every nested IR object dict (curves,
    surfaces, sections, materials, mass properties, …) carries `"type"`
    (lowercase IR class name without `Ir` prefix). Nested XML `id`/`guidref`

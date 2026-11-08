@@ -1,4 +1,5 @@
 """Exception hierarchy for ocx-integrity."""
+
 from __future__ import annotations
 
 
