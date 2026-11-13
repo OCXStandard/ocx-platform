@@ -5,6 +5,7 @@ Renderers never see IR objects or Quantity values. ``None`` renders as an
 empty cell.
 ``Link`` cells are internal cross-references: ``target`` names a row anchor
 (see ``ReportTable.row_anchors``); renderers that cannot link render the text.
+``Badge`` cells are coloured labels; renderers without colour render the text.
 """
 from __future__ import annotations
 
@@ -19,7 +20,15 @@ class Link:
     target: str
 
 
-Cell = str | int | float | Link | None
+@dataclass(frozen=True)
+class Badge:
+    """Coloured label: ``tone`` is one of "error", "warning", "info"."""
+
+    text: str
+    tone: str
+
+
+Cell = str | int | float | Link | Badge | None
 
 
 @dataclass(frozen=True)

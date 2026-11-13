@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+### Changed
+
+- **Breaking:** the rules report is one table with an expandable row per
+  rule category, holding its rules and all their findings and unchecked
+  elements (no cap). Severities are colour-coded badges (error red,
+  warning yellow, info green). `validate rules --max-findings` is removed.
+
 ### Added
 
+- Report cells can be coloured `Badge` labels (HTML and rich renderers).
 - Rule reports show unchecked elements: the JSON sidecar gains a per-result
-  `unchecked` list and `summary.unchecked_elements`; the rules report gains
-  an `Unchecked` column and an "Unchecked elements" table (capped by
-  `--max-findings`). The exit code is unchanged.
+  `unchecked` list and `summary.unchecked_elements`; the rules report shows
+  them per rule. The exit code is unchanged.
 
 ## 0.5.0 — 2026-10-20
 

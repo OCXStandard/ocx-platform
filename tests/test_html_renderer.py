@@ -170,3 +170,16 @@ def test_group_toggle_script_present():
 def test_group_rows_styled_bold():
     out = HtmlRenderer().render(_grouped_report())
     assert "tr.group > td { font-weight: 600; }" in out
+
+
+def test_badge_cell_renders_tone_class_and_escapes_text():
+    from ocx_model_validator.reporting.model import Badge
+    table = ReportTable(title="T", columns=["Severity"],
+                        rows=[[Badge("error", "error")],
+                              [Badge("<w>", "warning")]])
+    out = HtmlRenderer().render(Report(title="R", sections=[
+        ReportSection(title="S", tables=[table])]))
+    assert '<span class="badge badge-error">error</span>' in out
+    assert '<span class="badge badge-warning">&lt;w&gt;</span>' in out
+    for tone in ("error", "warning", "info"):
+        assert f".badge-{tone}" in out
