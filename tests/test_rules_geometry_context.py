@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -34,6 +35,23 @@ class TestGeometryContext:
 
     def test_sample_none_curve_returns_none(self, gctx):
         assert gctx.sample(None) is None
+
+    def test_sample_is_memoized_per_curve_and_tolerance(self, gctx):
+        import ocx_rules.geometry_context as gc_mod
+
+        curve = next(
+            c for panel in gctx.vessel.panels.values()
+            for c in gctx.boundary_curves(panel)[0]
+            if GeometryContext(gctx.vessel).sample(c, tol_m=0.005) is not None)
+        with patch.object(gc_mod, "sample_curve",
+                          wraps=gc_mod.sample_curve) as spy:
+            a = gctx.sample(curve, tol_m=0.005)
+            b = gctx.sample(curve, tol_m=0.005)
+            assert spy.call_count == 1
+            assert np.array_equal(a, b)
+            assert a is not b
+            gctx.sample(curve, tol_m=0.01)
+            assert spy.call_count == 2
 
     def test_surface_param_none_returns_none(self, gctx):
         assert gctx.surface_param(None) is None

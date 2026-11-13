@@ -30,6 +30,8 @@ class GeometryContext:
 
     def __init__(self, vessel: "IrVessel") -> None:
         self.vessel = vessel
+        self._sample_cache: dict[tuple[int, float],
+                                 tuple[object, np.ndarray | None]] = {}
 
     @cached_property
     def length(self) -> LengthResolver:
@@ -53,14 +55,25 @@ class GeometryContext:
 
     def sample(self, curve: "IrCurve3D | None",
                tol_m: float = 0.001) -> np.ndarray | None:
-        """Sample a curve to an (N, 3) polyline in metres, or None."""
+        """Sample a curve to an (N, 3) polyline in metres, or None.
+
+        Memoized per (curve, tolerance); callers receive a copy.
+        """
         if curve is None:
             return None
-        try:
-            return sample_curve(curve, self.length, tol_m)
-        except Exception as exc:
-            logger.debug("curve sampling failed: {}", exc)
-            return None
+        key = (id(curve), float(tol_m))
+        entry = self._sample_cache.get(key)
+        if entry is not None and entry[0] is curve:
+            result = entry[1]
+        else:
+            try:
+                result = sample_curve(curve, self.length, tol_m)
+            except Exception as exc:
+                logger.debug("curve sampling failed: {}", exc)
+                result = None
+            # Keep the curve referenced so its id cannot be reused.
+            self._sample_cache[key] = (curve, result)
+        return None if result is None else result.copy()
 
     def surface_param(self, surface: "IrSurface3D | None",
                       tol_m: float = 0.001) -> SurfaceParam | None:

@@ -8,6 +8,7 @@ surface normal, COGs outside the part, and values shared by many parts.
 from __future__ import annotations
 
 import math
+import weakref
 from collections import defaultdict
 from itertools import chain
 from typing import Any
@@ -84,7 +85,21 @@ def _surface_normal_at(params: list, point: np.ndarray) -> np.ndarray | None:
     return _normalize(best[1].normals(best[2])[0])
 
 
+_WEB_ANGLES_CACHE: "weakref.WeakKeyDictionary[Any, list[tuple[Any, int, float]]]" = (
+    weakref.WeakKeyDictionary())
+
+
 def _web_angles(context) -> list[tuple[Any, int, float]]:
+    """Memoized ``_compute_web_angles`` per GeometryContext (TOP-011/012)."""
+    geo = context.geometry
+    cached = _WEB_ANGLES_CACHE.get(geo)
+    if cached is None:
+        cached = _compute_web_angles(context)
+        _WEB_ANGLES_CACHE[geo] = cached
+    return cached
+
+
+def _compute_web_angles(context) -> list[tuple[Any, int, float]]:
     """(stiffener, inclination index, web-to-surface-normal angle in degrees).
 
     Shared by OCX-TOP-011/012. Evaluated at the trace point nearest the

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from ocx_model_core.model.ir import (
     IrCog,
@@ -143,6 +144,17 @@ class TestWebDirection:
     def _run(self, ctx):
         return (web_not_in_plate(ctx, self.NOT_IN_PLATE),
                 web_near_normal(ctx, self.NEAR_NORMAL))
+
+    def test_web_angles_computed_once_per_context(self):
+        import ocx_rules.packs.best_practice.checks.plausibility as mod
+
+        s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        with patch.object(mod, "_compute_web_angles",
+                          wraps=mod._compute_web_angles) as spy:
+            errors, _ = self._run(ctx)
+        assert spy.call_count == 1
+        assert len(errors) == 1
 
     def test_web_along_normal_passes_both(self):
         ctx = _ctx(panels=[_panel()], stiffeners=[_stiffener("s1")])
