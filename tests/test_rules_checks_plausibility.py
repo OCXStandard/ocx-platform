@@ -1,6 +1,7 @@
 """Tests for the exporter plausibility checks (checks/plausibility.py)."""
 from __future__ import annotations
 
+import math
 from types import SimpleNamespace
 
 from ocx_model_core.model.ir import (
@@ -25,6 +26,8 @@ from ocx_model_core.model.ir import (
 from ocx_rules.geometry_context import GeometryContext
 from ocx_rules.packs.best_practice.checks.plausibility import (
     inclination_position_on_trace,
+    web_near_normal,
+    web_not_in_plate,
 )
 
 _UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
@@ -126,3 +129,83 @@ class TestInclinationPositionOnTrace:
     def test_missing_position_is_skipped(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=None)])])
         assert inclination_position_on_trace(ctx, self.PARAMS) == []
+
+
+_S45 = math.sqrt(0.5)
+
+
+class TestWebDirection:
+    NOT_IN_PLATE = {"max_angle_deg": 80.0}
+    NEAR_NORMAL = {"warn_angle_deg": 30.0, "max_angle_deg": 80.0}
+
+    def _run(self, ctx):
+        return (web_not_in_plate(ctx, self.NOT_IN_PLATE),
+                web_near_normal(ctx, self.NEAR_NORMAL))
+
+    def test_web_along_normal_passes_both(self):
+        ctx = _ctx(panels=[_panel()], stiffeners=[_stiffener("s1")])
+        assert self._run(ctx) == ([], [])
+
+    def test_flipped_normal_is_equivalent(self):
+        s = _stiffener("s1", incls=[_incl(web=(0.0, 0.0, -1.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        assert self._run(ctx) == ([], [])
+
+    def test_web_at_45_degrees_warns_only(self):
+        s = _stiffener("s1", incls=[_incl(web=(0.0, _S45, _S45))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        errors, warnings = self._run(ctx)
+        assert errors == []
+        (finding,) = warnings
+        assert finding.element_id == "s1"
+        assert finding.guid == "g-s1"
+        assert "45.0" in finding.message
+
+    def test_web_in_plate_plane_is_error_only(self):
+        s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        errors, warnings = self._run(ctx)
+        assert warnings == []
+        (finding,) = errors
+        assert finding.element_id == "s1"
+        assert "90.0" in finding.message
+
+    def test_off_trace_position_is_evaluated_on_trace(self):
+        s = _stiffener("s1", incls=[_incl(pos=(500, 3000, 0), web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        errors, _ = self._run(ctx)
+        assert len(errors) == 1
+
+    def test_missing_position_uses_trace_start(self):
+        s = _stiffener("s1", incls=[_incl(pos=None, web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        errors, _ = self._run(ctx)
+        assert len(errors) == 1
+
+    def test_uses_nearest_of_several_panel_surfaces(self):
+        # ug.surface is the far plane; only ug.surfaces holds the z-plane.
+        s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel(surfaces=(_FAR_PLANE, _Z_PLANE))], stiffeners=[s])
+        errors, _ = self._run(ctx)
+        assert len(errors) == 1
+
+    def test_stiffener_without_panel_is_skipped(self):
+        s = _stiffener("s1", panel=None, incls=[_incl(web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(stiffeners=[s])
+        assert self._run(ctx) == ([], [])
+
+    def test_panel_without_surface_is_skipped(self):
+        s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel(surfaces=())], stiffeners=[s])
+        assert self._run(ctx) == ([], [])
+
+    def test_trace_far_from_surface_is_skipped(self):
+        s = _stiffener("s1", trace=((0, 0, 1000), (1000, 0, 1000)),
+                       incls=[_incl(pos=(500, 0, 1000), web=(0.0, 1.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        assert self._run(ctx) == ([], [])
+
+    def test_missing_or_zero_web_is_skipped(self):
+        s = _stiffener("s1", incls=[_incl(web=None), _incl(web=(0.0, 0.0, 0.0))])
+        ctx = _ctx(panels=[_panel()], stiffeners=[s])
+        assert self._run(ctx) == ([], [])
