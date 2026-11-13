@@ -9,6 +9,7 @@ from ocx_rules.model import (
     RuleSpec,
     RuleStatus,
     Severity,
+    Unchecked,
 )
 
 
@@ -84,3 +85,21 @@ class TestRulesJsonBuild:
                             findings=(Finding(message="x"),))
         text = json.dumps(rules_json.build([result], model="m.3docx"))
         assert "ocx-rule-validation" in text
+
+    def test_result_carries_unchecked_elements(self):
+        result = RuleResult(spec=_spec(), status=RuleStatus.PASSED,
+                            unchecked=(Unchecked("no surface", "PL1", "g1"),))
+        (entry,) = rules_json.build([result], model="m.3docx")["results"]
+        assert entry["unchecked"] == [
+            {"element_id": "PL1", "guid": "g1", "reason": "no surface"}]
+
+    def test_summary_counts_unchecked_elements(self):
+        a = RuleResult(spec=_spec("R-1"), status=RuleStatus.PASSED,
+                       unchecked=(Unchecked("x", "e1"), Unchecked("y", "e2")))
+        b = RuleResult(spec=_spec("R-2"), status=RuleStatus.FAILED,
+                       findings=(Finding(message="m"),),
+                       unchecked=(Unchecked("z", "e3"),))
+        c = RuleResult(spec=_spec("R-3"), status=RuleStatus.PASSED)
+        doc = rules_json.build([a, b, c], model="m.3docx")
+        assert doc["summary"]["unchecked_elements"] == 3
+        assert doc["results"][2]["unchecked"] == []
