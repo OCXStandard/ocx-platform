@@ -477,27 +477,38 @@ class TestSurfaceNormalsAndBoundaries:
     def test_coplanar_adjacent_members_pass(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
                         _coll_member("sb", 1000, 2000))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome()
 
     def test_opposed_normals_fail(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
                         _coll_member("sb", 1000, 2000, sweep_y=-1.0))
-        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
+        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS).findings
         assert finding.element_id == "sa"
         assert finding.guid == "ga"
         assert "orientation reverses" in finding.message
         assert "sb" in finding.message
 
-    def test_unbuildable_member_skipped(self):
+    def test_unbuildable_member_unchecked(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
                         _coll_member("sb", 1000, 2000, sweep_y=-1.0,
-                                     buildable=False))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+                                     guid="gb", buildable=False))
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome(
+            unchecked=(Unchecked("no buildable surface or boundary", "sb", "gb"),))
+
+    def test_pair_exception_unchecked_on_first_surface(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
+                        _coll_member("sb", 1000, 2000))
+        with patch("ocx_rules.packs.best_practice.checks.topology."
+                   "points_polyline_distances",
+                   side_effect=RuntimeError("boom")):
+            outcome = surface_normals_and_boundaries(ctx, self.PARAMS)
+        assert outcome == CheckOutcome(unchecked=(
+            Unchecked("evaluation against sb failed: boom", "sa", "ga"),))
 
     def test_distant_members_not_adjacent(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
                         _coll_member("sb", 3000, 4000, sweep_y=-1.0))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome()
 
     def test_t_configuration_without_shared_corners_fails(self):
         # Member B abuts the interior of A's x=1000 edge (no coincident
@@ -511,7 +522,7 @@ class TestSurfaceNormalsAndBoundaries:
             face_boundary_curve=boundary_b)
         ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
                         IrSurface(id="sb", geometry=geom_b))
-        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS)
+        (finding,) = surface_normals_and_boundaries(ctx, self.PARAMS).findings
         assert finding.element_id == "sa"
         assert "sb" in finding.message
 
@@ -528,7 +539,7 @@ class TestSurfaceNormalsAndBoundaries:
             face_boundary_curve=boundary_b)
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
                         IrSurface(id="sb", geometry=geom_b))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome()
 
     def test_curved_shared_edge_consistently_oriented_passes(self):
         # Quarter-arc shared edge (r = 1000 mm) between an inner pie
@@ -562,11 +573,11 @@ class TestSurfaceNormalsAndBoundaries:
             face_boundary_curve=boundary_a)
         ctx = _coll_ctx(IrSurface(id="sa", geometry=geom_a),
                         IrSurface(id="sb", geometry=geom_b))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome()
 
     def test_no_collections_passes(self):
         ctx = _ctx(_vessel({}))
-        assert surface_normals_and_boundaries(ctx, self.PARAMS) == []
+        assert surface_normals_and_boundaries(ctx, self.PARAMS) == CheckOutcome()
 
 
 def _incl(x_mm: float, web: tuple = (0, 0, 1),
@@ -594,11 +605,11 @@ class TestStiffenerInclinations:
         ctx = _stiffener_ctx([_incl(0, flange=(0, 1, 0)),
                               _incl(500, flange=(0, 1, 0)),
                               _incl(1000, flange=(0, 1, 0))])
-        assert stiffener_inclinations(ctx, {}) == []
+        assert stiffener_inclinations(ctx, {}) == CheckOutcome()
 
     def test_duplicate_position_fails(self):
         ctx = _stiffener_ctx([_incl(0), _incl(500), _incl(500)])
-        (finding,) = stiffener_inclinations(ctx, {})
+        (finding,) = stiffener_inclinations(ctx, {}).findings
         assert finding.element_id == "st1"
         assert finding.guid == "gst"
         assert "duplicate inclination position" in finding.message.lower()
@@ -606,7 +617,7 @@ class TestStiffenerInclinations:
     def test_web_direction_flip_fails(self):
         ctx = _stiffener_ctx([_incl(0, web=(0, 0, 1)),
                               _incl(500, web=(0, 0, -1))])
-        (finding,) = stiffener_inclinations(ctx, {})
+        (finding,) = stiffener_inclinations(ctx, {}).findings
         assert finding.element_id == "st1"
         assert finding.guid == "gst"
         assert "web direction flips" in finding.message.lower()
@@ -614,7 +625,7 @@ class TestStiffenerInclinations:
     def test_flange_direction_flip_fails(self):
         ctx = _stiffener_ctx([_incl(0, flange=(0, 1, 0)),
                               _incl(500, flange=(0, -1, 0))])
-        (finding,) = stiffener_inclinations(ctx, {})
+        (finding,) = stiffener_inclinations(ctx, {}).findings
         assert "flange direction flips" in finding.message.lower()
 
     def test_missing_vectors_skipped(self):
@@ -622,18 +633,18 @@ class TestStiffenerInclinations:
             _incl(0, web=(0, 0, 1)),
             IrInclination(position=_pt(500, 0)),   # no vectors
             _incl(1000, web=(0, 0, 1))])
-        assert stiffener_inclinations(ctx, {}) == []
+        assert stiffener_inclinations(ctx, {}) == CheckOutcome()
 
     def test_stiffener_without_inclinations_passes(self):
         ctx = _stiffener_ctx([])
-        assert stiffener_inclinations(ctx, {}) == []
+        assert stiffener_inclinations(ctx, {}) == CheckOutcome()
 
     def test_pillar_web_flip_fails(self):
         vessel = _vessel({})
         vessel.pillars["pil1"] = IrPillar(
             id="pil1", parent_ref=_vessel_parent(), guidref="gpil",
             inclinations=[_incl(0, web=(1, 0, 0)), _incl(500, web=(-1, 0, 0))])
-        (finding,) = stiffener_inclinations(_ctx(vessel), {})
+        (finding,) = stiffener_inclinations(_ctx(vessel), {}).findings
         assert finding.element_id == "pil1"
         assert finding.guid == "gpil"
         assert "web direction flips" in finding.message.lower()

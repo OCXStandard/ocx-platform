@@ -1,4 +1,6 @@
-"""Geometry topology checks (OCX-TOP-001 through 005, 008 and 009)."""
+"""Geometry topology checks (OCX-TOP-001 through 005, 008 and 009).
+
+Every check returns CheckOutcome (findings + unchecked elements)."""
 from __future__ import annotations
 
 from typing import Any
@@ -379,9 +381,9 @@ def _probe_into(p: np.ndarray, centroid: np.ndarray,
     return d / norm
 
 
-def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Finding]:
+def surface_normals_and_boundaries(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-008: face orientation must not reverse across shared boundaries."""
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-008")
     geo = context.geometry
     for cid, coll in context.vessel.surface_collections.items():
         members = []
@@ -390,8 +392,8 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
             boundary = geo.sample(getattr(geom, "face_boundary_curve", None))
             param = geo.surface_param(geom)
             if param is None or boundary is None or len(boundary) < 2:
-                logger.debug("TOP-008: member {} of collection {} skipped "
-                             "(no buildable surface or boundary)", surf.id, cid)
+                out.unchecked("no buildable surface or boundary", surf.id,
+                              surf.guidref)
                 continue
             bnd = np.asarray(boundary, dtype=float)
             members.append((surf, param, bnd, bnd.mean(axis=0),
@@ -418,8 +420,9 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                     cand = (list(zip(d_ab, bnd_a))
                             + list(zip(d_ba, bnd_b)))
                 except Exception as exc:  # noqa: BLE001 — lean-pass per pair
-                    logger.debug("TOP-008: pair {}/{} skipped ({})",
-                                 surf_a.id, surf_b.id, exc)
+                    out.unchecked(
+                        f"evaluation against {surf_b.id} failed: {exc}",
+                        surf_a.id, surf_a.guidref)
                     continue
                 close = sorted((c for c in cand if c[0] <= _ADJACENCY_TOL_M),
                                key=lambda c: c[0])
@@ -503,13 +506,13 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                 # strict majority of flipped samples; ties pass
                 if flipped > len(votes) - flipped:
                     angle = float(np.median(angles))
-                    findings.append(Finding(
+                    out.add(Finding(
                         message=(f"Surface orientation reverses across the "
                                  f"shared boundary with member {surf_b.id} "
                                  f"in collection {cid} (normals "
                                  f"{angle:.1f} deg apart)"),
                         element_id=surf_a.id, guid=surf_a.guidref))
-    return findings
+    return out.outcome()
 
 
 _DUP_POSITION_TOL_M = 1e-6
@@ -549,9 +552,9 @@ def _direction_flip(entries, field: str) -> tuple[int, int] | None:
     return None
 
 
-def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
+def stiffener_inclinations(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-009: inclination series must be duplicate-free and smooth."""
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-009")
     geo = context.geometry
     vessel = context.vessel
     members = list(vessel.stiffeners.items()) + list(vessel.pillars.items())
@@ -567,7 +570,7 @@ def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
                     and np.linalg.norm(positions[i] - positions[j])
                     < _DUP_POSITION_TOL_M), None)
         if dup is not None:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Duplicate inclination position: entries {dup[0]} "
                          f"and {dup[1]} are less than "
                          f"{_DUP_POSITION_TOL_M:g} m apart"),
@@ -576,9 +579,9 @@ def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
                              ("flange_direction", "Flange")):
             flip = _direction_flip(entries, field)
             if flip is not None:
-                findings.append(Finding(
+                out.add(Finding(
                     message=(f"{label} direction flips between inclination "
                              f"entries {flip[0]} and {flip[1]} "
                              f"(negative dot product)"),
                     element_id=mid, guid=member.guidref))
-    return findings
+    return out.outcome()
