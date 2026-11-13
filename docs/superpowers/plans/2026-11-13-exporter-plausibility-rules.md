@@ -1043,7 +1043,7 @@ Expected (from the investigation):
 - OCX-PROP-006: ≥ 156 findings with message `Inclination position (195.404, 24.082, 2.964) is shared by 156 parts`; COG findings for the same point.
 - OCX-TOP-010: many findings (positions up to ~25 m off the trace).
 - OCX-TOP-011: about 6 stiffeners (nplcid35141–35156 range).
-- OCX-TOP-012: about 15 stiffeners, including `nplcid34858` at ~37°.
+- OCX-TOP-012: 6 stiffeners, including `nplcid34858` at ~39°.
 - OCX-PROP-005: findings on parts whose COG is the shared point.
 - No rule CRASHED; runtime of the five rules well under a minute.
 

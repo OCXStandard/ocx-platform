@@ -103,7 +103,8 @@ Unit tests in `packages/ocx-rules/tests`, test-first, on a small synthetic
 Update any catalogue/rule-count assertions. Manual check on
 `ocx-render/example-models/iter0.3docx`: expect PROP-006 on the 156 shared
 positions, TOP-010 on the off-trace positions, TOP-011 on the six in-plane
-webs, TOP-012 on the ~15 between 30° and 80°.
+webs, TOP-012 on the 6 between 30° and 80° (21 exceed 10°, 12 exceed 30°,
+6 of those are ≥ 80° and belong to TOP-011).
 
 ## Docs
 
