@@ -384,6 +384,25 @@ def test_unbounded_geometry_320_ref_names():
     assert ir_ug.surface_ref == "SR1"
 
 
+class Plane3D(NS):
+    """Raw surface stand-in; _build_surface dispatches on the class name."""
+
+
+def _plane(pid, z):
+    return Plane3D(id=pid, point_on_surface=NS(coordinates=[0.0, 0.0, z], unit="Um"),
+                   normal=NS(direction=[0.0, 0.0, 1.0]), udirection=None)
+
+
+def test_unbounded_geometry_keeps_every_inline_surface():
+    """A panel may carry several surface patches (e.g. bottom, bilge and side
+    of a hull shell); dropping all but the first flattens the panel."""
+    ug = NS(plane3_d=[_plane("S1", 0.0), _plane("S2", 5.0)], nurbssurface=None,
+            extruded_surface=None, sphere3_d=None, cone3_d=None, cylinder3_d=None)
+    ir_ug = _b()._build_unbounded(ug)
+    assert [s.id for s in ir_ug.surfaces] == ["S1", "S2"]
+    assert ir_ug.surface.id == "S1"
+
+
 def test_unbounded_geometry_310_list_valued_refs():
     """3.0.0/3.1.0 bindings declare grid_ref/surface_ref as lists too."""
     ug = NS(plane3_d=None, nurbssurface=None, extruded_surface=None,

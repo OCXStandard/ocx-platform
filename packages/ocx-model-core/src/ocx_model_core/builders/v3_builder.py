@@ -656,7 +656,7 @@ class OcxV3Builder(IOcxBuilder):
         """Build IrUnboundedGeometry from a Panel/Plate UnboundedGeometry."""
         if ug is None:
             return None
-        surface = None
+        surfaces = []
         for attr in self._SURFACE_ATTRS:
             val = getattr(ug, attr, None)
             if val is None:
@@ -665,13 +665,12 @@ class OcxV3Builder(IOcxBuilder):
             for elem in elems:
                 surface = self._build_surface(elem)
                 if surface is not None:
-                    break
-            if surface is not None:
-                break
+                    surfaces.append(surface)
         grid = _first(getattr(ug, "unbounded_grid_ref", None)) or _first(getattr(ug, "grid_ref", None))
         sref = _first(getattr(ug, "unbounded_surface_ref", None)) or _first(getattr(ug, "surface_ref", None))
         return IrUnboundedGeometry(
-            surface=surface,
+            surface=surfaces[0] if surfaces else None,
+            surfaces=tuple(surfaces),
             surface_ref=(getattr(sref, "local_ref", None) or None) if sref else None,
             grid_ref=(getattr(grid, "local_ref", None) or None) if grid else None,
         )

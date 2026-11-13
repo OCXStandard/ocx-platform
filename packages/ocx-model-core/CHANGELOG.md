@@ -10,6 +10,11 @@
 
 ### Fixed
 
+- `IrUnboundedGeometry.surfaces` keeps every inline surface of an
+  `UnboundedGeometry` (the builder used to keep only the first, so a hull
+  shell panel made of many NURBS patches came out as its flat bottom
+  patch). `surface` is still the first of them.
+
 - `UnboundedGeometry` surface/grid references are list-valued in the
   3.0.x/3.1.x bindings and were read as raw lists, leaving panel surfaces
   unresolved (all plates skipped when rendering such models); the builder
