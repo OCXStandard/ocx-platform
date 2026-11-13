@@ -113,6 +113,7 @@ class OutcomeCollector:
         self._findings: list[Finding] = []
         self._unchecked: list[Unchecked] = []
         self._index: dict[str, int] = {}
+        self._reasons: dict[str, list[str]] = {}
 
     def add(self, finding: Finding) -> None:
         self._findings.append(finding)
@@ -127,13 +128,16 @@ class OutcomeCollector:
         idx = self._index.get(element_id)
         if idx is None:
             self._index[element_id] = len(self._unchecked)
+            self._reasons[element_id] = [reason]
             self._unchecked.append(Unchecked(reason, element_id, guid))
             return
-        prev = self._unchecked[idx]
-        if reason in prev.reason.split("; "):
+        reasons = self._reasons[element_id]
+        if reason in reasons:
             return
-        self._unchecked[idx] = Unchecked(f"{prev.reason}; {reason}",
-                                         element_id, prev.guid or guid)
+        reasons.append(reason)
+        prev = self._unchecked[idx]
+        self._unchecked[idx] = Unchecked("; ".join(reasons), element_id,
+                                         prev.guid or guid)
 
     def outcome(self) -> CheckOutcome:
         return CheckOutcome(findings=tuple(self._findings),

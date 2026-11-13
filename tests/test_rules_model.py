@@ -92,6 +92,12 @@ class TestOutcomeCollector:
         out.unchecked("first", "e1", "g1")  # exact duplicate dropped
         assert out.outcome().unchecked == (Unchecked("first; second", "e1", "g1"),)
 
+    def test_reason_containing_separator_deduplicated(self):
+        out = OutcomeCollector("R-1")
+        out.unchecked("a; b", "e1")
+        out.unchecked("a; b", "e1")
+        assert out.outcome().unchecked == (Unchecked("a; b", "e1"),)
+
     def test_none_element_entries_never_merge(self):
         out = OutcomeCollector("R-1")
         out.unchecked("x")
