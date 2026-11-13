@@ -1000,7 +1000,9 @@ git commit -m "feat(rules): TOP-001..005 report unchecked elements" -m "Co-autho
     `out.unchecked("no buildable surface or boundary", surf.id, surf.guidref)`. Keep `continue`.
   - Pair `except` block: replace its `logger.debug(...)` with
     `out.unchecked(f"evaluation against {surf_b.id} failed: {exc}", surf_a.id, surf_a.guidref)`. Keep `continue`.
-  - Leave every other `logger.debug` in this function unchanged: collection < 2 members, point contact, per-sample failures and no evaluable samples are rule logic per the spec.
+  - No evaluable samples for a confirmed-adjacent pair (`if not votes:`): replace its `logger.debug(...)` with
+    `out.unchecked(f"no evaluable shared boundary samples with {surf_b.id}", surf_a.id, surf_a.guidref)`. Keep `continue`.
+  - Leave every other `logger.debug` in this function unchanged: collection < 2 members, point contact and individual per-sample failures (when other samples of the pair succeed) are rule logic per the spec.
   - `findings.append(Finding(` → `out.add(Finding(`; `return findings` → `return out.outcome()`.
 
   *TOP-009* `stiffener_inclinations`:

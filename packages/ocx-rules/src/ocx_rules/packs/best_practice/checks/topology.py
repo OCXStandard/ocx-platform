@@ -325,9 +325,13 @@ def seam_topology(context, params: dict[str, Any]) -> CheckOutcome:
             if plate is not None:
                 cut_holes += plate.cut_by_holes
                 cut_contours += plate.cut_by_contours
-        hole_outlines, _ = _placed_hole_outlines(context, cut_holes,
-                                                 cut_contours)
+        hole_outlines, skipped = _placed_hole_outlines(context, cut_holes,
+                                                       cut_contours)
         if not hole_outlines:
+            if skipped:
+                for sid, seam in seams:
+                    out.unchecked(f"{skipped} hole(s) could not be placed",
+                                  sid, seam.guidref)
             continue
         seam_samples: dict[str, np.ndarray] = {}
         for sid, seam in seams:
@@ -498,9 +502,9 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> CheckOutc
                     dot = float(np.clip(na @ nb, -1.0, 1.0))
                     angles.append(np.degrees(np.arccos(dot)))
                 if not votes:
-                    logger.debug("TOP-008: pair {}/{} skipped (no evaluable "
-                                 "shared boundary samples)", surf_a.id,
-                                 surf_b.id)
+                    out.unchecked(
+                        f"no evaluable shared boundary samples with {surf_b.id}",
+                        surf_a.id, surf_a.guidref)
                     continue
                 flipped = sum(votes)
                 # strict majority of flipped samples; ties pass

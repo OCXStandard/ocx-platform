@@ -441,6 +441,19 @@ class TestSeamTopology:
         (finding,) = seam_topology(ctx, {"tolerance_mm": 5.0}).findings
         assert finding.element_id == "pl1"
 
+    def test_unplaceable_holes_unchecked_per_seam(self):
+        ctx = self._ctx_with_seam_and_plate(closed_plate=True)
+        ctx.vessel.hole_shape_catalogue = IrHoleShapeCatalogue(
+            id="cat", holes={"h1": IrHole2D(id="h1")})
+        ctx.vessel.plates["pl1"] = dataclasses.replace(
+            ctx.vessel.plates["pl1"], cut_by_holes=[IrHole2DContour(
+                id="hc1", hole_ref=Ref(local_ref="h1"),
+                transformation=_placement(500.0, 500.0))])
+        ctx.vessel.seams["s1"] = dataclasses.replace(
+            ctx.vessel.seams["s1"], guidref="gs1")
+        assert seam_topology(ctx, {"tolerance_mm": 5.0}) == CheckOutcome(
+            unchecked=(Unchecked("1 hole(s) could not be placed", "s1", "gs1"),))
+
     def test_seamed_panel_unsampleable_plate_contour_unchecked(self):
         ctx = self._ctx_with_seam_and_plate(closed_plate=True)
         ctx.vessel.plates["pl1"] = dataclasses.replace(
@@ -504,6 +517,16 @@ class TestSurfaceNormalsAndBoundaries:
             outcome = surface_normals_and_boundaries(ctx, self.PARAMS)
         assert outcome == CheckOutcome(unchecked=(
             Unchecked("evaluation against sb failed: boom", "sa", "ga"),))
+
+    def test_adjacent_pair_without_evaluable_samples_unchecked(self):
+        ctx = _coll_ctx(_coll_member("sa", 0, 1000, guid="ga"),
+                        _coll_member("sb", 1000, 2000, sweep_y=-1.0))
+        with patch("ocx_rules.packs.best_practice.checks.topology._normal_at",
+                   side_effect=RuntimeError("boom")):
+            outcome = surface_normals_and_boundaries(ctx, self.PARAMS)
+        assert outcome == CheckOutcome(unchecked=(
+            Unchecked("no evaluable shared boundary samples with sb",
+                      "sa", "ga"),))
 
     def test_distant_members_not_adjacent(self):
         ctx = _coll_ctx(_coll_member("sa", 0, 1000),
