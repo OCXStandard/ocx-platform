@@ -8,6 +8,7 @@ surface normal, COGs outside the part, and values shared by many parts.
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from itertools import chain
 from typing import Any
 
@@ -220,3 +221,62 @@ def part_cog_within_geometry(context, params: dict[str, Any]) -> list[Finding]:
         except Exception as exc:  # noqa: BLE001 — skip part
             logger.debug("PROP-005: part {} skipped: {}", part.id, exc)
     return findings
+
+
+def _grid_key(p: np.ndarray, step_m: float) -> tuple[int, int, int]:
+    return tuple(int(round(float(c) / step_m)) for c in p)
+
+
+class _Pool:
+    """Parts grouped by a rounded 3D value (one entry per part per key)."""
+
+    def __init__(self, label: str, step_m: float) -> None:
+        self.label = label
+        self.step_m = step_m
+        self.parts: dict[tuple, dict[str, Any]] = defaultdict(dict)
+        self.values: dict[tuple, np.ndarray] = {}
+
+    def add(self, part, value: np.ndarray) -> None:
+        key = _grid_key(value, self.step_m)
+        self.parts[key][part.id] = part
+        self.values.setdefault(key, value)
+
+    def findings(self, min_parts: int) -> list[Finding]:
+        out: list[Finding] = []
+        for key, parts in self.parts.items():
+            if len(parts) < min_parts:
+                continue
+            v = self.values[key]
+            msg = (f"{self.label} ({v[0]:.3f}, {v[1]:.3f}, {v[2]:.3f}) is "
+                   f"shared by {len(parts)} parts")
+            out.extend(Finding(msg, element_id=p.id, guid=p.guidref)
+                       for p in parts.values())
+        return out
+
+
+def shared_positions_and_cogs(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-PROP-006: positions/COGs must not be copied across many parts."""
+    step_m = float(params.get("tolerance_mm", 1.0)) / 1000.0
+    min_parts = int(params.get("min_parts", 3))
+    geo = context.geometry
+    vessel = context.vessel
+    positions = _Pool("Inclination position", step_m)
+    cogs = _Pool("Moulded COG", step_m)
+    for part in chain(vessel.stiffeners.values(), vessel.pillars.values()):
+        try:
+            for pos in _inclination_positions(geo, part.inclinations):
+                if pos is not None:
+                    positions.add(part, pos)
+        except Exception as exc:  # noqa: BLE001 — skip part
+            logger.debug("PROP-006: part {} positions skipped: {}", part.id, exc)
+    for part in chain(vessel.plates.values(), vessel.stiffeners.values(),
+                      vessel.pillars.values()):
+        mp = part.mass_properties
+        cog = mp.moulded_cog if mp is not None else None
+        if cog is None:
+            continue
+        try:
+            cogs.add(part, _cog_m(geo.length, cog))
+        except Exception as exc:  # noqa: BLE001 — skip part
+            logger.debug("PROP-006: part {} COG skipped: {}", part.id, exc)
+    return positions.findings(min_parts) + cogs.findings(min_parts)

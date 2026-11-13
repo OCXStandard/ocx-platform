@@ -27,6 +27,7 @@ from ocx_rules.geometry_context import GeometryContext
 from ocx_rules.packs.best_practice.checks.plausibility import (
     inclination_position_on_trace,
     part_cog_within_geometry,
+    shared_positions_and_cogs,
     web_near_normal,
     web_not_in_plate,
 )
@@ -248,3 +249,46 @@ class TestPartCogWithinGeometry:
     def test_part_without_mass_properties_is_skipped(self):
         ctx = _ctx(stiffeners=[_stiffener("s1")], plates=[_plate("pl1")])
         assert part_cog_within_geometry(ctx, self.PARAMS) == []
+
+
+class TestSharedPositionsAndCogs:
+    PARAMS = {"tolerance_mm": 1.0, "min_parts": 3}
+
+    def test_three_parts_sharing_a_position_fail(self):
+        ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(3)])
+        findings = shared_positions_and_cogs(ctx, self.PARAMS)
+        assert sorted(f.element_id for f in findings) == ["s0", "s1", "s2"]
+        assert all("Inclination position (0.500, 0.000, 0.000)" in f.message
+                   for f in findings)
+        assert all("shared by 3 parts" in f.message for f in findings)
+
+    def test_two_parts_sharing_a_position_pass(self):
+        ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(2)])
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+
+    def test_part_repeating_its_own_position_counts_once(self):
+        twice = _stiffener("s0", incls=[_incl(), _incl()])
+        ctx = _ctx(stiffeners=[twice, _stiffener("s1")])
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+
+    def test_values_within_tolerance_are_grouped(self):
+        ctx = _ctx(stiffeners=[
+            _stiffener("s0", incls=[_incl(pos=(500.0, 0, 0))]),
+            _stiffener("s1", incls=[_incl(pos=(500.2, 0, 0))]),
+            _stiffener("s2", incls=[_incl(pos=(499.9, 0, 0))])])
+        assert len(shared_positions_and_cogs(ctx, self.PARAMS)) == 3
+
+    def test_distinct_positions_pass(self):
+        ctx = _ctx(stiffeners=[
+            _stiffener(f"s{i}", incls=[_incl(pos=(100 * i, 0, 0))]) for i in range(3)])
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+
+    def test_cog_shared_across_part_kinds_fails(self):
+        cog = (195404, 24082, 2964)
+        ctx = _ctx(plates=[_plate("pl1", cog=cog)],
+                   stiffeners=[_stiffener("s1", incls=[], cog=cog)],
+                   pillars=[_pillar("c1", cog=cog)])
+        findings = shared_positions_and_cogs(ctx, self.PARAMS)
+        assert sorted(f.element_id for f in findings) == ["c1", "pl1", "s1"]
+        assert all(f.message.startswith("Moulded COG (195.404, 24.082, 2.964)")
+                   for f in findings)
