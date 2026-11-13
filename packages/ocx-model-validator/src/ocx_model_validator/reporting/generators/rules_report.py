@@ -16,7 +16,8 @@ _STATUS_LABEL = {
 
 def build(results: list[RuleResult], *, source_file: str,
           max_findings: int = 50) -> Report:
-    """Build a Report: status summary, per-rule table and a findings table."""
+    """Build a Report: status summary, per-rule table, findings and
+    unchecked elements."""
     counts: dict[RuleStatus, int] = {}
     for result in results:
         counts[result.status] = counts.get(result.status, 0) + 1
@@ -32,10 +33,10 @@ def build(results: list[RuleResult], *, source_file: str,
     rules_table = ReportTable(
         title="Rules",
         columns=["Rule", "Title", "Category", "Severity", "Status",
-                 "Findings", "Note"],
+                 "Findings", "Unchecked", "Note"],
         rows=[[r.spec.rule_id, r.spec.title, r.spec.category,
                r.spec.severity.value, _STATUS_LABEL[r.status],
-               len(r.findings) or None, r.reason]
+               len(r.findings) or None, len(r.unchecked) or None, r.reason]
               for r in results],
     )
 
@@ -57,9 +58,19 @@ def build(results: list[RuleResult], *, source_file: str,
     if truncated:
         notes.append(f"Findings truncated to the first {max_findings} of "
                      f"{len(finding_rows)}.")
+    unchecked_rows = [[result.spec.rule_id, u.element_id, u.guid, u.reason]
+                      for result in results for u in result.unchecked]
+    if len(unchecked_rows) > max_findings:
+        notes.append(f"Unchecked elements truncated to the first "
+                     f"{max_findings} of {len(unchecked_rows)}.")
     tables = [summary, rules_table]
     if finding_rows:
         tables.append(findings_table)
+    if unchecked_rows:
+        tables.append(ReportTable(
+            title="Unchecked elements",
+            columns=["Rule", "Element", "GUID", "Reason"],
+            rows=unchecked_rows[:max_findings]))
     return Report(
         title="Rule validation",
         metadata={"model": source_file, "rules run": str(len(results))},
