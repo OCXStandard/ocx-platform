@@ -111,7 +111,29 @@ class TestPanelLimitedByClosed:
         panel = IrPanel(id="p1", guidref="g1", limited_by=sides)
         ctx = _ctx(_vessel({"p1": panel}))
         assert panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}) == CheckOutcome(
-            unchecked=(Unchecked("1 unresolved boundary ref(s)", "p1", "g1"),))
+            unchecked=(Unchecked(
+                "1 boundary ref(s) without explicit curve (PanelRef×1)",
+                "p1", "g1"),))
+
+    def test_grid_and_dangling_refs_reported_separately(self):
+        sides = _square_sides()[:2]
+        sides += [IrLimitedByRef(ref_type="GridRef", local_ref="fr10"),
+                  IrLimitedByRef(ref_type="GridRef", local_ref="fr11"),
+                  IrLimitedByRef(ref_type="SeamRef", local_ref="missing")]
+        panel = IrPanel(id="p1", guidref="g1", limited_by=sides)
+        ctx = _ctx(_vessel({"p1": panel}))
+        (u,) = panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}).unchecked
+        assert u.reason == ("1 dangling boundary ref(s) (SeamRef×1); "
+                            "2 boundary ref(s) without explicit curve "
+                            "(GridRef×2)")
+
+    def test_unsampleable_boundary_curve_reported(self):
+        sides = _square_sides()[:3]
+        sides.append(_fec(IrNurbs3D(curve_length=None)))  # no data
+        panel = IrPanel(id="p1", guidref="g1", limited_by=sides)
+        ctx = _ctx(_vessel({"p1": panel}))
+        (u,) = panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}).unchecked
+        assert u.reason == "1 unsampleable boundary curve(s)"
 
     def test_no_panels_passes(self):
         ctx = _ctx(_vessel({}))

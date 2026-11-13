@@ -3,6 +3,7 @@
 Every check returns CheckOutcome (findings + unchecked elements)."""
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 import numpy as np
@@ -37,6 +38,46 @@ def _panel_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
     return samples, unresolved
 
 
+def _classified_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
+    """-> (sampled (N, 3) arrays, reason fragments for unusable refs).
+
+    Unusable refs are split into dangling SeamRef/StiffenerRef, ref types
+    without an explicit curve (e.g. GridRef), and unsampleable curves.
+    """
+    geo = context.geometry
+    samples = []
+    dangling: Counter[str] = Counter()
+    no_curve: Counter[str] = Counter()
+    unsampleable = 0
+    for ref in panel.limited_by:
+        curve = geo.boundary_curve_for_ref(ref)
+        if curve is None:
+            if ref.ref_type in ("SeamRef", "StiffenerRef"):
+                dangling[ref.ref_type] += 1
+            else:
+                no_curve[ref.ref_type] += 1
+            continue
+        pts = geo.sample(curve, tol_m)
+        if pts is None or len(pts) < 2:
+            unsampleable += 1
+        else:
+            samples.append(pts)
+
+    def by_type(counts: Counter[str]) -> str:
+        return ", ".join(f"{t}×{n}" for t, n in sorted(counts.items()))
+
+    reasons = []
+    if dangling:
+        reasons.append(f"{dangling.total()} dangling boundary ref(s) "
+                       f"({by_type(dangling)})")
+    if no_curve:
+        reasons.append(f"{no_curve.total()} boundary ref(s) without explicit "
+                       f"curve ({by_type(no_curve)})")
+    if unsampleable:
+        reasons.append(f"{unsampleable} unsampleable boundary curve(s)")
+    return samples, reasons
+
+
 def panel_limited_by_closed(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-001: panel LimitedBy must form a closed contour."""
     tol_m = float(params.get("tolerance_mm", 1.0)) / 1000.0
@@ -44,10 +85,9 @@ def panel_limited_by_closed(context, params: dict[str, Any]) -> CheckOutcome:
     for pid, panel in context.vessel.panels.items():
         if not panel.limited_by:
             continue
-        samples, skipped = _panel_boundary_samples(context, panel)
-        if skipped:
-            out.unchecked(f"{skipped} unresolved boundary ref(s)", pid,
-                          panel.guidref)
+        samples, reasons = _classified_boundary_samples(context, panel)
+        if reasons:
+            out.unchecked("; ".join(reasons), pid, panel.guidref)
             continue
         if not samples:
             out.unchecked("no sampleable boundary", pid, panel.guidref)

@@ -151,9 +151,9 @@ class RuleResult:
     spec: RuleSpec
     status: RuleStatus
     findings: tuple[Finding, ...] = ()
-    unchecked: tuple[Unchecked, ...] = ()  # PASSED / FAILED only
     reason: str | None = None  # set for SKIPPED / CRASHED
     duration_ms: float = 0.0
+    unchecked: tuple[Unchecked, ...] = ()  # PASSED / FAILED only
 
 
 @dataclass(frozen=True)
