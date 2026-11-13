@@ -1,0 +1,128 @@
+"""Tests for the exporter plausibility checks (checks/plausibility.py)."""
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+from ocx_model_core.model.ir import (
+    IrCog,
+    IrCompositeCurve3D,
+    IrInclination,
+    IrLine3D,
+    IrMassProperties,
+    IrPanel,
+    IrPillar,
+    IrPlane3D,
+    IrPlate,
+    IrPoint3D,
+    IrStiffener,
+    IrUnboundedGeometry,
+    IrUnit,
+    IrVector3D,
+    IrVessel,
+    ParentKind,
+    ParentRef,
+)
+from ocx_rules.geometry_context import GeometryContext
+from ocx_rules.packs.best_practice.checks.plausibility import (
+    inclination_position_on_trace,
+)
+
+_UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
+              dimension_url="D_L", to_si_factor=0.001, si_symbol="m")
+
+# z = 0 plane (normal +z) and a far plane y = 5 m (normal +y).
+_Z_PLANE = IrPlane3D(id="zp", point_on_surface=IrPoint3D(x=0, y=0, z=0, unit="Umm"),
+                     normal=IrVector3D(x=0.0, y=0.0, z=1.0))
+_FAR_PLANE = IrPlane3D(id="fp", point_on_surface=IrPoint3D(x=0, y=5000, z=0, unit="Umm"),
+                       normal=IrVector3D(x=0.0, y=1.0, z=0.0))
+
+
+def _pt(x: float, y: float, z: float = 0.0) -> IrPoint3D:
+    return IrPoint3D(x=x, y=y, z=z, unit="Umm")
+
+
+def _line(a, b) -> IrLine3D:
+    return IrLine3D(curve_length=None, start=_pt(*a), end=_pt(*b))
+
+
+def _mass(cog_mm) -> IrMassProperties | None:
+    return None if cog_mm is None else IrMassProperties(
+        moulded_cog=IrCog(*cog_mm, unit="Umm"))
+
+
+def _incl(pos=(500, 0, 0), web=(0.0, 0.0, 1.0)) -> IrInclination:
+    return IrInclination(
+        position=None if pos is None else _pt(*pos),
+        web_direction=None if web is None else IrVector3D(x=web[0], y=web[1], z=web[2]))
+
+
+def _stiffener(sid: str, *, panel: str | None = "p1", incls=None,
+               trace=((0, 0, 0), (1000, 0, 0)), cog=None) -> IrStiffener:
+    parent = (ParentRef(kind=ParentKind.PANEL, id=panel) if panel
+              else ParentRef(kind=ParentKind.VESSEL, id="v1"))
+    return IrStiffener(id=sid, guidref=f"g-{sid}", parent_ref=parent,
+                       trace=_line(*trace),
+                       inclinations=[_incl()] if incls is None else incls,
+                       mass_properties=_mass(cog))
+
+
+def _pillar(pid: str, *, incls=None, cog=None) -> IrPillar:
+    return IrPillar(id=pid, guidref=f"g-{pid}",
+                    parent_ref=ParentRef(kind=ParentKind.VESSEL, id="v1"),
+                    trace=_line((0, 0, 0), (0, 0, 3000)),
+                    inclinations=[] if incls is None else incls,
+                    mass_properties=_mass(cog))
+
+
+def _plate(pid: str, *, cog=None) -> IrPlate:
+    a, b, c, d = (0, 0, 0), (1000, 0, 0), (1000, 1000, 0), (0, 1000, 0)
+    contour = IrCompositeCurve3D(curve_length=None, segments=[
+        _line(a, b), _line(b, c), _line(c, d), _line(d, a)])
+    return IrPlate(id=pid, guidref=f"g-{pid}",
+                   parent_ref=ParentRef(kind=ParentKind.PANEL, id="p1"),
+                   outer_contour=contour, mass_properties=_mass(cog))
+
+
+def _panel(pid: str = "p1", surfaces=(_Z_PLANE,)) -> IrPanel:
+    ug = (IrUnboundedGeometry(surface=surfaces[0], surfaces=tuple(surfaces))
+          if surfaces else None)
+    return IrPanel(id=pid, unbounded_geometry=ug)
+
+
+def _ctx(*, panels=(), stiffeners=(), pillars=(), plates=()) -> SimpleNamespace:
+    v = IrVessel(id="v1", unit_registry={"Umm": _UMM})
+    v.panels.update({p.id: p for p in panels})
+    v.stiffeners.update({s.id: s for s in stiffeners})
+    v.pillars.update({p.id: p for p in pillars})
+    v.plates.update({p.id: p for p in plates})
+    return SimpleNamespace(vessel=v, geometry=GeometryContext(v))
+
+
+class TestInclinationPositionOnTrace:
+    PARAMS = {"position_tolerance_mm": 50.0}
+
+    def test_position_on_trace_passes(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1")])
+        assert inclination_position_on_trace(ctx, self.PARAMS) == []
+
+    def test_position_within_tolerance_passes(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(500, 40, 0))])])
+        assert inclination_position_on_trace(ctx, self.PARAMS) == []
+
+    def test_stiffener_position_off_trace_fails(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(500, 1000, 0))])])
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        assert finding.element_id == "s1"
+        assert finding.guid == "g-s1"
+        assert "Inclination 0" in finding.message
+        assert "1.000 m" in finding.message
+
+    def test_pillar_position_off_trace_fails(self):
+        ctx = _ctx(pillars=[_pillar("c1", incls=[_incl(pos=(2000, 0, 1000))])])
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        assert finding.element_id == "c1"
+        assert "2.000 m" in finding.message
+
+    def test_missing_position_is_skipped(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=None)])])
+        assert inclination_position_on_trace(ctx, self.PARAMS) == []
