@@ -16,6 +16,7 @@ from loguru import logger
 from ocx_model_core.model.ir.base import ParentKind
 
 from ocx_rules.model import Finding
+from ocx_rules.packs.best_practice.checks.properties import _cog_m
 from ocx_rules.packs.best_practice.checks.topology import _inclination_positions
 
 
@@ -179,4 +180,43 @@ def inclination_position_on_trace(context,
                         element_id=part.id, guid=part.guidref))
         except Exception as exc:  # noqa: BLE001 — skip part
             logger.debug("TOP-010: part {} skipped: {}", part.id, exc)
+    return findings
+
+
+def _parts_with_geometry(vessel):
+    """(part, curve) pairs: plate outer contours, stiffener/pillar traces."""
+    for plate in vessel.plates.values():
+        yield plate, plate.outer_contour
+    for part in chain(vessel.stiffeners.values(), vessel.pillars.values()):
+        yield part, part.trace
+
+
+def part_cog_within_geometry(context, params: dict[str, Any]) -> list[Finding]:
+    """OCX-PROP-005: the moulded COG must lie near the part's geometry."""
+    margin_mm = float(params.get("margin_mm", 500.0))
+    margin_m = margin_mm / 1000.0
+    geo = context.geometry
+    findings: list[Finding] = []
+    for part, curve in _parts_with_geometry(context.vessel):
+        mp = part.mass_properties
+        cog = mp.moulded_cog if mp is not None else None
+        if cog is None or curve is None:
+            continue
+        try:
+            pts = geo.sample(curve)
+            if pts is None or len(pts) == 0:
+                continue
+            c = _cog_m(geo.length, cog)
+            lo = pts.min(axis=0) - margin_m
+            hi = pts.max(axis=0) + margin_m
+            gap = np.maximum(np.maximum(lo - c, c - hi), 0.0)
+            dist = float(np.linalg.norm(gap))
+            if dist > 0.0:
+                findings.append(Finding(
+                    f"Moulded COG ({c[0]:.3f}, {c[1]:.3f}, {c[2]:.3f}) m is "
+                    f"{dist:.3f} m outside the part's bounding box "
+                    f"(margin {margin_mm:.0f} mm)",
+                    element_id=part.id, guid=part.guidref))
+        except Exception as exc:  # noqa: BLE001 — skip part
+            logger.debug("PROP-005: part {} skipped: {}", part.id, exc)
     return findings
