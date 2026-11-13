@@ -160,10 +160,14 @@ class IrNurbsSurface(IrSurface3D):
 @dataclass(frozen=True)
 class IrUnboundedGeometry:
     """Panel UnboundedGeometry: exactly one of an inline surface, a
-    SurfaceRef (local_ref) or a GridRef (ref-plane id) is normally set."""
+    SurfaceRef (local_ref) or a GridRef (ref-plane id) is normally set.
+
+    ``surfaces`` holds every inline surface patch in document order (a hull
+    shell panel may carry many); ``surface`` is the first of them."""
     surface: IrSurface3D | None = None
     surface_ref: str | None = None
     grid_ref: str | None = None
+    surfaces: tuple[IrSurface3D, ...] = ()
 
 
 # --- standalone reference geometry ---
