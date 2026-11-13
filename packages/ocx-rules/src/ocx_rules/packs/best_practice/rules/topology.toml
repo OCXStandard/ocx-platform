@@ -103,3 +103,40 @@ severity    = "error"
 requires    = ["ir", "geometry"]
 [rule.check]
 custom = "ocx_rules.packs.best_practice.checks:stiffener_inclinations"
+
+[[rule]]
+id          = "OCX-TOP-010"
+title       = "Inclination position on trace"
+description = "Every stiffener/pillar inclination Position must lie on the part's trace line."
+source      = "inclination"
+category    = "topology"
+severity    = "error"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom                = "ocx_rules.packs.best_practice.checks:inclination_position_on_trace"
+position_tolerance_mm = 50.0
+
+[[rule]]
+id          = "OCX-TOP-011"
+title       = "Web direction not in plate plane"
+description = "A stiffener's WebDirection must not lie in the plane of its panel surface (angle to the surface normal below the limit)."
+source      = "inclination"
+category    = "topology"
+severity    = "error"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom        = "ocx_rules.packs.best_practice.checks:web_not_in_plate"
+max_angle_deg = 80.0
+
+[[rule]]
+id          = "OCX-TOP-012"
+title       = "Web direction close to surface normal"
+description = "A stiffener's WebDirection should be close to its panel surface normal; larger inclinations are reported for review."
+source      = "inclination"
+category    = "topology"
+severity    = "warning"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom         = "ocx_rules.packs.best_practice.checks:web_near_normal"
+warn_angle_deg = 30.0
+max_angle_deg  = 80.0
