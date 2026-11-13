@@ -18,6 +18,7 @@ from ocx_rules.config import RuleConfig, apply_config
 from ocx_rules.context import ValidationContext
 from ocx_rules.model import (
     CheckNotImplemented,
+    CheckOutcome,
     CheckRef,
     RulePack,
     RuleResult,
@@ -89,9 +90,11 @@ class RuleManager:
     def _run_one(self, spec: RuleSpec, context: ValidationContext) -> RuleResult:
         start = time.perf_counter()
 
-        def done(status: RuleStatus, findings=(), reason=None) -> RuleResult:
+        def done(status: RuleStatus, findings=(), reason=None,
+                 unchecked=()) -> RuleResult:
             return RuleResult(
                 spec=spec, status=status, findings=tuple(findings), reason=reason,
+                unchecked=tuple(unchecked),
                 duration_ms=(time.perf_counter() - start) * 1000.0)
 
         reason = self._unsatisfied(spec, context)
@@ -100,14 +103,16 @@ class RuleManager:
             return done(RuleStatus.SKIPPED, reason=reason)
         try:
             check = _resolve_check(spec.check)
-            findings = check(context, dict(spec.params))
+            result = check(context, dict(spec.params))
+            outcome = (result if isinstance(result, CheckOutcome)
+                       else CheckOutcome(findings=tuple(result)))
         except CheckNotImplemented as exc:
             return done(RuleStatus.NOT_IMPLEMENTED, reason=str(exc))
         except Exception as exc:
             logger.warning("Rule {} crashed: {}", spec.rule_id, exc)
             return done(RuleStatus.CRASHED, reason=f"{type(exc).__name__}: {exc}")
-        return done(RuleStatus.FAILED if findings else RuleStatus.PASSED,
-                    findings=findings)
+        return done(RuleStatus.FAILED if outcome.findings else RuleStatus.PASSED,
+                    findings=outcome.findings, unchecked=outcome.unchecked)
 
     @staticmethod
     def _unsatisfied(spec: RuleSpec, context: ValidationContext) -> str | None:
