@@ -49,3 +49,28 @@ requires    = ["ir", "xml"]
 schemas     = ["3.2", "3.3"]
 [rule.check]
 custom = "ocx_rules.packs.best_practice.checks:renewal_thickness_on_instance"
+
+[[rule]]
+id          = "OCX-PROP-005"
+title       = "Part COG within part geometry"
+description = "A plate/stiffener/pillar MouldedCOG must lie within the bounding box of the part's geometry (contour or trace) inflated by a margin."
+source      = "mass_properties"
+category    = "properties"
+severity    = "warning"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom    = "ocx_rules.packs.best_practice.checks:part_cog_within_geometry"
+margin_mm = 500.0
+
+[[rule]]
+id          = "OCX-PROP-006"
+title       = "Position/COG not shared across parts"
+description = "Inclination positions and MouldedCOGs must not be identical across many parts (typical exporter copy bug)."
+source      = "mass_properties"
+category    = "properties"
+severity    = "warning"
+requires    = ["ir", "geometry"]
+[rule.check]
+custom       = "ocx_rules.packs.best_practice.checks:shared_positions_and_cogs"
+tolerance_mm = 1.0
+min_parts    = 3

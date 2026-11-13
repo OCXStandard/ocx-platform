@@ -4,7 +4,8 @@ Phase A: identity, document, references and curves_surfaces checks plus
 OCX-PROP-004 are real implementations. Phase B implemented the geometry
 checks in topology and properties; only the two compartment checks remain
 stubs (see geometry_stubs). TOML rules address every name as
-``ocx_rules.packs.best_practice.checks:<name>``.
+``ocx_rules.packs.best_practice.checks:<name>``. Exporter plausibility
+checks (OCX-TOP-010..012, OCX-PROP-005/006) live in plausibility.
 """
 from __future__ import annotations
 
@@ -30,6 +31,13 @@ from ocx_rules.packs.best_practice.checks.identity import (
     entitybase_has_guid_and_id,
     idbase_has_id,
     names_not_identifiers,
+)
+from ocx_rules.packs.best_practice.checks.plausibility import (
+    inclination_position_on_trace,
+    part_cog_within_geometry,
+    shared_positions_and_cogs,
+    web_near_normal,
+    web_not_in_plate,
 )
 from ocx_rules.packs.best_practice.checks.properties import (
     panel_weight_cog_consistent,
@@ -59,12 +67,15 @@ __all__ = [
     "composite_curve_continuous", "entitybase_has_guid_and_id",
     "enumerated_root_units", "explicit_connectivity", "hole_contours_closed",
     "hole_not_splitting_plate", "hole_single_representation", "idbase_has_id",
-    "names_not_identifiers", "nurbs_control_points", "nurbs_knot_multiplicity",
+    "inclination_position_on_trace", "names_not_identifiers",
+    "nurbs_control_points", "nurbs_knot_multiplicity",
     "nurbs_knots_non_decreasing", "panel_as_occurrence_group",
     "panel_limited_by_closed", "panel_weight_cog_consistent",
-    "plate_weight_consistent", "polyline_closed", "profile_closed_section",
-    "renewal_thickness_on_instance", "root_declarations",
-    "schema_location_tuple", "seam_topology", "slot_lug_plate_refs",
+    "part_cog_within_geometry", "plate_weight_consistent", "polyline_closed",
+    "profile_closed_section", "renewal_thickness_on_instance",
+    "root_declarations", "schema_location_tuple", "seam_topology",
+    "shared_positions_and_cogs", "slot_lug_plate_refs",
     "stiffener_end_configurations", "stiffener_inclinations",
     "surface_normals_and_boundaries", "unit_definitions", "unit_refs_resolve",
+    "web_near_normal", "web_not_in_plate",
 ]

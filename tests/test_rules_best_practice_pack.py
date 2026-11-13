@@ -10,16 +10,16 @@ EXPECTED_CATEGORIES = {
     "document": 5,
     "references": 8,
     "curves_surfaces": 5,
-    "topology": 9,
-    "properties": 4,
+    "topology": 12,
+    "properties": 6,
 }
 
 
 class TestBestPracticePack:
-    def test_loads_36_rules(self):
+    def test_loads_41_rules(self):
         pack = load_pack()
         assert pack.name == "best_practice"
-        assert len(pack.rules) == 36
+        assert len(pack.rules) == 41
 
     def test_category_counts(self):
         pack = load_pack()
@@ -70,3 +70,12 @@ class TestBestPracticePack:
         pack = load_pack()
         by_id = {r.rule_id: r for r in pack.rules}
         assert by_id["OCX-GEO-005"].params["center_tolerance_mm"] == 1.0
+
+    def test_plausibility_rule_defaults(self):
+        by_id = {r.rule_id: r for r in load_pack().rules}
+        assert by_id["OCX-TOP-010"].params["position_tolerance_mm"] == 50.0
+        assert by_id["OCX-TOP-011"].severity is Severity.ERROR
+        assert by_id["OCX-TOP-012"].severity is Severity.WARNING
+        assert by_id["OCX-TOP-012"].params["warn_angle_deg"] == 30.0
+        assert by_id["OCX-PROP-005"].params["margin_mm"] == 500.0
+        assert by_id["OCX-PROP-006"].params["min_parts"] == 3

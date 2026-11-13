@@ -4,6 +4,15 @@
 
 ### Added
 
+- Exporter plausibility rules (`checks/plausibility.py`):
+  `OCX-TOP-010` inclination Position must lie on the trace (error,
+  50 mm); `OCX-TOP-011` stiffener WebDirection must not lie in the panel
+  surface plane (error, ≥ 80° from the normal); `OCX-TOP-012` WebDirection
+  more than 30° from the surface normal (warning); `OCX-PROP-005`
+  MouldedCOG outside the part's bounding box + 500 mm (warning);
+  `OCX-PROP-006` inclination positions / MouldedCOGs shared by ≥ 3 parts
+  (warning, one finding per part). Web checks use every inline patch of
+  multi-surface panels (`UnboundedGeometry.surfaces`).
 - Per-rule schema-support markers: rules may declare
   `schemas = ["3.2", "3.3"]` in their TOML definition; the
   `RuleManager` skips rules not applicable to the loaded model's
