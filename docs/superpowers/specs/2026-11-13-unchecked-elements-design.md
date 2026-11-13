@@ -63,12 +63,13 @@ class CheckOutcome:
 Mutable helper used inside checks:
 
 - `add(finding: Finding) -> None` — append a finding.
-- `unchecked(element, reason: str) -> None` — `element` is any object with
-  `id` and `guidref` attributes (IR parts, panels, sections, surfaces, holes)
-  or `None`. Logs the reason at debug level, prefixed with the collector's
-  `rule_id`. One entry per element id: a repeated call for the same id appends
-  the new reason to the existing one, separated by `"; "`, unless that exact
-  reason is already present. Entries with `element=None` are never merged.
+- `unchecked(reason: str, element_id: str | None = None, guid: str | None = None) -> None`
+  — mirrors `Finding` (some owners, e.g. TOP-002 composite-curve owners, are
+  only known by id/GUID). Logs the reason at debug level, prefixed with the
+  collector's `rule_id`. One entry per element id: a repeated call for the
+  same id appends the new reason to the existing one, separated by `"; "`,
+  unless that exact reason is already present. Entries with
+  `element_id=None` are never merged.
 - `outcome() -> CheckOutcome` — findings and unchecked in insertion order.
 
 Constructed as `OutcomeCollector("OCX-TOP-010")`.

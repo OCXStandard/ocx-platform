@@ -4,6 +4,12 @@
 
 ### Added
 
+- Unchecked elements: checks may return `CheckOutcome(findings, unchecked)`;
+  `RuleResult.unchecked` lists elements a check could not evaluate (with a
+  reason) without changing PASSED/FAILED. `OutcomeCollector` builds outcomes
+  inside checks. All 15 geometry-dependent best-practice checks report
+  unchecked elements (unsampleable/reference-only traces, missing surfaces,
+  thickness or density, caught exceptions, …).
 - Exporter plausibility rules (`checks/plausibility.py`):
   `OCX-TOP-010` inclination Position must lie on the trace (error,
   50 mm); `OCX-TOP-011` stiffener WebDirection must not lie in the panel

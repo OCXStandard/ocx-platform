@@ -1,5 +1,14 @@
 # Changelog — ocx-model-validator
 
+## Unreleased
+
+### Added
+
+- Rule reports show unchecked elements: the JSON sidecar gains a per-result
+  `unchecked` list and `summary.unchecked_elements`; the rules report gains
+  an `Unchecked` column and an "Unchecked elements" table (capped by
+  `--max-findings`). The exit code is unchanged.
+
 ## 0.5.0 — 2026-10-20
 
 Initial release as a workspace package: parsing, IR, units and schema
