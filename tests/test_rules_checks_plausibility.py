@@ -1,6 +1,7 @@
 """Tests for the exporter plausibility checks (checks/plausibility.py)."""
 from __future__ import annotations
 
+import dataclasses
 import math
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -24,8 +25,10 @@ from ocx_model_core.model.ir import (
     IrVessel,
     ParentKind,
     ParentRef,
+    Ref,
 )
 from ocx_rules.geometry_context import GeometryContext
+from ocx_rules.model import CheckOutcome, Unchecked
 from ocx_rules.packs.best_practice.checks.plausibility import (
     inclination_position_on_trace,
     part_cog_within_geometry,
@@ -110,15 +113,15 @@ class TestInclinationPositionOnTrace:
 
     def test_position_on_trace_passes(self):
         ctx = _ctx(stiffeners=[_stiffener("s1")])
-        assert inclination_position_on_trace(ctx, self.PARAMS) == []
+        assert inclination_position_on_trace(ctx, self.PARAMS) == CheckOutcome()
 
     def test_position_within_tolerance_passes(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(500, 40, 0))])])
-        assert inclination_position_on_trace(ctx, self.PARAMS) == []
+        assert inclination_position_on_trace(ctx, self.PARAMS) == CheckOutcome()
 
     def test_stiffener_position_off_trace_fails(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(500, 1000, 0))])])
-        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS).findings
         assert finding.element_id == "s1"
         assert finding.guid == "g-s1"
         assert "Inclination 0" in finding.message
@@ -126,17 +129,17 @@ class TestInclinationPositionOnTrace:
 
     def test_pillar_position_off_trace_fails(self):
         ctx = _ctx(pillars=[_pillar("c1", incls=[_incl(pos=(2000, 0, 1000))])])
-        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS).findings
         assert finding.element_id == "c1"
         assert "2.000 m" in finding.message
 
     def test_missing_position_is_skipped(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=None)])])
-        assert inclination_position_on_trace(ctx, self.PARAMS) == []
+        assert inclination_position_on_trace(ctx, self.PARAMS) == CheckOutcome()
 
     def test_non_finite_position_fails(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(math.nan, 0, 0))])])
-        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS).findings
         assert finding.element_id == "s1"
         assert "non-finite" in finding.message
 
@@ -148,9 +151,12 @@ class TestWebDirection:
     NOT_IN_PLATE = {"max_angle_deg": 80.0}
     NEAR_NORMAL = {"warn_angle_deg": 30.0, "max_angle_deg": 80.0}
 
-    def _run(self, ctx):
+    def _outcomes(self, ctx):
         return (web_not_in_plate(ctx, self.NOT_IN_PLATE),
                 web_near_normal(ctx, self.NEAR_NORMAL))
+
+    def _run(self, ctx):
+        return tuple(o.findings for o in self._outcomes(ctx))
 
     def test_web_angles_computed_once_per_context(self):
         import ocx_rules.packs.best_practice.checks.plausibility as mod
@@ -165,18 +171,18 @@ class TestWebDirection:
 
     def test_web_along_normal_passes_both(self):
         ctx = _ctx(panels=[_panel()], stiffeners=[_stiffener("s1")])
-        assert self._run(ctx) == ([], [])
+        assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
     def test_flipped_normal_is_equivalent(self):
         s = _stiffener("s1", incls=[_incl(web=(0.0, 0.0, -1.0))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
-        assert self._run(ctx) == ([], [])
+        assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
     def test_web_at_45_degrees_warns_only(self):
         s = _stiffener("s1", incls=[_incl(web=(0.0, _S45, _S45))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
         errors, warnings = self._run(ctx)
-        assert errors == []
+        assert errors == ()
         (finding,) = warnings
         assert finding.element_id == "s1"
         assert finding.guid == "g-s1"
@@ -186,7 +192,7 @@ class TestWebDirection:
         s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
         errors, warnings = self._run(ctx)
-        assert warnings == []
+        assert warnings == ()
         (finding,) = errors
         assert finding.element_id == "s1"
         assert "90.0" in finding.message
@@ -213,23 +219,23 @@ class TestWebDirection:
     def test_stiffener_without_panel_is_skipped(self):
         s = _stiffener("s1", panel=None, incls=[_incl(web=(0.0, 1.0, 0.0))])
         ctx = _ctx(stiffeners=[s])
-        assert self._run(ctx) == ([], [])
+        assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
     def test_panel_without_surface_is_skipped(self):
         s = _stiffener("s1", incls=[_incl(web=(0.0, 1.0, 0.0))])
         ctx = _ctx(panels=[_panel(surfaces=())], stiffeners=[s])
-        assert self._run(ctx) == ([], [])
+        assert self._run(ctx) == ((), ())
 
     def test_trace_far_from_surface_is_skipped(self):
         s = _stiffener("s1", trace=((0, 0, 1000), (1000, 0, 1000)),
                        incls=[_incl(pos=(500, 0, 1000), web=(0.0, 1.0, 0.0))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
-        assert self._run(ctx) == ([], [])
+        assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
     def test_missing_or_zero_web_is_skipped(self):
         s = _stiffener("s1", incls=[_incl(web=None), _incl(web=(0.0, 0.0, 0.0))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
-        assert self._run(ctx) == ([], [])
+        assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
 
 class TestPartCogWithinGeometry:
@@ -237,41 +243,41 @@ class TestPartCogWithinGeometry:
 
     def test_stiffener_cog_on_trace_passes(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 0, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == []
+        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
 
     def test_cog_within_margin_passes(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 400, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == []
+        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
 
     def test_stiffener_cog_far_outside_fails(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 5000, 0))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS)
+        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
         assert finding.element_id == "s1"
         assert finding.guid == "g-s1"
         assert "4.500 m" in finding.message
 
     def test_plate_cog_inside_contour_box_passes(self):
         ctx = _ctx(plates=[_plate("pl1", cog=(500, 500, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == []
+        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
 
     def test_plate_cog_outside_fails(self):
         ctx = _ctx(plates=[_plate("pl1", cog=(500, 500, 6000))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS)
+        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
         assert finding.element_id == "pl1"
         assert "5.500 m" in finding.message
 
     def test_pillar_cog_outside_fails(self):
         ctx = _ctx(pillars=[_pillar("c1", cog=(3000, 0, 1000))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS)
+        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
         assert finding.element_id == "c1"
 
     def test_part_without_mass_properties_is_skipped(self):
         ctx = _ctx(stiffeners=[_stiffener("s1")], plates=[_plate("pl1")])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == []
+        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
 
     def test_non_finite_cog_fails(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, math.inf, 0))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS)
+        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
         assert finding.element_id == "s1"
         assert "non-finite" in finding.message
 
@@ -281,7 +287,7 @@ class TestSharedPositionsAndCogs:
 
     def test_three_parts_sharing_a_position_fail(self):
         ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(3)])
-        findings = shared_positions_and_cogs(ctx, self.PARAMS)
+        findings = shared_positions_and_cogs(ctx, self.PARAMS).findings
         assert sorted(f.element_id for f in findings) == ["s0", "s1", "s2"]
         assert all("Inclination position (0.500, 0.000, 0.000)" in f.message
                    for f in findings)
@@ -289,31 +295,31 @@ class TestSharedPositionsAndCogs:
 
     def test_two_parts_sharing_a_position_pass(self):
         ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(2)])
-        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == CheckOutcome()
 
     def test_part_repeating_its_own_position_counts_once(self):
         twice = _stiffener("s0", incls=[_incl(), _incl()])
         ctx = _ctx(stiffeners=[twice, _stiffener("s1")])
-        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == CheckOutcome()
 
     def test_values_within_tolerance_are_grouped(self):
         ctx = _ctx(stiffeners=[
             _stiffener("s0", incls=[_incl(pos=(500.0, 0, 0))]),
             _stiffener("s1", incls=[_incl(pos=(500.2, 0, 0))]),
             _stiffener("s2", incls=[_incl(pos=(499.9, 0, 0))])])
-        assert len(shared_positions_and_cogs(ctx, self.PARAMS)) == 3
+        assert len(shared_positions_and_cogs(ctx, self.PARAMS).findings) == 3
 
     def test_distinct_positions_pass(self):
         ctx = _ctx(stiffeners=[
             _stiffener(f"s{i}", incls=[_incl(pos=(100 * i, 0, 0))]) for i in range(3)])
-        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == CheckOutcome()
 
     def test_cog_shared_across_part_kinds_fails(self):
         cog = (195404, 24082, 2964)
         ctx = _ctx(plates=[_plate("pl1", cog=cog)],
                    stiffeners=[_stiffener("s1", incls=[], cog=cog)],
                    pillars=[_pillar("c1", cog=cog)])
-        findings = shared_positions_and_cogs(ctx, self.PARAMS)
+        findings = shared_positions_and_cogs(ctx, self.PARAMS).findings
         assert sorted(f.element_id for f in findings) == ["c1", "pl1", "s1"]
         assert all(f.message.startswith("Moulded COG (195.404, 24.082, 2.964)")
                    for f in findings)
@@ -323,14 +329,86 @@ class TestSharedPositionsAndCogs:
         ctx = _ctx(plates=[_plate("x", cog=cog)],
                    stiffeners=[_stiffener("x", incls=[], cog=cog)],
                    pillars=[_pillar("x", cog=cog)])
-        assert len(shared_positions_and_cogs(ctx, self.PARAMS)) == 3
+        assert len(shared_positions_and_cogs(ctx, self.PARAMS).findings) == 3
 
     def test_non_finite_values_are_not_grouped(self):
         ctx = _ctx(stiffeners=[
             _stiffener(f"s{i}", incls=[_incl(pos=(math.nan, 0, 0))]) for i in range(3)])
-        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == CheckOutcome()
 
     def test_non_positive_tolerance_is_rejected(self):
         ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(3)])
         with pytest.raises(ValueError, match="tolerance_mm"):
             shared_positions_and_cogs(ctx, {"tolerance_mm": 0.0, "min_parts": 3})
+
+
+def _ref_only(part):
+    """Copy of *part* whose trace is given only by reference."""
+    return dataclasses.replace(part, trace=None,
+                               trace_refs=[Ref(local_ref="c9")])
+
+
+class TestUncheckedPlausibility:
+    REF_ONLY = Unchecked("trace given only by reference (trace_refs)",
+                         "s1", "g-s1")
+
+    def test_top010_ref_only_trace_unchecked(self):
+        ctx = _ctx(stiffeners=[_ref_only(_stiffener("s1"))])
+        assert inclination_position_on_trace(
+            ctx, {"position_tolerance_mm": 50.0}) == CheckOutcome(
+                unchecked=(self.REF_ONLY,))
+
+    def test_top010_exception_unchecked(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1")])
+        with patch("ocx_rules.packs.best_practice.checks.plausibility."
+                   "_nearest_on_polyline", side_effect=RuntimeError("boom")):
+            outcome = inclination_position_on_trace(
+                ctx, {"position_tolerance_mm": 50.0})
+        assert outcome == CheckOutcome(unchecked=(
+            Unchecked("evaluation failed: boom", "s1", "g-s1"),))
+
+    def test_top011_012_ref_only_trace_unchecked(self):
+        ctx = _ctx(panels=[_panel()],
+                   stiffeners=[_ref_only(_stiffener("s1"))])
+        for check in (web_not_in_plate, web_near_normal):
+            assert check(ctx, {}) == CheckOutcome(unchecked=(self.REF_ONLY,))
+
+    def test_top011_missing_panel_unchecked(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", panel="p9")])
+        assert web_not_in_plate(ctx, {}).unchecked == (
+            Unchecked("owning panel p9 not found", "s1", "g-s1"),)
+
+    def test_top011_no_buildable_surface_unchecked(self):
+        ctx = _ctx(panels=[_panel(surfaces=())], stiffeners=[_stiffener("s1")])
+        assert web_not_in_plate(ctx, {}).unchecked == (
+            Unchecked("no buildable panel surface", "s1", "g-s1"),)
+
+    def test_top011_free_standing_stiffener_silent(self):
+        ctx = _ctx(panels=[_panel(surfaces=(_FAR_PLANE,))],
+                   stiffeners=[_stiffener("s1")])
+        assert web_not_in_plate(ctx, {}) == CheckOutcome()
+
+    def test_prop005_plate_without_outline_unchecked(self):
+        plate = dataclasses.replace(_plate("pl1", cog=(500, 500, 0)),
+                                    outer_contour=None)
+        ctx = _ctx(plates=[plate])
+        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}) == CheckOutcome(
+            unchecked=(Unchecked("no outline or trace", "pl1", "g-pl1"),))
+
+    def test_prop005_ref_only_trace_unchecked(self):
+        ctx = _ctx(stiffeners=[_ref_only(_stiffener("s1", cog=(500, 0, 0)))])
+        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}).unchecked == (
+            self.REF_ONLY,)
+
+    def test_prop005_part_without_cog_silent(self):
+        ctx = _ctx(stiffeners=[_ref_only(_stiffener("s1"))])
+        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}) == CheckOutcome()
+
+    def test_prop006_cog_exception_unchecked(self):
+        ctx = _ctx(plates=[_plate("pl1", cog=(0, 0, 0))])
+        with patch("ocx_rules.packs.best_practice.checks.plausibility._cog_m",
+                   side_effect=RuntimeError("boom")):
+            outcome = shared_positions_and_cogs(
+                ctx, {"tolerance_mm": 1.0, "min_parts": 3})
+        assert outcome == CheckOutcome(unchecked=(
+            Unchecked("COG evaluation failed: boom", "pl1", "g-pl1"),))

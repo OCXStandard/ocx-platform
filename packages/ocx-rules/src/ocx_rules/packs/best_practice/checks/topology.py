@@ -1,6 +1,9 @@
-"""Geometry topology checks (OCX-TOP-001 through 005, 008 and 009)."""
+"""Geometry topology checks (OCX-TOP-001 through 005, 008 and 009).
+
+Every check returns CheckOutcome (findings + unchecked elements)."""
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 import numpy as np
@@ -16,7 +19,7 @@ from ocx_geometry.topology2d import (
 from ocx_model_core.model.ir.base import ParentKind
 from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
 
-from ocx_rules.model import Finding
+from ocx_rules.model import CheckOutcome, Finding, OutcomeCollector
 
 _SAMPLE_TOL_M = 0.001
 
@@ -35,33 +38,71 @@ def _panel_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
     return samples, unresolved
 
 
-def panel_limited_by_closed(context, params: dict[str, Any]) -> list[Finding]:
+def _classified_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
+    """-> (sampled (N, 3) arrays, reason fragments for unusable refs).
+
+    Unusable refs are split into dangling SeamRef/StiffenerRef, ref types
+    without an explicit curve (e.g. GridRef), and unsampleable curves.
+    """
+    geo = context.geometry
+    samples = []
+    dangling: Counter[str] = Counter()
+    no_curve: Counter[str] = Counter()
+    unsampleable = 0
+    for ref in panel.limited_by:
+        curve = geo.boundary_curve_for_ref(ref)
+        if curve is None:
+            if ref.ref_type in ("SeamRef", "StiffenerRef"):
+                dangling[ref.ref_type] += 1
+            else:
+                no_curve[ref.ref_type] += 1
+            continue
+        pts = geo.sample(curve, tol_m)
+        if pts is None or len(pts) < 2:
+            unsampleable += 1
+        else:
+            samples.append(pts)
+
+    def by_type(counts: Counter[str]) -> str:
+        return ", ".join(f"{t}×{n}" for t, n in sorted(counts.items()))
+
+    reasons = []
+    if dangling:
+        reasons.append(f"{dangling.total()} dangling boundary ref(s) "
+                       f"({by_type(dangling)})")
+    if no_curve:
+        reasons.append(f"{no_curve.total()} boundary ref(s) without explicit "
+                       f"curve ({by_type(no_curve)})")
+    if unsampleable:
+        reasons.append(f"{unsampleable} unsampleable boundary curve(s)")
+    return samples, reasons
+
+
+def panel_limited_by_closed(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-001: panel LimitedBy must form a closed contour."""
     tol_m = float(params.get("tolerance_mm", 1.0)) / 1000.0
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-001")
     for pid, panel in context.vessel.panels.items():
         if not panel.limited_by:
             continue
-        samples, skipped = _panel_boundary_samples(context, panel)
-        if skipped:
-            logger.debug("TOP-001: panel {} skipped ({} unresolved refs)",
-                         pid, skipped)
+        samples, reasons = _classified_boundary_samples(context, panel)
+        if reasons:
+            out.unchecked("; ".join(reasons), pid, panel.guidref)
             continue
         if not samples:
-            logger.debug("TOP-001: panel {} skipped (no sampleable boundary)",
-                         pid)
+            out.unchecked("no sampleable boundary", pid, panel.guidref)
             continue
         ring, gaps = chain_polylines(samples)
         if ring is None:
             continue
         worst = max(gaps)
         if worst > tol_m:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Panel boundary is not closed: largest gap "
                          f"{worst * 1000:.2f} mm exceeds "
                          f"{tol_m * 1000:.2f} mm"),
                 element_id=pid, guid=panel.guidref))
-    return findings
+    return out.outcome()
 
 
 def _composite_curves(context) -> list[tuple[str, str | None, IrCompositeCurve3D]]:
@@ -102,17 +143,17 @@ def _composite_curves(context) -> list[tuple[str, str | None, IrCompositeCurve3D
     return found
 
 
-def composite_curve_continuous(context, params: dict[str, Any]) -> list[Finding]:
+def composite_curve_continuous(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-002: CompositeCurve3D segments must join end-to-end."""
     tol_m = float(params.get("tolerance_mm", 0.1)) / 1000.0
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-002")
     for owner_id, guid, curve in _composite_curves(context):
         samples = []
         for seg in curve.segments:
             pts = context.geometry.sample(seg)
             if pts is None or len(pts) < 2:
-                logger.debug("TOP-002: composite curve on {} skipped "
-                             "(unsampleable segment)", owner_id)
+                out.unchecked("composite curve has an unsampleable segment",
+                              owner_id, guid)
                 samples = None
                 break
             samples.append(pts)
@@ -121,32 +162,32 @@ def composite_curve_continuous(context, params: dict[str, Any]) -> list[Finding]
         gaps = chained_junction_gaps(samples)
         bad = [g for g in gaps if g > tol_m]
         if bad:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Composite curve segments are not continuous: "
                          f"worst junction gap {max(bad) * 1000:.2f} mm "
                          f"exceeds {tol_m * 1000:.2f} mm"),
                 element_id=owner_id, guid=guid))
-    return findings
+    return out.outcome()
 
 
-def hole_contours_closed(context, params: dict[str, Any]) -> list[Finding]:
+def hole_contours_closed(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-003: hole/opening contours must be closed."""
     tol_m = float(params.get("tolerance_mm", 0.1)) / 1000.0
     catalogue = context.vessel.hole_shape_catalogue
     if catalogue is None:
-        return []
-    findings: list[Finding] = []
+        return CheckOutcome()
+    out = OutcomeCollector("OCX-TOP-003")
     for hid, hole in catalogue.holes.items():
         if hole.parametric is not None:
             ring = parametric_profile(hole.parametric, context.geometry.length,
                                       _SAMPLE_TOL_M)
             if ring is None:
-                logger.debug("TOP-003: hole {} parametric profile could not "
-                             "be built; skipped", hid)
+                out.unchecked("parametric profile could not be built", hid,
+                              hole.guidref)
                 continue
             reason = polygon_ok(ring)
             if reason is not None:
-                findings.append(Finding(
+                out.add(Finding(
                     message=(f"Parametric hole profile is not a valid "
                              f"closed polygon: {reason}"),
                     element_id=hid, guid=hole.guidref))
@@ -155,16 +196,16 @@ def hole_contours_closed(context, params: dict[str, Any]) -> list[Finding]:
             continue
         pts = context.geometry.sample(hole.contour)
         if pts is None or len(pts) < 2:
-            logger.debug("TOP-003: hole {} contour unsampleable; skipped", hid)
+            out.unchecked("unsampleable contour", hid, hole.guidref)
             continue
         gap = float(np.linalg.norm(pts[0] - pts[-1]))
         if gap > tol_m:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Hole contour is not closed: closure gap "
                          f"{gap * 1000:.2f} mm exceeds "
                          f"{tol_m * 1000:.2f} mm"),
                 element_id=hid, guid=hole.guidref))
-    return findings
+    return out.outcome()
 
 
 def _resolve_catalogue_hole(vessel, ref):
@@ -229,9 +270,9 @@ def _placed_hole_outlines(context, cut_by_holes, cut_by_contours,
     return outlines, skipped
 
 
-def hole_not_splitting_plate(context, params: dict[str, Any]) -> list[Finding]:
+def hole_not_splitting_plate(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-004: a hole must not split a plate into disjoint regions."""
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-004")
     geo = context.geometry
     vessel = context.vessel
     for pid, plate in vessel.plates.items():
@@ -242,74 +283,72 @@ def hole_not_splitting_plate(context, params: dict[str, Any]) -> list[Finding]:
         if pr is not None and pr.kind == ParentKind.PANEL:
             panel = vessel.panels.get(pr.id)
         if panel is None:
-            logger.debug("TOP-004: plate {} skipped (no owning panel)", pid)
+            out.unchecked("no owning panel", pid, plate.guidref)
             continue
         param = geo.surface_param(geo.panel_surface(panel))
         if param is None:
-            logger.debug("TOP-004: plate {} skipped (no buildable panel "
-                         "surface)", pid)
+            out.unchecked("no buildable panel surface", pid, plate.guidref)
             continue
         if param.periodic_u:
-            logger.debug("TOP-004: plate {} skipped (periodic surface, "
-                         "ambiguous UV mapping)", pid)
+            out.unchecked("periodic surface, ambiguous UV mapping", pid,
+                          plate.guidref)
             continue
         outline = geo.sample(plate.outer_contour)
         if outline is None or len(outline) < 3:
-            logger.debug("TOP-004: plate {} skipped (unsampleable outer "
-                         "contour)", pid)
+            out.unchecked("unsampleable outer contour", pid, plate.guidref)
             continue
         holes_3d, skipped = _placed_hole_outlines(
             context, plate.cut_by_holes, plate.cut_by_contours)
+        if not holes_3d:
+            out.unchecked(f"{skipped} hole(s) could not be placed", pid,
+                          plate.guidref)
+            continue
         if skipped:
             logger.debug("TOP-004: plate {}: {} hole(s) could not be "
                          "placed; skipped", pid, skipped)
-        if not holes_3d:
-            continue
         try:
             outline_uv = np.asarray(param.inverse(outline), dtype=float)
             cuts_uv = [np.asarray(param.inverse(h), dtype=float)
                        for h in holes_3d]
         except Exception as exc:  # noqa: BLE001 — lean-pass on UV failure
-            logger.debug("TOP-004: plate {} skipped (UV mapping failed: {})",
-                         pid, exc)
+            out.unchecked(f"UV mapping failed: {exc}", pid, plate.guidref)
             continue
         n = region_count(outline_uv, cuts_uv)
         if n > 1:
-            findings.append(Finding(
+            out.add(Finding(
                 message=f"Hole splits plate into {n} regions",
                 element_id=pid, guid=plate.guidref))
-    return findings
+    return out.outcome()
 
 
-def _plate_contours_closed(context, panel, tol_m: float) -> list[Finding]:
+def _plate_contours_closed(context, panel, tol_m: float,
+                           out: OutcomeCollector) -> None:
     """OCX-TOP-005 aspect: plates of a seamed panel have closed outer contours."""
     geo = context.geometry
     vessel = context.vessel
-    findings: list[Finding] = []
     for plate_id in panel.plate_ids:
         plate = vessel.plates.get(plate_id)
         if plate is None or plate.outer_contour is None:
             continue
         pts = geo.sample(plate.outer_contour)
         if pts is None or len(pts) < 3:
-            logger.debug("TOP-005: plate {} skipped (unsampleable outer "
-                         "contour)", plate_id)
+            out.unchecked("unsampleable outer contour", plate_id,
+                          plate.guidref)
             continue
         gap = float(np.linalg.norm(pts[0] - pts[-1]))
         if gap > tol_m:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Plate outer contour is not closed: gap "
                          f"{gap * 1000:.2f} mm exceeds "
                          f"{tol_m * 1000:.2f} mm"),
                 element_id=plate_id, guid=plate.guidref))
-    return findings
 
 
-def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
+def seam_topology(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-005: seam endpoints must not land on hole contours, and
     plate outer contours of seamed panels must be closed."""
     tol_m = float(params.get("tolerance_mm", 5.0)) / 1000.0
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-005")
     geo = context.geometry
     vessel = context.vessel
     for pid, panel in vessel.panels.items():
@@ -317,7 +356,7 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
                  if sid in vessel.seams]
         if not seams:
             continue
-        findings += _plate_contours_closed(context, panel, tol_m)
+        _plate_contours_closed(context, panel, tol_m, out)
         boundary, _ = _panel_boundary_samples(context, panel)
         cut_holes = list(panel.cut_by_holes)
         cut_contours = list(panel.cut_by_contours)
@@ -326,18 +365,21 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
             if plate is not None:
                 cut_holes += plate.cut_by_holes
                 cut_contours += plate.cut_by_contours
-        hole_outlines, _ = _placed_hole_outlines(context, cut_holes,
-                                                 cut_contours)
+        hole_outlines, skipped = _placed_hole_outlines(context, cut_holes,
+                                                       cut_contours)
+        if not hole_outlines:
+            if skipped:
+                for sid, seam in seams:
+                    out.unchecked(f"{skipped} hole(s) could not be placed",
+                                  sid, seam.guidref)
+            continue
         seam_samples: dict[str, np.ndarray] = {}
         for sid, seam in seams:
             pts = geo.sample(seam.trace_line)
             if pts is None or len(pts) < 2:
-                logger.debug("TOP-005: seam {} on panel {} skipped "
-                             "(unsampleable trace)", sid, pid)
+                out.unchecked("unsampleable trace", sid, seam.guidref)
                 continue
             seam_samples[sid] = pts
-        if not hole_outlines:
-            continue
         for sid, pts in seam_samples.items():
             seam = vessel.seams[sid]
             non_hole = boundary + [p for osid, p in seam_samples.items()
@@ -348,12 +390,12 @@ def seam_topology(context, params: dict[str, Any]) -> list[Finding]:
                 d_other = min((point_polyline_distance(endpoint, c)
                                for c in non_hole), default=float("inf"))
                 if d_hole <= tol_m and d_hole < d_other:
-                    findings.append(Finding(
+                    out.add(Finding(
                         message=(f"Seam {label} endpoint lies on a hole "
                                  f"contour ({d_hole * 1000:.2f} mm away, "
                                  f"tolerance {tol_m * 1000:.2f} mm)"),
                         element_id=sid, guid=seam.guidref))
-    return findings
+    return out.outcome()
 
 
 _ADJACENCY_TOL_M = 0.001   # boundary proximity that makes two members adjacent
@@ -383,9 +425,9 @@ def _probe_into(p: np.ndarray, centroid: np.ndarray,
     return d / norm
 
 
-def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Finding]:
+def surface_normals_and_boundaries(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-008: face orientation must not reverse across shared boundaries."""
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-008")
     geo = context.geometry
     for cid, coll in context.vessel.surface_collections.items():
         members = []
@@ -394,8 +436,8 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
             boundary = geo.sample(getattr(geom, "face_boundary_curve", None))
             param = geo.surface_param(geom)
             if param is None or boundary is None or len(boundary) < 2:
-                logger.debug("TOP-008: member {} of collection {} skipped "
-                             "(no buildable surface or boundary)", surf.id, cid)
+                out.unchecked("no buildable surface or boundary", surf.id,
+                              surf.guidref)
                 continue
             bnd = np.asarray(boundary, dtype=float)
             members.append((surf, param, bnd, bnd.mean(axis=0),
@@ -422,8 +464,9 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                     cand = (list(zip(d_ab, bnd_a))
                             + list(zip(d_ba, bnd_b)))
                 except Exception as exc:  # noqa: BLE001 — lean-pass per pair
-                    logger.debug("TOP-008: pair {}/{} skipped ({})",
-                                 surf_a.id, surf_b.id, exc)
+                    out.unchecked(
+                        f"evaluation against {surf_b.id} failed: {exc}",
+                        surf_a.id, surf_a.guidref)
                     continue
                 close = sorted((c for c in cand if c[0] <= _ADJACENCY_TOL_M),
                                key=lambda c: c[0])
@@ -499,21 +542,21 @@ def surface_normals_and_boundaries(context, params: dict[str, Any]) -> list[Find
                     dot = float(np.clip(na @ nb, -1.0, 1.0))
                     angles.append(np.degrees(np.arccos(dot)))
                 if not votes:
-                    logger.debug("TOP-008: pair {}/{} skipped (no evaluable "
-                                 "shared boundary samples)", surf_a.id,
-                                 surf_b.id)
+                    out.unchecked(
+                        f"no evaluable shared boundary samples with {surf_b.id}",
+                        surf_a.id, surf_a.guidref)
                     continue
                 flipped = sum(votes)
                 # strict majority of flipped samples; ties pass
                 if flipped > len(votes) - flipped:
                     angle = float(np.median(angles))
-                    findings.append(Finding(
+                    out.add(Finding(
                         message=(f"Surface orientation reverses across the "
                                  f"shared boundary with member {surf_b.id} "
                                  f"in collection {cid} (normals "
                                  f"{angle:.1f} deg apart)"),
                         element_id=surf_a.id, guid=surf_a.guidref))
-    return findings
+    return out.outcome()
 
 
 _DUP_POSITION_TOL_M = 1e-6
@@ -553,9 +596,9 @@ def _direction_flip(entries, field: str) -> tuple[int, int] | None:
     return None
 
 
-def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
+def stiffener_inclinations(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-009: inclination series must be duplicate-free and smooth."""
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-009")
     geo = context.geometry
     vessel = context.vessel
     members = list(vessel.stiffeners.items()) + list(vessel.pillars.items())
@@ -571,7 +614,7 @@ def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
                     and np.linalg.norm(positions[i] - positions[j])
                     < _DUP_POSITION_TOL_M), None)
         if dup is not None:
-            findings.append(Finding(
+            out.add(Finding(
                 message=(f"Duplicate inclination position: entries {dup[0]} "
                          f"and {dup[1]} are less than "
                          f"{_DUP_POSITION_TOL_M:g} m apart"),
@@ -580,9 +623,9 @@ def stiffener_inclinations(context, params: dict[str, Any]) -> list[Finding]:
                              ("flange_direction", "Flange")):
             flip = _direction_flip(entries, field)
             if flip is not None:
-                findings.append(Finding(
+                out.add(Finding(
                     message=(f"{label} direction flips between inclination "
                              f"entries {flip[0]} and {flip[1]} "
                              f"(negative dot product)"),
                     element_id=mid, guid=member.guidref))
-    return findings
+    return out.outcome()

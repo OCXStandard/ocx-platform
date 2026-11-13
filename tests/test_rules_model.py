@@ -6,13 +6,16 @@ import dataclasses
 import pytest
 from ocx_rules.model import (
     CheckNotImplemented,
+    CheckOutcome,
     CheckRef,
     Finding,
+    OutcomeCollector,
     RulePack,
     RuleResult,
     RuleSpec,
     RuleStatus,
     Severity,
+    Unchecked,
 )
 
 
@@ -65,3 +68,49 @@ class TestModel:
 
     def test_check_not_implemented_is_exception(self):
         assert issubclass(CheckNotImplemented, Exception)
+
+
+class TestOutcomeCollector:
+    def test_empty_outcome(self):
+        assert OutcomeCollector("R-1").outcome() == CheckOutcome()
+
+    def test_findings_and_unchecked_in_insertion_order(self):
+        out = OutcomeCollector("R-1")
+        out.add(Finding(message="a", element_id="e1"))
+        out.unchecked("no thickness", "e2", "g2")
+        out.add(Finding(message="b", element_id="e3"))
+        out.unchecked("no surface", "e4")
+        outcome = out.outcome()
+        assert [f.message for f in outcome.findings] == ["a", "b"]
+        assert outcome.unchecked == (Unchecked("no thickness", "e2", "g2"),
+                                     Unchecked("no surface", "e4", None))
+
+    def test_reasons_merge_per_element(self):
+        out = OutcomeCollector("R-1")
+        out.unchecked("first", "e1", "g1")
+        out.unchecked("second", "e1", "g1")
+        out.unchecked("first", "e1", "g1")  # exact duplicate dropped
+        assert out.outcome().unchecked == (Unchecked("first; second", "e1", "g1"),)
+
+    def test_reason_containing_separator_deduplicated(self):
+        out = OutcomeCollector("R-1")
+        out.unchecked("a; b", "e1")
+        out.unchecked("a; b", "e1")
+        assert out.outcome().unchecked == (Unchecked("a; b", "e1"),)
+
+    def test_none_element_entries_never_merge(self):
+        out = OutcomeCollector("R-1")
+        out.unchecked("x")
+        out.unchecked("x")
+        assert out.outcome().unchecked == (Unchecked("x"), Unchecked("x"))
+
+    def test_outcome_is_a_snapshot(self):
+        out = OutcomeCollector("R-1")
+        first = out.outcome()
+        out.unchecked("later", "e1")
+        assert first == CheckOutcome()
+
+
+def test_rule_result_unchecked_defaults_to_empty():
+    result = RuleResult(spec=_spec(), status=RuleStatus.PASSED)
+    assert result.unchecked == ()

@@ -1,13 +1,16 @@
 """Core data model for the rule engine.
 
-All dataclasses are frozen. ``RuleSpec.params`` and ``RuleResult.findings``
-hold plain data; specs are produced by the catalogue loader and (optionally)
-rewritten by the user config before execution.
+All dataclasses are frozen. ``RuleSpec.params``, ``RuleResult.findings`` and
+``RuleResult.unchecked`` hold plain data; specs are produced by the catalogue
+loader and (optionally) rewritten by the user config before execution.
+``OutcomeCollector`` is the one mutable helper.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+
+from loguru import logger
 
 
 class Severity(str, Enum):
@@ -81,6 +84,67 @@ class Finding:
 
 
 @dataclass(frozen=True)
+class Unchecked:
+    """An element a check could not evaluate (informational)."""
+
+    reason: str
+    element_id: str | None = None
+    guid: str | None = None
+
+
+@dataclass(frozen=True)
+class CheckOutcome:
+    """Result of one check: violations plus elements it could not evaluate."""
+
+    findings: tuple[Finding, ...] = ()
+    unchecked: tuple[Unchecked, ...] = ()
+
+
+class OutcomeCollector:
+    """Mutable builder for a :class:`CheckOutcome` used inside checks.
+
+    ``unchecked`` keeps one entry per element id: further reasons for the
+    same id are appended with ``"; "`` (exact duplicates dropped). Entries
+    without an element id are never merged.
+    """
+
+    def __init__(self, rule_id: str) -> None:
+        self.rule_id = rule_id
+        self._findings: list[Finding] = []
+        self._unchecked: list[Unchecked] = []
+        self._index: dict[str, int] = {}
+        self._reasons: dict[str, list[str]] = {}
+
+    def add(self, finding: Finding) -> None:
+        self._findings.append(finding)
+
+    def unchecked(self, reason: str, element_id: str | None = None,
+                  guid: str | None = None) -> None:
+        logger.debug("{}: {} not checked ({})", self.rule_id,
+                     element_id or "<unidentified>", reason)
+        if element_id is None:
+            self._unchecked.append(Unchecked(reason, None, guid))
+            return
+        idx = self._index.get(element_id)
+        if idx is None:
+            self._index[element_id] = len(self._unchecked)
+            self._reasons[element_id] = [reason]
+            self._unchecked.append(Unchecked(reason, element_id, guid))
+            return
+        reasons = self._reasons[element_id]
+        if reason in reasons:
+            return
+        reasons.append(reason)
+        prev = self._unchecked[idx]
+        self._unchecked[idx] = Unchecked("; ".join(reasons), element_id,
+                                         prev.guid or guid)
+
+    def outcome(self) -> CheckOutcome:
+        return CheckOutcome(findings=tuple(self._findings),
+                            unchecked=tuple(self._unchecked))
+
+
+@dataclass(frozen=True)
 class RuleResult:
     """Outcome of executing one rule against one model."""
 
@@ -89,6 +153,7 @@ class RuleResult:
     findings: tuple[Finding, ...] = ()
     reason: str | None = None  # set for SKIPPED / CRASHED
     duration_ms: float = 0.0
+    unchecked: tuple[Unchecked, ...] = ()  # PASSED / FAILED only
 
 
 @dataclass(frozen=True)

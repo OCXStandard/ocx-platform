@@ -3,7 +3,8 @@
 Produces a plain dict (JSON-serialisable) mirroring the schema-validation
 sidecar: model identity, a run summary and one entry per rule with full
 source provenance (wiki source, category, severity) plus every finding's
-element id, GUID and XML line number.
+element id, GUID and XML line number, plus the elements each check could
+not evaluate (``unchecked``).
 """
 from __future__ import annotations
 
@@ -36,6 +37,7 @@ def build(results: list[RuleResult], *, model: str) -> dict:
             "by_status": by_status,
             "error_findings": error_findings,
             "warning_findings": warning_findings,
+            "unchecked_elements": sum(len(r.unchecked) for r in results),
         },
         "results": [_result_entry(r) for r in results],
     }
@@ -57,5 +59,9 @@ def _result_entry(result: RuleResult) -> dict:
             {"message": f.message, "element_id": f.element_id,
              "guid": f.guid, "location": f.location}
             for f in result.findings
+        ],
+        "unchecked": [
+            {"element_id": u.element_id, "guid": u.guid, "reason": u.reason}
+            for u in result.unchecked
         ],
     }

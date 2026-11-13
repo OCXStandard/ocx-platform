@@ -4,6 +4,9 @@ These rules catch data that is well-formed but physically implausible —
 typically exporter bugs that copy one value onto many parts: inclination
 positions off the trace, web directions that disagree with the panel
 surface normal, COGs outside the part, and values shared by many parts.
+
+Checks return CheckOutcome; parts they cannot evaluate (unusable trace,
+reference-only trace, exceptions) are reported as unchecked.
 """
 from __future__ import annotations
 
@@ -14,10 +17,9 @@ from itertools import chain
 from typing import Any
 
 import numpy as np
-from loguru import logger
 from ocx_model_core.model.ir.base import ParentKind
 
-from ocx_rules.model import Finding
+from ocx_rules.model import CheckOutcome, Finding, OutcomeCollector, Unchecked
 from ocx_rules.packs.best_practice.checks.properties import _cog_m
 from ocx_rules.packs.best_practice.checks.topology import _inclination_positions
 
@@ -57,6 +59,15 @@ def _unit_vector(v) -> np.ndarray | None:
     return _normalize(np.array([v.x, v.y, v.z], dtype=float))
 
 
+def _curve_unusable(part, curve) -> str:
+    """Why a part's outline/trace cannot be sampled (unchecked reason)."""
+    if curve is None:
+        if getattr(part, "trace_refs", None):
+            return "trace given only by reference (trace_refs)"
+        return "no outline or trace"
+    return "unsampleable outline or trace"
+
+
 def _panel_surface_params(geo, panel) -> list:
     """SurfaceParams for every support surface of a panel.
 
@@ -85,11 +96,13 @@ def _surface_normal_at(params: list, point: np.ndarray) -> np.ndarray | None:
     return _normalize(best[1].normals(best[2])[0])
 
 
-_WEB_ANGLES_CACHE: "weakref.WeakKeyDictionary[Any, list[tuple[Any, int, float]]]" = (
+_WebAngles = tuple[list[tuple[Any, int, float]], tuple[Unchecked, ...]]
+
+_WEB_ANGLES_CACHE: "weakref.WeakKeyDictionary[Any, _WebAngles]" = (
     weakref.WeakKeyDictionary())
 
 
-def _web_angles(context) -> list[tuple[Any, int, float]]:
+def _web_angles(context) -> _WebAngles:
     """Memoized ``_compute_web_angles`` per GeometryContext (TOP-011/012)."""
     geo = context.geometry
     cached = _WEB_ANGLES_CACHE.get(geo)
@@ -99,17 +112,20 @@ def _web_angles(context) -> list[tuple[Any, int, float]]:
     return cached
 
 
-def _compute_web_angles(context) -> list[tuple[Any, int, float]]:
-    """(stiffener, inclination index, web-to-surface-normal angle in degrees).
+def _compute_web_angles(context) -> _WebAngles:
+    """((stiffener, inclination index, web-to-normal angle deg), unchecked).
 
     Shared by OCX-TOP-011/012. Evaluated at the trace point nearest the
     inclination position (trace start when it has none). Stiffeners without
-    a panel, a resolvable surface, or within 50 mm of it are skipped.
+    inclinations or a panel parent are not applicable; stiffeners farther
+    than 50 mm from every panel surface are free-standing (rule logic).
+    Missing panels/surfaces, unusable traces and exceptions are unchecked.
     """
     geo = context.geometry
     vessel = context.vessel
+    out = OutcomeCollector("OCX-TOP-011/012")
     surface_cache: dict[str, list] = {}
-    out: list[tuple[Any, int, float]] = []
+    angles_out: list[tuple[Any, int, float]] = []
     for stiffener in vessel.stiffeners.values():
         parent = stiffener.parent_ref
         if (not stiffener.inclinations or parent is None
@@ -117,15 +133,21 @@ def _compute_web_angles(context) -> list[tuple[Any, int, float]]:
             continue
         panel = vessel.panels.get(parent.id)
         if panel is None:
+            out.unchecked(f"owning panel {parent.id} not found",
+                          stiffener.id, stiffener.guidref)
             continue
         try:
             if panel.id not in surface_cache:
                 surface_cache[panel.id] = _panel_surface_params(geo, panel)
             params = surface_cache[panel.id]
             if not params:
+                out.unchecked("no buildable panel surface", stiffener.id,
+                              stiffener.guidref)
                 continue
             poly = geo.sample(stiffener.trace)
             if poly is None or len(poly) == 0:
+                out.unchecked(_curve_unusable(stiffener, stiffener.trace),
+                              stiffener.id, stiffener.guidref)
                 continue
             positions = _inclination_positions(geo, stiffener.inclinations)
             angles: list[tuple[Any, int, float]] = []
@@ -140,68 +162,73 @@ def _compute_web_angles(context) -> list[tuple[Any, int, float]]:
                     continue
                 cos = min(abs(float(web @ normal)), 1.0)
                 angles.append((stiffener, i, math.degrees(math.acos(cos))))
-            out.extend(angles)
+            angles_out.extend(angles)
         except Exception as exc:  # noqa: BLE001 — skip stiffener
-            logger.debug("TOP-011/012: stiffener {} skipped: {}",
-                         stiffener.id, exc)
-    return out
+            out.unchecked(f"evaluation failed: {exc}", stiffener.id,
+                          stiffener.guidref)
+    return angles_out, out.outcome().unchecked
 
 
-def web_not_in_plate(context, params: dict[str, Any]) -> list[Finding]:
+def web_not_in_plate(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-011: the web must not lie in the plate plane."""
     max_deg = float(params.get("max_angle_deg", 80.0))
-    return [
+    angles, unchecked = _web_angles(context)
+    return CheckOutcome(findings=tuple(
         Finding(f"Inclination {i}: web direction is {angle:.1f}° from the "
                 f"panel surface normal (lies in the plate plane; limit "
                 f"{max_deg:.0f}°)",
                 element_id=s.id, guid=s.guidref)
-        for s, i, angle in _web_angles(context) if angle >= max_deg]
+        for s, i, angle in angles if angle >= max_deg), unchecked=unchecked)
 
 
-def web_near_normal(context, params: dict[str, Any]) -> list[Finding]:
+def web_near_normal(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-012: the web should be close to the panel surface normal."""
     warn_deg = float(params.get("warn_angle_deg", 30.0))
     max_deg = float(params.get("max_angle_deg", 80.0))
-    return [
+    angles, unchecked = _web_angles(context)
+    return CheckOutcome(findings=tuple(
         Finding(f"Inclination {i}: web direction is {angle:.1f}° from the "
                 f"panel surface normal (warning above {warn_deg:.0f}°)",
                 element_id=s.id, guid=s.guidref)
-        for s, i, angle in _web_angles(context) if warn_deg < angle < max_deg]
+        for s, i, angle in angles if warn_deg < angle < max_deg),
+        unchecked=unchecked)
 
 
 def inclination_position_on_trace(context,
-                                  params: dict[str, Any]) -> list[Finding]:
+                                  params: dict[str, Any]) -> CheckOutcome:
     """OCX-TOP-010: every inclination Position must lie on the part's trace."""
     tol_mm = float(params.get("position_tolerance_mm", 50.0))
     tol_m = tol_mm / 1000.0
     geo = context.geometry
     vessel = context.vessel
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-TOP-010")
     for part in chain(vessel.stiffeners.values(), vessel.pillars.values()):
         if not part.inclinations:
             continue
         try:
             poly = geo.sample(part.trace)
             if poly is None or len(poly) == 0:
+                out.unchecked(_curve_unusable(part, part.trace), part.id,
+                              part.guidref)
                 continue
             positions = _inclination_positions(geo, part.inclinations)
             for i, pos in enumerate(positions):
                 if pos is None:
                     continue
                 if not np.isfinite(pos).all():
-                    findings.append(Finding(
+                    out.add(Finding(
                         f"Inclination {i} position has non-finite "
                         f"coordinates", element_id=part.id, guid=part.guidref))
                     continue
                 _, dist = _nearest_on_polyline(poly, pos)
                 if dist > tol_m:
-                    findings.append(Finding(
+                    out.add(Finding(
                         f"Inclination {i} position is {dist:.3f} m off the "
                         f"trace (tolerance {tol_mm:.0f} mm)",
                         element_id=part.id, guid=part.guidref))
         except Exception as exc:  # noqa: BLE001 — skip part
-            logger.debug("TOP-010: part {} skipped: {}", part.id, exc)
-    return findings
+            out.unchecked(f"evaluation failed: {exc}", part.id, part.guidref)
+    return out.outcome()
 
 
 def _parts_with_geometry(vessel):
@@ -212,24 +239,26 @@ def _parts_with_geometry(vessel):
         yield part, part.trace
 
 
-def part_cog_within_geometry(context, params: dict[str, Any]) -> list[Finding]:
+def part_cog_within_geometry(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-PROP-005: the moulded COG must lie near the part's geometry."""
     margin_mm = float(params.get("margin_mm", 500.0))
     margin_m = margin_mm / 1000.0
     geo = context.geometry
-    findings: list[Finding] = []
+    out = OutcomeCollector("OCX-PROP-005")
     for part, curve in _parts_with_geometry(context.vessel):
         mp = part.mass_properties
         cog = mp.moulded_cog if mp is not None else None
-        if cog is None or curve is None:
+        if cog is None:
             continue
         try:
             pts = geo.sample(curve)
             if pts is None or len(pts) == 0:
+                out.unchecked(_curve_unusable(part, curve), part.id,
+                              part.guidref)
                 continue
             c = _cog_m(geo.length, cog)
             if not np.isfinite(c).all():
-                findings.append(Finding(
+                out.add(Finding(
                     "Moulded COG has non-finite coordinates",
                     element_id=part.id, guid=part.guidref))
                 continue
@@ -238,14 +267,14 @@ def part_cog_within_geometry(context, params: dict[str, Any]) -> list[Finding]:
             gap = np.maximum(np.maximum(lo - c, c - hi), 0.0)
             dist = float(np.linalg.norm(gap))
             if dist > 0.0:
-                findings.append(Finding(
+                out.add(Finding(
                     f"Moulded COG ({c[0]:.3f}, {c[1]:.3f}, {c[2]:.3f}) m is "
                     f"{dist:.3f} m outside the part's bounding box "
                     f"(margin {margin_mm:.0f} mm)",
                     element_id=part.id, guid=part.guidref))
         except Exception as exc:  # noqa: BLE001 — skip part
-            logger.debug("PROP-005: part {} skipped: {}", part.id, exc)
-    return findings
+            out.unchecked(f"evaluation failed: {exc}", part.id, part.guidref)
+    return out.outcome()
 
 
 def _grid_key(p: np.ndarray, step_m: float) -> tuple[int, int, int]:
@@ -285,11 +314,12 @@ class _Pool:
         return out
 
 
-def shared_positions_and_cogs(context, params: dict[str, Any]) -> list[Finding]:
+def shared_positions_and_cogs(context, params: dict[str, Any]) -> CheckOutcome:
     """OCX-PROP-006: positions/COGs must not be copied across many parts."""
     tol_mm = float(params.get("tolerance_mm", 1.0))
     if not tol_mm > 0.0:
         raise ValueError(f"OCX-PROP-006: tolerance_mm must be > 0, got {tol_mm}")
+    out = OutcomeCollector("OCX-PROP-006")
     step_m = tol_mm / 1000.0
     min_parts = int(params.get("min_parts", 3))
     geo = context.geometry
@@ -302,7 +332,8 @@ def shared_positions_and_cogs(context, params: dict[str, Any]) -> list[Finding]:
                 if pos is not None:
                     positions.add(part, pos)
         except Exception as exc:  # noqa: BLE001 — skip part
-            logger.debug("PROP-006: part {} positions skipped: {}", part.id, exc)
+            out.unchecked(f"inclination positions failed: {exc}", part.id,
+                          part.guidref)
     for part in chain(vessel.plates.values(), vessel.stiffeners.values(),
                       vessel.pillars.values()):
         mp = part.mass_properties
@@ -312,5 +343,8 @@ def shared_positions_and_cogs(context, params: dict[str, Any]) -> list[Finding]:
         try:
             cogs.add(part, _cog_m(geo.length, cog))
         except Exception as exc:  # noqa: BLE001 — skip part
-            logger.debug("PROP-006: part {} COG skipped: {}", part.id, exc)
-    return positions.findings(min_parts) + cogs.findings(min_parts)
+            out.unchecked(f"COG evaluation failed: {exc}", part.id,
+                          part.guidref)
+    for finding in positions.findings(min_parts) + cogs.findings(min_parts):
+        out.add(finding)
+    return out.outcome()

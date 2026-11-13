@@ -34,7 +34,10 @@ making downstream tools independent of any particular OCX schema version.
   (`schemas = ["3.2", "3.3"]`) and are skipped — not failed — on models of
   other versions. 39 of the 41 rules are fully implemented (24 content
   rules + 15 geometry-dependent rules backed by the analytic geometry
-  kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred
+  kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred. Elements a
+  check cannot evaluate (e.g. reference-only traces, unbuildable surfaces) are
+  listed as *unchecked* in the reports; they never change a rule's status or
+  the exit code
 - **3-D rendering and render diagnostics** are developed in a separate,
   private project and are not part of this platform.
 - **Integrity manifest - EXPERIMENTAL** (`ocx-integrity`): stable part IDs and
@@ -155,7 +158,7 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   │       └── holes.py           ← CutBy hole profiles and placement
 │   ├── ocx-rules/                 ← configurable best-practice rule engine
 │   │   └── src/ocx_rules/
-│   │       ├── model.py           ← RuleSpec, RuleResult, Finding, Severity, RuleStatus
+│   │       ├── model.py           ← RuleSpec, RuleResult, Finding, CheckOutcome, Unchecked, Severity, RuleStatus
 │   │       ├── context.py         ← ValidationContext (lazy lxml tree + lazy IrVessel)
 │   │       ├── xml_index.py       ← XmlIndex: shared identity/reference scan of the document
 │   │       ├── catalogue.py       ← TOML rule-catalogue loader (load-time validation)
