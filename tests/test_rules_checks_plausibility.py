@@ -171,7 +171,7 @@ class TestWebDirection:
         assert "90.0" in finding.message
 
     def test_off_trace_position_is_evaluated_on_trace(self):
-        s = _stiffener("s1", incls=[_incl(pos=(500, 3000, 0), web=(0.0, 1.0, 0.0))])
+        s = _stiffener("s1", incls=[_incl(pos=(500, 0, 3000), web=(0.0, 1.0, 0.0))])
         ctx = _ctx(panels=[_panel()], stiffeners=[s])
         errors, _ = self._run(ctx)
         assert len(errors) == 1
