@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from ocx_model_core.model.ir import (
     IrCog,
@@ -27,6 +28,7 @@ from ocx_model_core.model.ir import (
     Ref,
 )
 from ocx_rules.geometry_context import GeometryContext
+from ocx_rules.model import CheckOutcome, Unchecked
 from ocx_rules.packs.best_practice.checks import renewal_thickness_on_instance
 from ocx_rules.packs.best_practice.checks.properties import (
     panel_weight_cog_consistent,
@@ -169,39 +171,79 @@ class TestPlateWeightConsistent:
 
     def test_consistent_plate_passes(self):
         ctx = self._ctx_with_plate(declared_kg=78.5)
-        assert plate_weight_consistent(ctx, self.PARAMS) == []
+        assert plate_weight_consistent(ctx, self.PARAMS) == CheckOutcome()
 
     def test_declared_weight_off_fails_with_both_values(self):
         ctx = self._ctx_with_plate(declared_kg=90.0)
-        (finding,) = plate_weight_consistent(ctx, self.PARAMS)
+        (finding,) = plate_weight_consistent(ctx, self.PARAMS).findings
         assert finding.element_id == "pl1"
         assert finding.guid == "gpl1"
         assert "90.00" in finding.message
         assert "78.50" in finding.message
 
-    def test_missing_declared_weight_skipped(self):
+    def test_missing_declared_weight_skipped(self):  # not applicable: silent
         ctx = self._ctx_with_plate(declared_kg=None)
-        assert plate_weight_consistent(ctx, self.PARAMS) == []
+        assert plate_weight_consistent(ctx, self.PARAMS) == CheckOutcome()
 
-    def test_missing_thickness_skipped(self):
+    def test_missing_thickness_unchecked(self):
         ctx = self._ctx_with_plate(declared_kg=90.0, thickness_mm=None)
-        assert plate_weight_consistent(ctx, self.PARAMS) == []
+        assert plate_weight_consistent(ctx, self.PARAMS) == CheckOutcome(
+            unchecked=(Unchecked("no thickness", "pl1", "gpl1"),))
 
-    def test_missing_density_skipped(self):
+    def test_missing_density_unchecked(self):
         ctx = self._ctx_with_plate(declared_kg=90.0, density=None)
-        assert plate_weight_consistent(ctx, self.PARAMS) == []
+        assert plate_weight_consistent(ctx, self.PARAMS) == CheckOutcome(
+            unchecked=(Unchecked("no material density", "pl1", "gpl1"),))
 
     def test_no_plates_passes(self):
-        assert plate_weight_consistent(_geo_ctx(_vessel()), self.PARAMS) == []
+        assert (plate_weight_consistent(_geo_ctx(_vessel()), self.PARAMS)
+                == CheckOutcome())
 
-    def test_degenerate_outline_skipped(self):
-        # A collapsed (linear) outline yields surface_area 0.0, which must
-        # be treated as unevaluable, not as a weight deviation.
+    def test_degenerate_outline_unchecked(self):
+        # A collapsed (collinear) outline yields surface_area 0.0, which must
+        # be treated as unevaluable, not as a weight deviation. Two
+        # collinear segments give >= 3 samples (a lone line gives only 2).
         ctx = self._ctx_with_plate(declared_kg=78.5)
         ctx.vessel.plates["pl1"] = replace(
             ctx.vessel.plates["pl1"],
-            outer_contour=_line(_pt(0, 0), _pt(1000, 0)))
-        assert plate_weight_consistent(ctx, self.PARAMS) == []
+            outer_contour=IrCompositeCurve3D(curve_length=None, segments=[
+                _line(_pt(0, 0), _pt(500, 0)),
+                _line(_pt(500, 0), _pt(1000, 0))]))
+        outcome = plate_weight_consistent(ctx, self.PARAMS)
+        assert outcome.findings == ()
+        (u,) = outcome.unchecked
+        assert (u.element_id, u.guid) == ("pl1", "gpl1")
+        assert u.reason.startswith("degenerate computed area")
+
+    def test_no_owning_panel_unchecked(self):
+        ctx = self._ctx_with_plate(declared_kg=78.5)
+        ctx.vessel.plates["pl1"] = replace(
+            ctx.vessel.plates["pl1"],
+            parent_ref=ParentRef(kind=ParentKind.VESSEL, id="v1"))
+        assert plate_weight_consistent(ctx, self.PARAMS).unchecked == (
+            Unchecked("no owning panel", "pl1", "gpl1"),)
+
+    def test_no_buildable_surface_unchecked(self):
+        ctx = self._ctx_with_plate(declared_kg=78.5)
+        ctx.vessel.panels["pan1"] = replace(ctx.vessel.panels["pan1"],
+                                            unbounded_geometry=None)
+        assert plate_weight_consistent(ctx, self.PARAMS).unchecked == (
+            Unchecked("no buildable panel surface", "pl1", "gpl1"),)
+
+    def test_unsampleable_outline_unchecked(self):
+        ctx = self._ctx_with_plate(declared_kg=78.5)
+        ctx.vessel.plates["pl1"] = replace(ctx.vessel.plates["pl1"],
+                                           outer_contour=None)
+        assert plate_weight_consistent(ctx, self.PARAMS).unchecked == (
+            Unchecked("unsampleable outer contour", "pl1", "gpl1"),)
+
+    def test_area_exception_unchecked(self):
+        ctx = self._ctx_with_plate(declared_kg=78.5)
+        with patch("ocx_rules.packs.best_practice.checks.properties."
+                   "surface_area", side_effect=RuntimeError("boom")):
+            outcome = plate_weight_consistent(ctx, self.PARAMS)
+        assert outcome == CheckOutcome(unchecked=(
+            Unchecked("area evaluation failed: boom", "pl1", "gpl1"),))
 
 
 class TestPanelWeightCogConsistent:
@@ -224,13 +266,13 @@ class TestPanelWeightCogConsistent:
         ctx = self._ctx_with_panel(
             _mass_props(weight_kg=157.0),
             [_mass_props(weight_kg=78.5), _mass_props(weight_kg=78.5)])
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == CheckOutcome()
 
     def test_mass_mismatch_fails(self):
         ctx = self._ctx_with_panel(
             _mass_props(weight_kg=200.0),
             [_mass_props(weight_kg=78.5), _mass_props(weight_kg=78.5)])
-        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS)
+        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS).findings
         assert finding.element_id == "pan1"
         assert finding.guid == "gpan1"
         assert "200.00" in finding.message
@@ -242,7 +284,7 @@ class TestPanelWeightCogConsistent:
             _mass_props(weight_kg=157.0, cog_mm=(500, 500, 0)),
             [_mass_props(weight_kg=78.5, cog_mm=(250, 500, 0)),
              _mass_props(weight_kg=78.5, cog_mm=(750, 500, 0))])
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == CheckOutcome()
 
     def test_cog_offset_fails(self):
         # weighted plate CoG at x=500 mm, panel declares x=600 -> 100 mm off
@@ -250,7 +292,7 @@ class TestPanelWeightCogConsistent:
             _mass_props(weight_kg=157.0, cog_mm=(600, 500, 0)),
             [_mass_props(weight_kg=78.5, cog_mm=(250, 500, 0)),
              _mass_props(weight_kg=78.5, cog_mm=(750, 500, 0))])
-        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS)
+        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS).findings
         assert finding.element_id == "pan1"
         assert finding.guid == "gpan1"
         assert "centre of gravity" in finding.message
@@ -266,7 +308,7 @@ class TestPanelWeightCogConsistent:
             id="st1",
             parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
             mass_properties=_mass_props(weight_kg=78.5))
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == CheckOutcome()
 
     def test_cog_weighted_across_child_kinds(self):
         # plate at x=250, stiffener at x=750, equal masses -> CoG x=500.
@@ -277,7 +319,7 @@ class TestPanelWeightCogConsistent:
             id="st1",
             parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
             mass_properties=_mass_props(weight_kg=78.5, cog_mm=(750, 500, 0)))
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == CheckOutcome()
 
     def test_total_including_children_still_deviating_fails(self):
         ctx = self._ctx_with_panel(
@@ -287,19 +329,23 @@ class TestPanelWeightCogConsistent:
             id="st1",
             parent_ref=ParentRef(kind=ParentKind.PANEL, id="pan1"),
             mass_properties=_mass_props(weight_kg=78.5))
-        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS)
+        (finding,) = panel_weight_cog_consistent(ctx, self.PARAMS).findings
         assert finding.element_id == "pan1"
         assert "300.00" in finding.message
         assert "157.00" in finding.message
 
-    def test_panel_without_declared_mass_props_skipped(self):
+    def test_panel_without_declared_mass_props_skipped(self):  # silent
         ctx = self._ctx_with_panel(None, [_mass_props(weight_kg=78.5)])
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        assert panel_weight_cog_consistent(ctx, self.PARAMS) == CheckOutcome()
 
-    def test_panel_without_weighed_child_plates_skipped(self):
+    def test_panel_without_weighed_children_unchecked(self):
         ctx = self._ctx_with_panel(_mass_props(weight_kg=157.0),
                                    [IrMassProperties()])
-        assert panel_weight_cog_consistent(ctx, self.PARAMS) == []
+        outcome = panel_weight_cog_consistent(ctx, self.PARAMS)
+        assert outcome.findings == ()
+        (u,) = outcome.unchecked
+        assert u.reason == "no children with declared mass"
+        assert (u.element_id, u.guid) == ("pan1", "gpan1")
 
 
 class TestProfileClosedSection:
@@ -312,21 +358,31 @@ class TestProfileClosedSection:
         ctx = self._ctx_with_section(IrFlatBarSection(
             id="s1", height=Quantity(value=100.0, unit="Umm"),
             width=Quantity(value=10.0, unit="Umm")))
-        assert profile_closed_section(ctx, {}) == []
+        assert profile_closed_section(ctx, {}) == CheckOutcome()
 
     def test_degenerate_section_fails_with_reason(self):
         ctx = self._ctx_with_section(IrFlatBarSection(
             id="s1", guidref="gs1",
             height=Quantity(value=0.0, unit="Umm"),
             width=Quantity(value=0.0, unit="Umm")))
-        (finding,) = profile_closed_section(ctx, {})
+        (finding,) = profile_closed_section(ctx, {}).findings
         assert finding.element_id == "s1"
         assert finding.guid == "gs1"
         assert "not a closed valid polygon" in finding.message
 
-    def test_unbuildable_section_skipped(self):
+    def test_unbuildable_section_unchecked(self):
+        ctx = self._ctx_with_section(IrGenericSection(id="s1", guidref="gs1"))
+        # IrGenericSection inherits ``guidref`` from IrSection
+        assert profile_closed_section(ctx, {}) == CheckOutcome(unchecked=(
+            Unchecked("profile could not be built", "s1", "gs1"),))
+
+    def test_profile_exception_unchecked(self):
         ctx = self._ctx_with_section(IrGenericSection(id="s1"))
-        assert profile_closed_section(ctx, {}) == []
+        with patch("ocx_rules.packs.best_practice.checks.properties."
+                   "section_polygon", side_effect=RuntimeError("boom")):
+            outcome = profile_closed_section(ctx, {})
+        assert outcome.unchecked == (
+            Unchecked("profile build failed: boom", "s1", None),)
 
     def test_no_sections_passes(self):
-        assert profile_closed_section(_geo_ctx(_vessel()), {}) == []
+        assert profile_closed_section(_geo_ctx(_vessel()), {}) == CheckOutcome()
