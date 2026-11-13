@@ -188,6 +188,11 @@ def inclination_position_on_trace(context,
             for i, pos in enumerate(positions):
                 if pos is None:
                     continue
+                if not np.isfinite(pos).all():
+                    findings.append(Finding(
+                        f"Inclination {i} position has non-finite "
+                        f"coordinates", element_id=part.id, guid=part.guidref))
+                    continue
                 _, dist = _nearest_on_polyline(poly, pos)
                 if dist > tol_m:
                     findings.append(Finding(
@@ -223,6 +228,11 @@ def part_cog_within_geometry(context, params: dict[str, Any]) -> list[Finding]:
             if pts is None or len(pts) == 0:
                 continue
             c = _cog_m(geo.length, cog)
+            if not np.isfinite(c).all():
+                findings.append(Finding(
+                    "Moulded COG has non-finite coordinates",
+                    element_id=part.id, guid=part.guidref))
+                continue
             lo = pts.min(axis=0) - margin_m
             hi = pts.max(axis=0) + margin_m
             gap = np.maximum(np.maximum(lo - c, c - hi), 0.0)
@@ -243,17 +253,23 @@ def _grid_key(p: np.ndarray, step_m: float) -> tuple[int, int, int]:
 
 
 class _Pool:
-    """Parts grouped by a rounded 3D value (one entry per part per key)."""
+    """Parts grouped by a rounded 3D value (one entry per part per key).
+
+    Non-finite values are ignored (PROP-005/TOP-010 report them).
+    """
 
     def __init__(self, label: str, step_m: float) -> None:
         self.label = label
         self.step_m = step_m
-        self.parts: dict[tuple, dict[str, Any]] = defaultdict(dict)
+        # Keyed by object identity: duplicate IDs must not merge parts.
+        self.parts: dict[tuple, dict[int, Any]] = defaultdict(dict)
         self.values: dict[tuple, np.ndarray] = {}
 
     def add(self, part, value: np.ndarray) -> None:
+        if not np.isfinite(value).all():
+            return
         key = _grid_key(value, self.step_m)
-        self.parts[key][part.id] = part
+        self.parts[key][id(part)] = part
         self.values.setdefault(key, value)
 
     def findings(self, min_parts: int) -> list[Finding]:
@@ -271,7 +287,10 @@ class _Pool:
 
 def shared_positions_and_cogs(context, params: dict[str, Any]) -> list[Finding]:
     """OCX-PROP-006: positions/COGs must not be copied across many parts."""
-    step_m = float(params.get("tolerance_mm", 1.0)) / 1000.0
+    tol_mm = float(params.get("tolerance_mm", 1.0))
+    if not tol_mm > 0.0:
+        raise ValueError(f"OCX-PROP-006: tolerance_mm must be > 0, got {tol_mm}")
+    step_m = tol_mm / 1000.0
     min_parts = int(params.get("min_parts", 3))
     geo = context.geometry
     vessel = context.vessel

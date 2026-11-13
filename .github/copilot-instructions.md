@@ -56,8 +56,8 @@ ocx-platform/                  ← repo / workspace root
 │   │       ├── config.py        ← user TOML config (disable/severity/params)
 │   │       ├── geometry_context.py ← GeometryContext: geometry services for checks
 │   │       └── packs/best_practice/ ← built-in pack: rules/*.toml + checks/ package
-│   │                              (34 of 36 rules implemented — 24 content +
-│   │                              10 geometry; OCX-TOP-006/007 compartment
+│   │                              (39 of 41 rules implemented — 24 content +
+│   │                              15 geometry; OCX-TOP-006/007 compartment
 │   │                              rules are deferred stubs in geometry_stubs.py)
 │   ├── ocx-integrity/          ← salted aspect hashes + Merkle manifest (core only)
 │   │   └── src/ocx_integrity/

@@ -57,7 +57,8 @@ class GeometryContext:
                tol_m: float = 0.001) -> np.ndarray | None:
         """Sample a curve to an (N, 3) polyline in metres, or None.
 
-        Memoized per (curve, tolerance); callers receive a copy.
+        Memoized per (curve, tolerance) for the lifetime of this context
+        (one validation run over an unchanging IR); callers receive a copy.
         """
         if curve is None:
             return None

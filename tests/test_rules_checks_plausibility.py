@@ -5,6 +5,7 @@ import math
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
 from ocx_model_core.model.ir import (
     IrCog,
     IrCompositeCurve3D,
@@ -132,6 +133,12 @@ class TestInclinationPositionOnTrace:
     def test_missing_position_is_skipped(self):
         ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=None)])])
         assert inclination_position_on_trace(ctx, self.PARAMS) == []
+
+    def test_non_finite_position_fails(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", incls=[_incl(pos=(math.nan, 0, 0))])])
+        (finding,) = inclination_position_on_trace(ctx, self.PARAMS)
+        assert finding.element_id == "s1"
+        assert "non-finite" in finding.message
 
 
 _S45 = math.sqrt(0.5)
@@ -262,6 +269,12 @@ class TestPartCogWithinGeometry:
         ctx = _ctx(stiffeners=[_stiffener("s1")], plates=[_plate("pl1")])
         assert part_cog_within_geometry(ctx, self.PARAMS) == []
 
+    def test_non_finite_cog_fails(self):
+        ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, math.inf, 0))])
+        (finding,) = part_cog_within_geometry(ctx, self.PARAMS)
+        assert finding.element_id == "s1"
+        assert "non-finite" in finding.message
+
 
 class TestSharedPositionsAndCogs:
     PARAMS = {"tolerance_mm": 1.0, "min_parts": 3}
@@ -304,3 +317,20 @@ class TestSharedPositionsAndCogs:
         assert sorted(f.element_id for f in findings) == ["c1", "pl1", "s1"]
         assert all(f.message.startswith("Moulded COG (195.404, 24.082, 2.964)")
                    for f in findings)
+
+    def test_parts_with_duplicate_ids_count_separately(self):
+        cog = (1000, 2000, 3000)
+        ctx = _ctx(plates=[_plate("x", cog=cog)],
+                   stiffeners=[_stiffener("x", incls=[], cog=cog)],
+                   pillars=[_pillar("x", cog=cog)])
+        assert len(shared_positions_and_cogs(ctx, self.PARAMS)) == 3
+
+    def test_non_finite_values_are_not_grouped(self):
+        ctx = _ctx(stiffeners=[
+            _stiffener(f"s{i}", incls=[_incl(pos=(math.nan, 0, 0))]) for i in range(3)])
+        assert shared_positions_and_cogs(ctx, self.PARAMS) == []
+
+    def test_non_positive_tolerance_is_rejected(self):
+        ctx = _ctx(stiffeners=[_stiffener(f"s{i}") for i in range(3)])
+        with pytest.raises(ValueError, match="tolerance_mm"):
+            shared_positions_and_cogs(ctx, {"tolerance_mm": 0.0, "min_parts": 3})
