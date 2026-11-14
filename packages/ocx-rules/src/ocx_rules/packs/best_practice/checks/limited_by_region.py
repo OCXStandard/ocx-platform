@@ -3,8 +3,9 @@ path for panels bounded by GridRefs.
 
 A GridRef names a plane, not a curve, and LimitedBy order is not cyclic,
 so the boundary is found as a planar arrangement in the panel surface's uv
-space: every boundary becomes uv linework, the linework is polygonized and
-the face containing a seed point inside the OuterContour is the panel.
+space: every boundary (plus surface parameter edges inside the window)
+becomes uv linework, the linework is polygonized, and the union of the faces
+inside the OuterContour is the panel region.
 """
 from __future__ import annotations
 
@@ -13,10 +14,14 @@ from collections import Counter
 import numpy as np
 from ocx_geometry.intersect import intersect_surface_plane
 from ocx_geometry.topology2d import points_polyline_distances
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Polygon
 from shapely.ops import polygonize, unary_union
 
 _SAMPLE_TOL_M = 0.001
+# Max area of (region XOR OuterContour), as a fraction of the contour area,
+# for the arrangement region to count as enclosing the panel; absorbs
+# sampling and marching-squares discretisation.
+_REGION_MISMATCH = 0.01
 NOT_CLOSED = "Panel boundary is not closed: LimitedBy does not enclose the panel"
 
 
@@ -41,7 +46,11 @@ def boundary_reasons(dangling: Counter[str], no_curve: Counter[str],
 def grid_panel_outcome(geo, panel, tol_m: float) -> tuple[str | None, list[str]]:
     """``(unchecked reason, finding messages)`` for a panel with GridRefs.
 
-    Exceptions propagate; the caller reports them as unchecked.
+    The panel region is the union of arrangement faces inside the
+    OuterContour; it must match the contour (else not closed), and every
+    boundary must touch its rings — GridRefs by analytic plane distance,
+    explicit curves by polyline distance. Exceptions propagate; the caller
+    reports them as unchecked.
     """
     planes: list[tuple[str, tuple[np.ndarray, np.ndarray]]] = []
     explicit: list[tuple[str, np.ndarray]] = []
@@ -80,21 +89,27 @@ def grid_panel_outcome(geo, panel, tol_m: float) -> tuple[str | None, list[str]]
     window = geo.panel_uv_window(panel, param, [p for _, p in explicit])
     if window is None:
         return "cannot determine panel extent", []
-    seed = _seed(geo, panel, param, window)
-    if seed is None:
-        return "no seed point", []
+    contour = _contour_uv(geo, panel, param, window)
+    if contour is None:
+        return "unusable OuterContour", []
 
     boundaries = [(label, [pts]) for label, pts in explicit]
-    boundaries += [(label, intersect_surface_plane(param, p, n, window,
-                                                   _SAMPLE_TOL_M))
-                   for label, (p, n) in planes]
+    cuts = [(label, intersect_surface_plane(param, p, n, window,
+                                            _SAMPLE_TOL_M))
+            for label, (p, n) in planes]
     lines = [LineString(_to_uv(param, pl, window))
-             for _, pls in boundaries for pl in pls if len(pl) >= 2]
-    faces = [f for f in polygonize(unary_union(lines)) if f.contains(seed)]
-    if not faces:
+             for _, pls in boundaries + cuts for pl in pls if len(pl) >= 2]
+    lines += _domain_edges(param, window)
+    faces = [f for f in polygonize(unary_union(lines))
+             if contour.contains(f.representative_point())]
+    region = unary_union(faces) if faces else None
+    if (region is None or region.is_empty
+            or region.symmetric_difference(contour).area
+            > _REGION_MISMATCH * contour.area):
         return None, [NOT_CLOSED]
-    face = min(faces, key=lambda f: f.area)
-    ring = param.evaluate(np.asarray(face.exterior.coords))
+    ring = param.evaluate(np.vstack([
+        np.asarray(r.coords) for poly in getattr(region, "geoms", [region])
+        for r in (poly.exterior, *poly.interiors)]))
     messages = []
     for label, pls in boundaries:
         dist = min((float(points_polyline_distances(ring, pl).min())
@@ -102,7 +117,26 @@ def grid_panel_outcome(geo, panel, tol_m: float) -> tuple[str | None, list[str]]
         if dist > tol_m:
             messages.append(f"LimitedBy boundary {label} does not bound "
                             f"the panel")
+    for label, (p, n) in planes:
+        if float(np.abs((ring - p) @ n).min()) > tol_m:
+            messages.append(f"LimitedBy boundary {label} does not bound "
+                            f"the panel")
     return None, messages
+
+
+def _domain_edges(param, window) -> list[LineString]:
+    """Window edges lying on a finite ``param.uv_domain()`` bound: real
+    surface edges, where a plane cut beyond the domain finds no sign change."""
+    domain = param.uv_domain()
+    if domain is None:
+        return []
+    u0, u1, v0, v1 = window
+    du0, du1, dv0, dv1 = domain
+    edges = [LineString([(u, v0), (u, v1)])
+             for u, d in ((u0, du0), (u1, du1)) if np.isfinite(d) and u == d]
+    edges += [LineString([(u0, v), (u1, v)])
+              for v, d in ((v0, dv0), (v1, dv1)) if np.isfinite(d) and v == d]
+    return edges
 
 
 def _extend_open_ends(pts: np.ndarray, d: float) -> np.ndarray:
@@ -128,12 +162,11 @@ def _to_uv(param, pts: np.ndarray, window) -> np.ndarray:
     return uv
 
 
-def _seed(geo, panel, param, window) -> Point | None:
-    """A uv point inside the panel: representative point of the first
-    OuterContour (inside even when concave); None if it is unusable."""
+def _contour_uv(geo, panel, param, window) -> Polygon | None:
+    """First OuterContour as a uv polygon; None unless valid with area."""
     pts = geo.sample(panel.outer_contours[0], _SAMPLE_TOL_M)
     if pts is not None and len(pts) >= 3:
         poly = Polygon(_to_uv(param, pts, window))
         if poly.is_valid and poly.area > 0:
-            return poly.representative_point()
+            return poly
     return None

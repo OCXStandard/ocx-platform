@@ -123,28 +123,38 @@ from `panel_limited_by_closed`:
 3. Resolve each LimitedBy ref to 3D polylines:
    - GridRef → `grid_ref_plane` then `intersect_surface_plane`; a
      GridRef whose ref plane cannot be resolved counts as dangling
-     (reason fragment "dangling boundary ref(s) (GridRef×n)"); an empty
-     intersection makes that boundary stray (step 6).
+     (reason fragment "dangling boundary ref(s) (GridRef×n)"). Each plane
+     is cut across the whole window, so a non-convex panel's own planes
+     split it into several faces (handled in step 6).
    - FreeEdgeCurve3D / SeamRef / StiffenerRef → sampled curve as today;
      each open end is extended by `tolerance_mm` along its end tangent.
    - Dangling SeamRef/StiffenerRef, other curveless types, unsampleable
      curves → same reason fragments as today.
    If any ref yields a reason fragment, the whole panel is reported
    unchecked with the joined reasons and skipped (same as today).
-4. Map all polylines to uv with `param.inverse`; `unary_union` the
-   linestrings and `polygonize`.
-5. Seed (in uv): `representative_point()` of the first OuterContour
-   mapped to uv (guaranteed inside, also for concave contours; the
-   centroid is not). An unsampleable or invalid OuterContour polygon →
-   unchecked "no seed point".
-6. Findings (rule severity, error):
-   - No polygon contains the seed → "Panel boundary is not closed:
+4. Map all polylines to uv with `param.inverse`. Add the window edges
+   that coincide with a finite `param.uv_domain()` bound (real surface
+   edges, e.g. the ends of an extruded base curve or NURBS patch edges;
+   edges that only come from window growth are not added): beyond the
+   domain the plane function is constant, so a plane lying on such an
+   edge yields no marching-squares cut. `unary_union` the linestrings
+   and `polygonize`.
+5. `contour` = the first OuterContour mapped to uv; it must be a valid
+   polygon with area > 0, else unchecked "unusable OuterContour".
+6. Panel region `U` = union of the polygonized faces whose
+   `representative_point()` lies inside `contour`. Findings (rule
+   severity, error):
+   - `U` empty, or `area(U △ contour) > 1 % · area(contour)` (absorbs
+     sampling/marching discretisation) → "Panel boundary is not closed:
      LimitedBy does not enclose the panel".
-   - Otherwise, take the containing polygon with the smallest area; its
-     exterior is evaluated back to 3D. Every LimitedBy boundary whose
-     minimum 3D distance to that exterior exceeds `tolerance_mm` (or
-     whose intersection was empty) → "LimitedBy boundary <ref_type>
-     <local_ref> does not bound the panel" (one finding per boundary).
+   - Otherwise the boundary rings of `U` (exteriors and interiors) are
+     evaluated to 3D. A GridRef boundary bounds the panel when the
+     analytic plane distance `min |n·(x − p)|` over those ring points is
+     ≤ `tolerance_mm` (so planes on surface edges, which have no cut,
+     still count); an explicit curve bounds it when its minimum 3D
+     distance to the ring points is ≤ `tolerance_mm`. Every other
+     boundary → "LimitedBy boundary <ref_type> <local_ref> does not bound
+     the panel" (one finding per boundary).
 
 ## Error handling
 

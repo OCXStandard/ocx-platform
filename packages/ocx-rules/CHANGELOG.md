@@ -38,14 +38,20 @@
   closed plate contours" aspect of the rule.
 - `OCX-TOP-001` checks panels bounded by `GridRef`s instead of reporting
   them unchecked: grid planes (with `Offset`) are intersected with the
-  panel surface, all boundaries are polygonized in the surface's uv space,
-  and the face containing the panel's OuterContour must exist ("not
-  closed" otherwise) and be bounded by every LimitedBy boundary (one
-  "does not bound the panel" finding per stray boundary). Location-only
+  panel surface, all boundaries (plus surface parameter-domain edges) are
+  polygonized in the surface's uv space, and the union of the faces inside
+  the panel's OuterContour must match that contour ("not closed"
+  otherwise, also for L/U/T-shaped panels) and be bounded by every
+  LimitedBy boundary (one "does not bound the panel" finding per stray
+  boundary; GridRefs are measured by analytic plane distance, so planes
+  lying on a surface edge count). Location-only
   grid ref planes are synthesized from their coordinate-system axis, also
-  for `UnboundedGeometry/GridRef` panel surfaces. Unresolvable GridRefs
+  for `UnboundedGeometry/GridRef` panel surfaces; this also lets
+  `OCX-TOP-011`/`OCX-TOP-012` evaluate stiffeners on location-only
+  grid-plane panels, which were previously unchecked. Unresolvable GridRefs
   are reported as dangling; GridRef panels without an OuterContour stay
-  unchecked ("cannot determine panel extent").
+  unchecked ("cannot determine panel extent"), as do those whose
+  OuterContour is not a valid polygon ("unusable OuterContour").
 
 ### Fixed
 
