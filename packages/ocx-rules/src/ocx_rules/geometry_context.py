@@ -11,14 +11,18 @@ from typing import TYPE_CHECKING
 import numpy as np
 from loguru import logger
 from ocx_geometry.curves import sample_curve
+from ocx_geometry.grid import grid_plane
+from ocx_geometry.intersect import offset_plane
 from ocx_geometry.measure import LengthResolver
 from ocx_geometry.surfaces import SurfaceParam, make_param
+from ocx_model_core.model.ir import IrPlane3D, IrPoint3D, IrVector3D
 
 if TYPE_CHECKING:
     from ocx_model_core.model.ir import (
         IrCurve3D,
         IrLimitedByRef,
         IrPanel,
+        IrRefPlane,
         IrSurface3D,
         IrVessel,
         Quantity,
@@ -105,8 +109,54 @@ class GeometryContext:
         if ug.grid_ref is not None:
             rp = v.ref_planes.get(ug.grid_ref)
             if rp is not None:
-                return rp.reference_plane
+                return self._ref_plane_geometry(rp)
         return None
+
+    def ref_plane_axis(self, ref_plane_id: str) -> str | None:
+        """'x' | 'y' | 'z' — the coordinate-system list holding the plane."""
+        for cs in self.vessel.coordinate_systems.values():
+            if ref_plane_id in cs.x_ref_plane_ids:
+                return "x"
+            if ref_plane_id in cs.y_ref_plane_ids:
+                return "y"
+            if ref_plane_id in cs.z_ref_plane_ids:
+                return "z"
+        return None
+
+    def _ref_plane_geometry(self, rp: "IrRefPlane") -> IrPlane3D | None:
+        """Explicit plane, else one synthesized from axis + location."""
+        if rp.reference_plane is not None:
+            return rp.reference_plane
+        if rp.location is None or rp.location.value is None:
+            return None
+        axis = self.ref_plane_axis(rp.id)
+        if axis is None:
+            return None
+        point, normal = grid_plane(axis, float(rp.location.value))
+        return IrPlane3D(
+            id=rp.id,
+            point_on_surface=IrPoint3D(*map(float, point),
+                                       unit=rp.location.unit),
+            normal=IrVector3D(*map(float, normal)))
+
+    def grid_ref_plane(
+            self, ref: "IrLimitedByRef",
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """``(point, unit normal)`` in metres of a GridRef's plane with its
+        ``Offset`` applied (positive along the normal), or None."""
+        rp = self.vessel.ref_planes.get(ref.local_ref)
+        plane = self._ref_plane_geometry(rp) if rp is not None else None
+        if plane is None or plane.point_on_surface is None \
+                or plane.normal is None:
+            return None
+        n = plane.normal
+        try:
+            return offset_plane(self.length.point(plane.point_on_surface),
+                                [n.x, n.y, n.z],
+                                self.to_si(ref.offset) or 0.0)
+        except ValueError as exc:
+            logger.debug("grid ref plane {} failed: {}", ref.local_ref, exc)
+            return None
 
     def boundary_curve_for_ref(self,
                                ref: "IrLimitedByRef") -> "IrCurve3D | None":
