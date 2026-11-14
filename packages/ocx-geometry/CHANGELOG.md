@@ -1,5 +1,19 @@
 # Changelog — ocx-geometry
 
+## Unreleased
+
+### Added
+
+- `grid.grid_plane(axis, location)`: axis-aligned grid plane (positive
+  axis normal).
+- `intersect.offset_plane` and `intersect.intersect_surface_plane`:
+  surface ∩ plane as 3D polylines inside a uv window — analytic for
+  planes, marching squares (saddle resolved by the cell centre) for every
+  other surface.
+- `SurfaceParam.uv_domain()`: parameter domain (NURBS knot domain;
+  extruded `(0, base length, -inf, inf)`; sphere `v ∈ [0, π]`; cone `v`
+  bounded at the apex; `None` when no finite bounds are needed).
+
 ## 0.2.0 — 2026-11-08
 
 ### Removed

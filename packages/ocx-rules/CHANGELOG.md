@@ -36,6 +36,16 @@
   last sample of each plate's `OuterContour` must not exceed
   `tolerance_mm`, closing the "pattern must subdivide the panel into
   closed plate contours" aspect of the rule.
+- `OCX-TOP-001` checks panels bounded by `GridRef`s instead of reporting
+  them unchecked: grid planes (with `Offset`) are intersected with the
+  panel surface, all boundaries are polygonized in the surface's uv space,
+  and the face containing the panel's OuterContour must exist ("not
+  closed" otherwise) and be bounded by every LimitedBy boundary (one
+  "does not bound the panel" finding per stray boundary). Location-only
+  grid ref planes are synthesized from their coordinate-system axis, also
+  for `UnboundedGeometry/GridRef` panel surfaces. Unresolvable GridRefs
+  are reported as dangling; GridRef panels without an OuterContour stay
+  unchecked ("cannot determine panel extent").
 
 ### Fixed
 
