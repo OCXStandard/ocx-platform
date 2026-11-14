@@ -30,16 +30,21 @@ def _status_counts(results: list[RuleResult]) -> list[tuple[RuleStatus, int]]:
     return sorted(counts.items(), key=lambda kv: kv[0].value)
 
 
+def _status_cell(status: RuleStatus) -> Cell:
+    label = _STATUS_LABEL[status]
+    return Badge(label, "error") if status is RuleStatus.FAILED else label
+
+
 def _rule_rows(result: RuleResult) -> list[list[Cell]]:
     spec = result.spec
-    badge = Badge(spec.severity.value, spec.severity.value)
+    severity = spec.severity.value
     title = f"{spec.title} ({result.reason})" if result.reason else spec.title
     rows: list[list[Cell]] = [[
-        spec.rule_id, title, badge, _STATUS_LABEL[result.status],
+        spec.rule_id, title, severity, _status_cell(result.status),
         len(result.findings) or None, len(result.unchecked) or None,
         None, None, None]]
-    rows += [[None, f.message, badge, "finding", None, None,
-              f.element_id, f.guid, f.location] for f in result.findings]
+    rows += [[None, f.message, severity, Badge("finding", "warning"), None,
+              None, f.element_id, f.guid, f.location] for f in result.findings]
     rows += [[None, u.reason, None, "unchecked", None, None,
               u.element_id, u.guid, None] for u in result.unchecked]
     return rows
@@ -47,7 +52,9 @@ def _rule_rows(result: RuleResult) -> list[list[Cell]]:
 
 def build(results: list[RuleResult], *, source_file: str) -> Report:
     """Build a Report: status summary plus one table with an expandable row
-    per rule category holding its rules, findings and unchecked elements."""
+    per rule category holding its rules, findings and unchecked elements.
+    Status cells are coloured: FAILED (and categories with a failure) red,
+    findings yellow."""
     summary = ReportTable(
         title="Summary",
         columns=["Status", "Rules"],
@@ -61,8 +68,10 @@ def build(results: list[RuleResult], *, source_file: str) -> Report:
     rows: list[list[Cell]] = []
     children: list[list[list[Cell]]] = []
     for category, members in by_category.items():
-        status = ", ".join(f"{n} {_STATUS_LABEL[s]}"
-                           for s, n in _status_counts(members))
+        status: Cell = ", ".join(f"{n} {_STATUS_LABEL[s]}"
+                                 for s, n in _status_counts(members))
+        if any(r.status is RuleStatus.FAILED for r in members):
+            status = Badge(status, "error")
         rows.append([category, f"{len(members)} rule(s)", None, status,
                      sum(len(r.findings) for r in members) or None,
                      sum(len(r.unchecked) for r in members) or None,

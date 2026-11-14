@@ -59,8 +59,16 @@ def test_category_row_summarises_its_rules():
                    findings=(Finding("a"), Finding("b"))),
     ]
     (row,) = _rules_table(results).rows
-    assert row == ["topology", "2 rule(s)", None, "1 FAILED, 1 passed",
+    assert row == ["topology", "2 rule(s)", None,
+                   Badge("1 FAILED, 1 passed", "error"),
                    2, 1, None, None, None]
+
+
+def test_category_without_failures_has_plain_status():
+    results = [RuleResult(spec=_spec("T-1"), status=RuleStatus.PASSED),
+               RuleResult(spec=_spec("T-2"), status=RuleStatus.SKIPPED)]
+    (row,) = _rules_table(results).rows
+    assert row[3] == "1 passed, 1 skipped"
 
 
 def test_children_list_rules_then_their_findings_and_unchecked():
@@ -73,21 +81,15 @@ def test_children_list_rules_then_their_findings_and_unchecked():
                    reason="needs geometry"),
     ]
     (children,) = _rules_table(results).row_children
-    warn = Badge("warning", "warning")
     assert children == [
-        ["T-1", "title T-1", warn, "FAILED", 1, 1, None, None, None],
-        [None, "gap", warn, "finding", None, None, "e1", "g1", 42],
+        ["T-1", "title T-1", "warning", Badge("FAILED", "error"), 1, 1,
+         None, None, None],
+        [None, "gap", "warning", Badge("finding", "warning"), None, None,
+         "e1", "g1", 42],
         [None, "no surface", None, "unchecked", None, None, "e2", "g2", None],
-        ["T-2", "title T-2 (needs geometry)", Badge("error", "error"),
+        ["T-2", "title T-2 (needs geometry)", "error",
          "skipped", None, None, None, None, None],
     ]
-
-
-def test_info_severity_badge_tone():
-    results = [RuleResult(spec=_spec(severity=Severity.INFO),
-                          status=RuleStatus.PASSED)]
-    (children,) = _rules_table(results).row_children
-    assert children[0][2] == Badge("info", "info")
 
 
 def test_all_findings_listed_without_cap():
@@ -95,4 +97,5 @@ def test_all_findings_listed_without_cap():
     results = [RuleResult(spec=_spec(), status=RuleStatus.FAILED,
                           findings=many)]
     (children,) = _rules_table(results).row_children
-    assert sum(1 for c in children if c[3] == "finding") == 500
+    assert sum(1 for c in children
+               if c[3] == Badge("finding", "warning")) == 500

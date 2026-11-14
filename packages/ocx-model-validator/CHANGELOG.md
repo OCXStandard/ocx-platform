@@ -6,8 +6,9 @@
 
 - **Breaking:** the rules report is one table with an expandable row per
   rule category, holding its rules and all their findings and unchecked
-  elements (no cap). Severities are colour-coded badges (error red,
-  warning yellow, info green). `validate rules --max-findings` is removed.
+  elements (no cap). Status cells are colour-coded: FAILED red, findings
+  yellow; a category is red when any of its rules failed.
+  `validate rules --max-findings` is removed.
 
 ### Added
 
