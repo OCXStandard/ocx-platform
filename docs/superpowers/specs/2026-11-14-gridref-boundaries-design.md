@@ -115,7 +115,8 @@ from `panel_limited_by_closed`:
 
 1. Classify the LimitedBy refs first (dangling / no curve / unsampleable,
    with unresolvable GridRefs counted as dangling); any reason fragment →
-   unchecked.
+   unchecked. No OuterContour → unchecked "cannot determine panel
+   extent" (the uv window would be too small to hold the GridRef cuts).
 2. `param = surface_param(panel_surface(panel))`; `None` → unchecked
    "no buildable panel surface". Then `window = panel_uv_window(panel,
    param)`; `None` → unchecked "cannot determine panel extent".
@@ -134,8 +135,7 @@ from `panel_limited_by_closed`:
    linestrings and `polygonize`.
 5. Seed (in uv): `representative_point()` of the first OuterContour
    mapped to uv (guaranteed inside, also for concave contours; the
-   centroid is not), else `point_on_surface` mapped to uv. Neither, or
-   an invalid OuterContour polygon without `point_on_surface` →
+   centroid is not). An unsampleable or invalid OuterContour polygon →
    unchecked "no seed point".
 6. Findings (rule severity, error):
    - No polygon contains the seed → "Panel boundary is not closed:

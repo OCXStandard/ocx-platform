@@ -71,6 +71,8 @@ def grid_panel_outcome(geo, panel, tol_m: float) -> tuple[str | None, list[str]]
     reasons = boundary_reasons(dangling, no_curve, unsampleable)
     if reasons:
         return "; ".join(reasons), []
+    if not panel.outer_contours:
+        return "cannot determine panel extent", []
 
     param = geo.surface_param(geo.panel_surface(panel))
     if param is None:
@@ -128,15 +130,10 @@ def _to_uv(param, pts: np.ndarray, window) -> np.ndarray:
 
 def _seed(geo, panel, param, window) -> Point | None:
     """A uv point inside the panel: representative point of the first
-    OuterContour (inside even when concave), else point_on_surface."""
-    for contour in panel.outer_contours[:1]:
-        pts = geo.sample(contour, _SAMPLE_TOL_M)
-        if pts is not None and len(pts) >= 3:
-            poly = Polygon(_to_uv(param, pts, window))
-            if poly.is_valid and poly.area > 0:
-                return poly.representative_point()
-    if panel.point_on_surface is not None:
-        uv = _to_uv(param, geo.length.point(panel.point_on_surface)[None, :],
-                    window)
-        return Point(uv[0])
+    OuterContour (inside even when concave); None if it is unusable."""
+    pts = geo.sample(panel.outer_contours[0], _SAMPLE_TOL_M)
+    if pts is not None and len(pts) >= 3:
+        poly = Polygon(_to_uv(param, pts, window))
+        if poly.is_valid and poly.area > 0:
+            return poly.representative_point()
     return None

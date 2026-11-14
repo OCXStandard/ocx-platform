@@ -27,7 +27,7 @@ from ocx_rules.packs.best_practice.checks.topology import panel_limited_by_close
 _UMM = IrUnit(id="Umm", name="millimetre", symbol="mm",
               dimension_url="D_L", to_si_factor=0.001, si_symbol="m")
 _PLANES = {"fx0": ("x", 0.0), "fx1": ("x", 1000.0), "fx2": ("x", 5000.0),
-           "fy0": ("y", 0.0), "fy1": ("y", 1000.0),
+           "fy0": ("y", 0.0), "fy1": ("y", 1000.0), "fy2": ("y", 5000.0),
            "fz0": ("z", 0.0), "fz1": ("z", 1000.0)}
 _NOT_CLOSED = ("Panel boundary is not closed: LimitedBy does not enclose "
                "the panel")
@@ -143,11 +143,18 @@ class TestGridRefPanels:
         panel = _flat_panel([_grid(n) for n in _XXYY], contour=False)
         assert _run(panel) == _unchecked("cannot determine panel extent")
 
+    def test_no_contour_with_point_on_surface_unchecked(self):
+        panel = _flat_panel([_grid(n) for n in ("fx0", "fx2", "fy0", "fy2")],
+                            contour=False)
+        panel.point_on_surface = _pt(2500, 2500)
+        assert _run(panel) == _unchecked("cannot determine panel extent")
+
     def test_no_seed_point_unchecked(self):
-        refs = [_grid("fx0"), _grid("fy0"), _grid("fy1"),
-                _fec(_pt(1000, 0), _pt(1000, 1000))]
-        assert _run(_flat_panel(refs, contour=False)) == _unchecked(
-            "no seed point")
+        panel = _flat_panel([_grid(n) for n in _XXYY])
+        panel.outer_contours = [IrPolyLine3D(
+            curve_length=None, is_closed=True,
+            vertices=[_pt(0, 0), _pt(500, 500), _pt(1000, 1000)])]
+        assert _run(panel) == _unchecked("no seed point")
 
     def test_evaluation_error_unchecked(self):
         target = ("ocx_rules.packs.best_practice.checks.limited_by_region."
