@@ -20,6 +20,9 @@ from ocx_model_core.model.ir.base import ParentKind
 from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
 
 from ocx_rules.model import CheckOutcome, Finding, OutcomeCollector
+from ocx_rules.packs.best_practice.checks.limited_by_region import (
+    boundary_reasons,
+)
 
 _SAMPLE_TOL_M = 0.001
 
@@ -42,7 +45,7 @@ def _classified_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
     """-> (sampled (N, 3) arrays, reason fragments for unusable refs).
 
     Unusable refs are split into dangling SeamRef/StiffenerRef, ref types
-    without an explicit curve (e.g. GridRef), and unsampleable curves.
+    without an explicit curve (e.g. PanelRef), and unsampleable curves.
     """
     geo = context.geometry
     samples = []
@@ -62,20 +65,7 @@ def _classified_boundary_samples(context, panel, tol_m=_SAMPLE_TOL_M):
             unsampleable += 1
         else:
             samples.append(pts)
-
-    def by_type(counts: Counter[str]) -> str:
-        return ", ".join(f"{t}×{n}" for t, n in sorted(counts.items()))
-
-    reasons = []
-    if dangling:
-        reasons.append(f"{dangling.total()} dangling boundary ref(s) "
-                       f"({by_type(dangling)})")
-    if no_curve:
-        reasons.append(f"{no_curve.total()} boundary ref(s) without explicit "
-                       f"curve ({by_type(no_curve)})")
-    if unsampleable:
-        reasons.append(f"{unsampleable} unsampleable boundary curve(s)")
-    return samples, reasons
+    return samples, boundary_reasons(dangling, no_curve, unsampleable)
 
 
 def panel_limited_by_closed(context, params: dict[str, Any]) -> CheckOutcome:
