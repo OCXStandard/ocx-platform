@@ -5,6 +5,7 @@ lean-pass policy. Units: everything returned is SI metres / kg.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -157,6 +158,42 @@ class GeometryContext:
         except ValueError as exc:
             logger.debug("grid ref plane {} failed: {}", ref.local_ref, exc)
             return None
+
+    def panel_uv_window(
+            self, panel: "IrPanel", param: SurfaceParam,
+            extra_points: Iterable[np.ndarray] = (),
+    ) -> tuple[float, float, float, float] | None:
+        """uv window ``(u0, u1, v0, v1)`` around a panel on ``param``.
+
+        Bounding box (in uv) of the OuterContour samples, point_on_surface
+        and ``extra_points``, grown on each side by its extent plus 1 m;
+        periodic u is capped at one period; clamped to ``param.uv_domain()``.
+        """
+        chunks = [s for s in (self.sample(c) for c in panel.outer_contours)
+                  if s is not None and len(s)]
+        if panel.point_on_surface is not None:
+            chunks.append(self.length.point(panel.point_on_surface)[None, :])
+        chunks += [np.asarray(p, dtype=float).reshape(-1, 3)
+                   for p in extra_points if len(p)]
+        domain = param.uv_domain()
+        if not chunks:
+            if domain is not None and np.all(np.isfinite(domain)):
+                return tuple(float(x) for x in domain)
+            return None
+        uv = param.inverse(np.vstack(chunks))
+        lo, hi = uv.min(axis=0), uv.max(axis=0)
+        su, sv = param.uv_scale()
+        grow = (hi - lo) + np.array([1.0 / su, 1.0 / sv])
+        lo, hi = lo - grow, hi + grow
+        if param.periodic_u and hi[0] - lo[0] > 2.0 * np.pi:
+            mid = 0.5 * (lo[0] + hi[0])
+            lo[0], hi[0] = mid - np.pi, mid + np.pi
+        if domain is not None:
+            lo = np.maximum(lo, [domain[0], domain[2]])
+            hi = np.minimum(hi, [domain[1], domain[3]])
+        if np.any(hi <= lo):
+            return None
+        return (float(lo[0]), float(hi[0]), float(lo[1]), float(hi[1]))
 
     def boundary_curve_for_ref(self,
                                ref: "IrLimitedByRef") -> "IrCurve3D | None":
