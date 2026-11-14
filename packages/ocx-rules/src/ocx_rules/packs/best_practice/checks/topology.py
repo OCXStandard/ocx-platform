@@ -22,6 +22,7 @@ from ocx_model_core.model.ir.geometry import IrCompositeCurve3D
 from ocx_rules.model import CheckOutcome, Finding, OutcomeCollector
 from ocx_rules.packs.best_practice.checks.limited_by_region import (
     boundary_reasons,
+    grid_panel_outcome,
 )
 
 _SAMPLE_TOL_M = 0.001
@@ -74,6 +75,19 @@ def panel_limited_by_closed(context, params: dict[str, Any]) -> CheckOutcome:
     out = OutcomeCollector("OCX-TOP-001")
     for pid, panel in context.vessel.panels.items():
         if not panel.limited_by:
+            continue
+        if any(ref.ref_type == "GridRef" for ref in panel.limited_by):
+            try:
+                reason, messages = grid_panel_outcome(
+                    context.geometry, panel, tol_m)
+            except Exception as exc:
+                logger.debug("TOP-001 grid path failed for {}: {}", pid, exc)
+                reason, messages = f"boundary evaluation failed: {exc}", []
+            if reason:
+                out.unchecked(reason, pid, panel.guidref)
+            for message in messages:
+                out.add(Finding(message=message, element_id=pid,
+                                guid=panel.guidref))
             continue
         samples, reasons = _classified_boundary_samples(context, panel)
         if reasons:

@@ -924,6 +924,7 @@ dependencies = [
     { name = "lxml" },
     { name = "ocx-geometry" },
     { name = "ocx-model-core" },
+    { name = "shapely" },
 ]
 
 [package.metadata]
@@ -932,6 +933,7 @@ requires-dist = [
     { name = "lxml", specifier = ">=6.0" },
     { name = "ocx-geometry", editable = "packages/ocx-geometry" },
     { name = "ocx-model-core", editable = "packages/ocx-model-core" },
+    { name = "shapely", specifier = ">=2.2.0" },
 ]
 
 [[package]]
