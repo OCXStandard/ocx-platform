@@ -5,15 +5,23 @@ from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
-from ocx_model_validator.reporting.model import Cell, Link, Report, ReportSection
+from ocx_model_validator.reporting.model import Badge, Cell, Link, Report, ReportSection
 
 _NA = ""
+_TONE_STYLE = {"error": "bold red", "warning": "bold yellow", "info": "bold green"}
 
 
 def _cell(c: Cell) -> str:
-    if isinstance(c, Link):
+    if isinstance(c, (Link, Badge)):
         c = c.text
     return _NA if c is None else str(c)
+
+
+def _markup(c: Cell) -> str:
+    text = escape(_cell(c))
+    if isinstance(c, Badge) and c.tone in _TONE_STYLE:
+        return f"[{_TONE_STYLE[c.tone]}]{text}[/]"
+    return text
 
 
 class RichRenderer:
@@ -44,11 +52,12 @@ class RichRenderer:
             for i, row in enumerate(t.rows):
                 children = t.row_children[i] if i < len(t.row_children) else []
                 if children:  # group rows stand out in bold
-                    table.add_row(*[f"[bold]{escape(_cell(c))}[/]" for c in row])
+                    table.add_row(*[f"[bold]{_markup(c)}[/]" for c in row])
                 else:
-                    table.add_row(*[escape(_cell(c)) for c in row])
+                    table.add_row(*[_markup(c) for c in row])
                 for child in children:
-                    table.add_row(*[f"[dim]{escape(_cell(c))}[/]" for c in child])
+                    table.add_row(*[_markup(c) if isinstance(c, Badge)
+                                    else f"[dim]{_markup(c)}[/]" for c in child])
             for row in t.footer_rows:
                 table.add_row(*[f"[bold]{escape(_cell(c))}[/]" for c in row])
             console.print(table)

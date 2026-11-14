@@ -11,6 +11,7 @@ import itertools
 from collections.abc import Iterator
 
 from ocx_model_validator.reporting.model import (
+    Badge,
     Cell,
     Link,
     Report,
@@ -47,6 +48,11 @@ tr.group > td:first-child::before { content: "\\25B8\\00A0"; color: #57606a; }
 tr.group.open > td:first-child::before { content: "\\25BE\\00A0"; }
 tr.child td { background: #fafbfc; color: #57606a; }
 tr.highlight td { background: #fff8c5; }
+.badge { display: inline-block; padding: 0 0.5rem; border-radius: 1rem;
+  font-size: 0.85em; font-weight: 600; }
+.badge-error { background: #cf222e; color: #fff; }
+.badge-warning { background: #f2cc60; color: #1f2328; }
+.badge-info { background: #1a7f37; color: #fff; }
 aside.note { border-left: 4px solid #d4a72c; background: #fff8c5;
   padding: 0.4rem 0.8rem; margin: 0.5rem 0; }
 """
@@ -101,6 +107,9 @@ def _cell_html(c: Cell, anchors: set[str]) -> str:
         if c.target in anchors:
             return f'<a href="#{_esc(c.target)}">{_esc(c.text)}</a>'
         return _esc(c.text)
+    if isinstance(c, Badge):
+        return (f'<span class="badge badge-{_esc(c.tone)}">'
+                f"{_esc(c.text)}</span>")
     return _esc(c)
 
 
