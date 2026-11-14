@@ -5,11 +5,16 @@ surface with a plane as 3D polylines restricted to a uv window.
 """
 from __future__ import annotations
 
+from collections import defaultdict
+
 import numpy as np
 
 from ocx_geometry.surfaces import PlaneParam, SurfaceParam
 
 _PARALLEL_EPS = 1e-9
+_DEFAULT_CELLS = 200
+_MIN_CELLS = 8
+_MAX_CELLS = 1000
 
 UVWindow = tuple[float, float, float, float]
 
@@ -39,8 +44,7 @@ def intersect_surface_plane(param: SurfaceParam, point, normal,
     p, n = offset_plane(point, normal, 0.0)
     if isinstance(param, PlaneParam):
         return _plane_cut(param, p, n, window)
-    raise NotImplementedError(
-        f"no intersection for {type(param).__name__} yet")
+    return _marching_cut(param, p, n, window, tol_m)
 
 
 def _plane_cut(param: PlaneParam, p: np.ndarray, n: np.ndarray,
@@ -77,3 +81,88 @@ def _clip_line(origin: np.ndarray, direction: np.ndarray,
     if t_hi - t_lo <= 1e-12:
         return None
     return float(t_lo), float(t_hi)
+
+
+def _cells(span_uv: float, scale: float, edge_m: float | None) -> int:
+    if edge_m is None or edge_m <= 0:
+        return _DEFAULT_CELLS
+    return int(np.clip(np.ceil(span_uv * scale / edge_m),
+                       _MIN_CELLS, _MAX_CELLS))
+
+
+def _marching_cut(param: SurfaceParam, p: np.ndarray, n: np.ndarray,
+                  window: UVWindow, tol_m: float) -> list[np.ndarray]:
+    u0, u1, v0, v1 = window
+    su, sv = param.uv_scale()
+    edge = param.max_edge_m(tol_m)
+    us = np.linspace(u0, u1, _cells(u1 - u0, su, edge) + 1)
+    vs = np.linspace(v0, v1, _cells(v1 - v0, sv, edge) + 1)
+    uu, vv = np.meshgrid(us, vs, indexing="ij")
+    pts = param.evaluate(np.column_stack([uu.ravel(), vv.ravel()]))
+    f = ((pts - p) @ n).reshape(uu.shape)
+    segments = _contour_segments(f)
+    if not segments:
+        return []
+
+    def uv_at(key: tuple[str, int, int]) -> np.ndarray:
+        kind, i, j = key
+        i2, j2 = (i + 1, j) if kind == "u" else (i, j + 1)
+        t = f[i, j] / (f[i, j] - f[i2, j2])
+        return np.array([uu[i, j] + t * (uu[i2, j2] - uu[i, j]),
+                         vv[i, j] + t * (vv[i2, j2] - vv[i, j])])
+
+    return [param.evaluate(np.array([uv_at(k) for k in chain]))
+            for chain in _link(segments)]
+
+
+def _contour_segments(f: np.ndarray) -> list[tuple[tuple, tuple]]:
+    """Marching-squares segments as pairs of grid-edge keys."""
+    pos = f >= 0.0
+    bottom = pos[:-1, :-1] != pos[1:, :-1]
+    top = pos[:-1, 1:] != pos[1:, 1:]
+    left = pos[:-1, :-1] != pos[:-1, 1:]
+    right = pos[1:, :-1] != pos[1:, 1:]
+    segments = []
+    for i, j in np.argwhere(bottom | top | left | right):
+        i, j = int(i), int(j)
+        keys = {"b": ("u", i, j), "r": ("v", i + 1, j),
+                "t": ("u", i, j + 1), "l": ("v", i, j)}
+        cut = [k for k, mask in (("b", bottom), ("r", right),
+                                 ("t", top), ("l", left)) if mask[i, j]]
+        if len(cut) == 2:
+            segments.append((keys[cut[0]], keys[cut[1]]))
+            continue
+        centre = 0.25 * (f[i, j] + f[i + 1, j] + f[i + 1, j + 1] + f[i, j + 1])
+        if (centre >= 0.0) == pos[i, j]:
+            pairs = (("b", "r"), ("t", "l"))
+        else:
+            pairs = (("b", "l"), ("r", "t"))
+        segments.extend((keys[a], keys[b]) for a, b in pairs)
+    return segments
+
+
+def _link(segments: list[tuple[tuple, tuple]]) -> list[list[tuple]]:
+    """Chain segments sharing edge keys: open chains first, then loops."""
+    adj: dict[tuple, list[tuple]] = defaultdict(list)
+    for a, b in segments:
+        adj[a].append(b)
+        adj[b].append(a)
+
+    def walk(start: tuple) -> list[tuple]:
+        chain = [start]
+        cur = start
+        while adj[cur]:
+            nxt = adj[cur].pop()
+            adj[nxt].remove(cur)
+            chain.append(nxt)
+            cur = nxt
+            if nxt == start:
+                break
+        return chain
+
+    chains = [walk(k) for k in [k for k, nb in adj.items() if len(nb) == 1]
+              if adj[k]]
+    for k in list(adj):
+        while adj[k]:
+            chains.append(walk(k))
+    return chains
