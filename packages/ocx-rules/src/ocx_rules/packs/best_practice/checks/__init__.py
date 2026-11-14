@@ -5,7 +5,7 @@ OCX-PROP-004 are real implementations. Phase B implemented the geometry
 checks in topology and properties; only the two compartment checks remain
 stubs (see geometry_stubs). TOML rules address every name as
 ``ocx_rules.packs.best_practice.checks:<name>``. Exporter plausibility
-checks (OCX-TOP-010..012, OCX-PROP-005/006) live in plausibility.
+checks (OCX-TOP-010..012, OCX-PROP-006) live in plausibility.
 """
 from __future__ import annotations
 
@@ -34,7 +34,6 @@ from ocx_rules.packs.best_practice.checks.identity import (
 )
 from ocx_rules.packs.best_practice.checks.plausibility import (
     inclination_position_on_trace,
-    part_cog_within_geometry,
     shared_positions_and_cogs,
     web_near_normal,
     web_not_in_plate,
@@ -71,7 +70,7 @@ __all__ = [
     "nurbs_control_points", "nurbs_knot_multiplicity",
     "nurbs_knots_non_decreasing", "panel_as_occurrence_group",
     "panel_limited_by_closed", "panel_weight_cog_consistent",
-    "part_cog_within_geometry", "plate_weight_consistent", "polyline_closed",
+    "plate_weight_consistent", "polyline_closed",
     "profile_closed_section", "renewal_thickness_on_instance",
     "root_declarations", "schema_location_tuple", "seam_topology",
     "shared_positions_and_cogs", "slot_lug_plate_refs",

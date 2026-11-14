@@ -11,15 +11,15 @@ EXPECTED_CATEGORIES = {
     "references": 8,
     "curves_surfaces": 5,
     "topology": 12,
-    "properties": 6,
+    "properties": 5,
 }
 
 
 class TestBestPracticePack:
-    def test_loads_41_rules(self):
+    def test_loads_40_rules(self):
         pack = load_pack()
         assert pack.name == "best_practice"
-        assert len(pack.rules) == 41
+        assert len(pack.rules) == 40
 
     def test_category_counts(self):
         pack = load_pack()
@@ -77,5 +77,7 @@ class TestBestPracticePack:
         assert by_id["OCX-TOP-011"].severity is Severity.ERROR
         assert by_id["OCX-TOP-012"].severity is Severity.WARNING
         assert by_id["OCX-TOP-012"].params["warn_angle_deg"] == 30.0
-        assert by_id["OCX-PROP-005"].params["margin_mm"] == 500.0
         assert by_id["OCX-PROP-006"].params["min_parts"] == 3
+
+    def test_prop_005_removed_for_false_positives(self):
+        assert "OCX-PROP-005" not in {r.rule_id for r in load_pack().rules}
