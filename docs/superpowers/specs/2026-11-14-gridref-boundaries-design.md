@@ -74,7 +74,7 @@ IR-independent, all values in metres.
   - Every other `SurfaceParam`: numerical. Evaluate the signed distance
     `d(u, v) = n · (S(u, v) − p)` on a regular uv grid over the window;
     grid step from `param.max_edge_m(tol_m)` converted with
-    `param.uv_scale()` (fallback: 200 cells per axis), capped at 1000
+    `param.uv_scale()` (fallback: 200 cells per axis), clamped to 8…1000
     cells per axis. A built-in marching-squares routine extracts the
     zero contour (linear interpolation on cell edges; the ambiguous
     saddle case is resolved by the cell-centre value), segments are
@@ -98,8 +98,11 @@ IR-independent, all values in metres.
    bounding box (via `param.inverse`) of the panel's OuterContour
    samples, `point_on_surface` and all explicit boundary-curve samples,
    enlarged on each side by 100 % of its extent plus 1 m (converted to
-   uv with `uv_scale`). If none of these exist, fall back to
-   `param.bounds()`; otherwise `None`.
+   uv with `uv_scale`), then clamped to `param.uv_domain()`. If none of
+   these exist, fall back to a finite `param.uv_domain()`; otherwise
+   `None`. `SurfaceParam.uv_domain()` is a new method (default `None`;
+   NURBS: knot domain; extruded: `(0, base length, -inf, inf)`), needed
+   because `bounds()` is a 3D box and NURBS/extruded `evaluate` clamp uv.
 
 ## Section 3 — OCX-TOP-001
 
@@ -110,10 +113,12 @@ Panels **with** at least one GridRef use the arrangement path,
 implemented in a new module `checks/limited_by_region.py` and called
 from `panel_limited_by_closed`:
 
-1. `param = surface_param(panel_surface(panel))`; `None` → unchecked
-   "no buildable panel surface".
-2. `window = panel_uv_window(panel, param)`; `None` → unchecked
-   "cannot determine panel extent".
+1. Classify the LimitedBy refs first (dangling / no curve / unsampleable,
+   with unresolvable GridRefs counted as dangling); any reason fragment →
+   unchecked.
+2. `param = surface_param(panel_surface(panel))`; `None` → unchecked
+   "no buildable panel surface". Then `window = panel_uv_window(panel,
+   param)`; `None` → unchecked "cannot determine panel extent".
 3. Resolve each LimitedBy ref to 3D polylines:
    - GridRef → `grid_ref_plane` then `intersect_surface_plane`; a
      GridRef whose ref plane cannot be resolved counts as dangling
