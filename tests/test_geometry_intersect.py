@@ -152,3 +152,15 @@ class TestMarchingInternals:
         from ocx_geometry.intersect import _link
         (chain,) = _link([("a", "b"), ("b", "c")])
         assert chain in (["a", "b", "c"], ["c", "b", "a"])
+
+    def test_marching_drops_zero_length_segments_on_grid_vertices(self):
+        from ocx_geometry.intersect import _marching_cut
+        n = np.array([1.0, 1.0, 0.0]) / np.sqrt(2.0)
+        p = np.array([0.5, 0.5, 0.0])
+        lines = _marching_cut(_xy_plane(), p, n, (0.0, 1.0, 0.0, 1.0), 1e-3)
+        assert lines
+        for line in lines:
+            assert len(line) >= 2
+            gaps = np.linalg.norm(np.diff(line, axis=0), axis=1)
+            assert gaps.min() > 1e-12
+            assert np.allclose((line - p) @ n, 0.0, atol=1e-9)

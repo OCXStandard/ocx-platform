@@ -111,8 +111,18 @@ def _marching_cut(param: SurfaceParam, p: np.ndarray, n: np.ndarray,
         return np.array([uu[i, j] + t * (uu[i2, j2] - uu[i, j]),
                          vv[i, j] + t * (vv[i2, j2] - vv[i, j])])
 
-    return [param.evaluate(np.array([uv_at(k) for k in chain]))
-            for chain in _link(segments)]
+    # Zero levels through grid vertices yield coincident uv points (t = 0
+    # on several edges); drop them so no polyline has zero-length steps.
+    eps = 1e-12 * max(u1 - u0, v1 - v0)
+    lines = []
+    for chain in _link(segments):
+        uv = np.array([uv_at(k) for k in chain])
+        keep = np.ones(len(uv), dtype=bool)
+        keep[1:] = np.linalg.norm(np.diff(uv, axis=0), axis=1) > eps
+        uv = uv[keep]
+        if len(uv) >= 2:
+            lines.append(param.evaluate(uv))
+    return lines
 
 
 def _contour_segments(f: np.ndarray) -> list[tuple[tuple, tuple]]:
