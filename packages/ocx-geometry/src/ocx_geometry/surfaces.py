@@ -78,6 +78,11 @@ class SurfaceParam(ABC):
         """Axis-aligned box that contains the whole surface (None: unbounded)."""
         return None
 
+    def uv_domain(self) -> tuple[float, float, float, float] | None:
+        """``(u0, u1, v0, v1)`` parameter domain (entries may be ±inf);
+        None when the parametrization is unbounded in both directions."""
+        return None
+
 
 def _chord_edge(radius: float, tol_m: float) -> float:
     """Max chord length with sagitta <= tol on a circle of given radius."""
@@ -318,6 +323,9 @@ class ExtrudedParam(SurfaceParam):
             out[i] = (best_u, (p - base) @ self.d)
         return out
 
+    def uv_domain(self):
+        return (0.0, float(self.s[-1]), -np.inf, np.inf)
+
     def max_edge_m(self, tol_m):
         """Bound edges by the smallest circumradius along the base polyline."""
         if len(self.b) < 3:
@@ -372,6 +380,10 @@ class NurbsSurfaceParam(SurfaceParam):
     def bounds(self):
         # convex-hull property: the surface lies inside its control-point box
         return self._bounds
+
+    def uv_domain(self):
+        return (float(self.du[0]), float(self.du[1]),
+                float(self.dv[0]), float(self.dv[1]))
 
     def _clip_uv(self, uv: np.ndarray) -> np.ndarray:
         return np.clip(uv, [self.du[0], self.dv[0]], [self.du[1], self.dv[1]])
