@@ -80,7 +80,7 @@ class SurfaceParam(ABC):
 
     def uv_domain(self) -> tuple[float, float, float, float] | None:
         """``(u0, u1, v0, v1)`` parameter domain (entries may be ±inf);
-        None when the parametrization is unbounded in both directions."""
+        None when no finite parameter bounds are known or needed."""
         return None
 
 
@@ -184,6 +184,16 @@ class ConeParam(SurfaceParam):
         u = np.arctan2(rad @ self.y, rad @ self.x)
         return np.column_stack([np.unwrap(u), v])
 
+    def uv_domain(self):
+        # Past the apex the radius turns negative and evaluate() continues on
+        # the opposite nappe; stop v at the apex on the base→tip side.
+        if self.rb == self.rt:
+            return None
+        v_apex = self.rb * self.h / (self.rb - self.rt)
+        if self.rb > self.rt:
+            return (-math.inf, math.inf, -math.inf, v_apex)
+        return (-math.inf, math.inf, v_apex, math.inf)
+
     def uv_scale(self):
         return (max(self.rb, self.rt), 1.0)
 
@@ -223,6 +233,9 @@ class SphereParam(SurfaceParam):
     def normals(self, uv):
         p = self.evaluate(uv)
         return (p - self.o) / self.r
+
+    def uv_domain(self):
+        return (-math.inf, math.inf, 0.0, math.pi)
 
     def uv_scale(self):
         return (self.r, self.r)
