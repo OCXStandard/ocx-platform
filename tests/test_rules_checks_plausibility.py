@@ -31,7 +31,6 @@ from ocx_rules.geometry_context import GeometryContext
 from ocx_rules.model import CheckOutcome, Unchecked
 from ocx_rules.packs.best_practice.checks.plausibility import (
     inclination_position_on_trace,
-    part_cog_within_geometry,
     shared_positions_and_cogs,
     web_near_normal,
     web_not_in_plate,
@@ -238,50 +237,6 @@ class TestWebDirection:
         assert self._outcomes(ctx) == (CheckOutcome(), CheckOutcome())
 
 
-class TestPartCogWithinGeometry:
-    PARAMS = {"margin_mm": 500.0}
-
-    def test_stiffener_cog_on_trace_passes(self):
-        ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 0, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
-
-    def test_cog_within_margin_passes(self):
-        ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 400, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
-
-    def test_stiffener_cog_far_outside_fails(self):
-        ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, 5000, 0))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
-        assert finding.element_id == "s1"
-        assert finding.guid == "g-s1"
-        assert "4.500 m" in finding.message
-
-    def test_plate_cog_inside_contour_box_passes(self):
-        ctx = _ctx(plates=[_plate("pl1", cog=(500, 500, 0))])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
-
-    def test_plate_cog_outside_fails(self):
-        ctx = _ctx(plates=[_plate("pl1", cog=(500, 500, 6000))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
-        assert finding.element_id == "pl1"
-        assert "5.500 m" in finding.message
-
-    def test_pillar_cog_outside_fails(self):
-        ctx = _ctx(pillars=[_pillar("c1", cog=(3000, 0, 1000))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
-        assert finding.element_id == "c1"
-
-    def test_part_without_mass_properties_is_skipped(self):
-        ctx = _ctx(stiffeners=[_stiffener("s1")], plates=[_plate("pl1")])
-        assert part_cog_within_geometry(ctx, self.PARAMS) == CheckOutcome()
-
-    def test_non_finite_cog_fails(self):
-        ctx = _ctx(stiffeners=[_stiffener("s1", cog=(500, math.inf, 0))])
-        (finding,) = part_cog_within_geometry(ctx, self.PARAMS).findings
-        assert finding.element_id == "s1"
-        assert "non-finite" in finding.message
-
-
 class TestSharedPositionsAndCogs:
     PARAMS = {"tolerance_mm": 1.0, "min_parts": 3}
 
@@ -387,22 +342,6 @@ class TestUncheckedPlausibility:
         ctx = _ctx(panels=[_panel(surfaces=(_FAR_PLANE,))],
                    stiffeners=[_stiffener("s1")])
         assert web_not_in_plate(ctx, {}) == CheckOutcome()
-
-    def test_prop005_plate_without_outline_unchecked(self):
-        plate = dataclasses.replace(_plate("pl1", cog=(500, 500, 0)),
-                                    outer_contour=None)
-        ctx = _ctx(plates=[plate])
-        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}) == CheckOutcome(
-            unchecked=(Unchecked("no outline or trace", "pl1", "g-pl1"),))
-
-    def test_prop005_ref_only_trace_unchecked(self):
-        ctx = _ctx(stiffeners=[_ref_only(_stiffener("s1", cog=(500, 0, 0)))])
-        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}).unchecked == (
-            self.REF_ONLY,)
-
-    def test_prop005_part_without_cog_silent(self):
-        ctx = _ctx(stiffeners=[_ref_only(_stiffener("s1"))])
-        assert part_cog_within_geometry(ctx, {"margin_mm": 500.0}) == CheckOutcome()
 
     def test_prop006_cog_exception_unchecked(self):
         ctx = _ctx(plates=[_plate("pl1", cog=(0, 0, 0))])

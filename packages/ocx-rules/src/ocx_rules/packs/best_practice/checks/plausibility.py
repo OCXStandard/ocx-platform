@@ -1,9 +1,9 @@
-"""Exporter plausibility checks (OCX-TOP-010..012, OCX-PROP-005/006).
+"""Exporter plausibility checks (OCX-TOP-010..012, OCX-PROP-006).
 
 These rules catch data that is well-formed but physically implausible —
 typically exporter bugs that copy one value onto many parts: inclination
 positions off the trace, web directions that disagree with the panel
-surface normal, COGs outside the part, and values shared by many parts.
+surface normal, and values shared by many parts.
 
 Checks return CheckOutcome; parts they cannot evaluate (unusable trace,
 reference-only trace, exceptions) are reported as unchecked.
@@ -231,52 +231,6 @@ def inclination_position_on_trace(context,
     return out.outcome()
 
 
-def _parts_with_geometry(vessel):
-    """(part, curve) pairs: plate outer contours, stiffener/pillar traces."""
-    for plate in vessel.plates.values():
-        yield plate, plate.outer_contour
-    for part in chain(vessel.stiffeners.values(), vessel.pillars.values()):
-        yield part, part.trace
-
-
-def part_cog_within_geometry(context, params: dict[str, Any]) -> CheckOutcome:
-    """OCX-PROP-005: the moulded COG must lie near the part's geometry."""
-    margin_mm = float(params.get("margin_mm", 500.0))
-    margin_m = margin_mm / 1000.0
-    geo = context.geometry
-    out = OutcomeCollector("OCX-PROP-005")
-    for part, curve in _parts_with_geometry(context.vessel):
-        mp = part.mass_properties
-        cog = mp.moulded_cog if mp is not None else None
-        if cog is None:
-            continue
-        try:
-            pts = geo.sample(curve)
-            if pts is None or len(pts) == 0:
-                out.unchecked(_curve_unusable(part, curve), part.id,
-                              part.guidref)
-                continue
-            c = _cog_m(geo.length, cog)
-            if not np.isfinite(c).all():
-                out.add(Finding(
-                    "Moulded COG has non-finite coordinates",
-                    element_id=part.id, guid=part.guidref))
-                continue
-            lo = pts.min(axis=0) - margin_m
-            hi = pts.max(axis=0) + margin_m
-            gap = np.maximum(np.maximum(lo - c, c - hi), 0.0)
-            dist = float(np.linalg.norm(gap))
-            if dist > 0.0:
-                out.add(Finding(
-                    f"Moulded COG ({c[0]:.3f}, {c[1]:.3f}, {c[2]:.3f}) m is "
-                    f"{dist:.3f} m outside the part's bounding box "
-                    f"(margin {margin_mm:.0f} mm)",
-                    element_id=part.id, guid=part.guidref))
-        except Exception as exc:  # noqa: BLE001 — skip part
-            out.unchecked(f"evaluation failed: {exc}", part.id, part.guidref)
-    return out.outcome()
-
-
 def _grid_key(p: np.ndarray, step_m: float) -> tuple[int, int, int]:
     return tuple(int(round(float(c) / step_m)) for c in p)
 
@@ -284,7 +238,7 @@ def _grid_key(p: np.ndarray, step_m: float) -> tuple[int, int, int]:
 class _Pool:
     """Parts grouped by a rounded 3D value (one entry per part per key).
 
-    Non-finite values are ignored (PROP-005/TOP-010 report them).
+    Non-finite values are ignored (TOP-010 reports non-finite positions).
     """
 
     def __init__(self, label: str, step_m: float) -> None:

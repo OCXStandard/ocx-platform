@@ -32,8 +32,8 @@ making downstream tools independent of any particular OCX schema version.
   plugins and tunable through a user config (disable rules, override
   severity/parameters). Rules may declare supported schema families
   (`schemas = ["3.2", "3.3"]`) and are skipped — not failed — on models of
-  other versions. 39 of the 41 rules are fully implemented (24 content
-  rules + 15 geometry-dependent rules backed by the analytic geometry
+  other versions. 38 of the 40 rules are fully implemented (24 content
+  rules + 14 geometry-dependent rules backed by the analytic geometry
   kernel); the 2 compartment rules (OCX-TOP-006/007) are deferred. Elements a
   check cannot evaluate (e.g. reference-only traces, unbuildable surfaces) are
   listed as *unchecked* in the reports; they never change a rule's status or
