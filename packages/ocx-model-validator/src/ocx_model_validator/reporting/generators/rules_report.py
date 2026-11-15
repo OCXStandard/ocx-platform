@@ -3,7 +3,13 @@ from __future__ import annotations
 
 from ocx_rules.model import RuleResult, RuleStatus
 
-from ocx_model_validator.reporting.model import Report, ReportSection, ReportTable
+from ocx_model_validator.reporting.model import (
+    Badge,
+    Cell,
+    Report,
+    ReportSection,
+    ReportTable,
+)
 
 _STATUS_LABEL = {
     RuleStatus.PASSED: "passed",
@@ -13,67 +19,70 @@ _STATUS_LABEL = {
     RuleStatus.CRASHED: "CRASHED",
 }
 
+_COLUMNS = ["Category / rule", "Title / message", "Severity", "Status",
+            "Findings", "Unchecked", "Element", "GUID", "Line"]
 
-def build(results: list[RuleResult], *, source_file: str,
-          max_findings: int = 50) -> Report:
-    """Build a Report: status summary, per-rule table, findings and
-    unchecked elements."""
+
+def _status_counts(results: list[RuleResult]) -> list[tuple[RuleStatus, int]]:
     counts: dict[RuleStatus, int] = {}
     for result in results:
         counts[result.status] = counts.get(result.status, 0) + 1
+    return sorted(counts.items(), key=lambda kv: kv[0].value)
 
+
+def _status_cell(status: RuleStatus) -> Cell:
+    label = _STATUS_LABEL[status]
+    return Badge(label, "error") if status is RuleStatus.FAILED else label
+
+
+def _rule_rows(result: RuleResult) -> list[list[Cell]]:
+    spec = result.spec
+    severity = spec.severity.value
+    title = f"{spec.title} ({result.reason})" if result.reason else spec.title
+    rows: list[list[Cell]] = [[
+        spec.rule_id, title, severity, _status_cell(result.status),
+        len(result.findings) or None, len(result.unchecked) or None,
+        None, None, None]]
+    rows += [[None, f.message, severity, Badge("finding", "warning"), None,
+              None, f.element_id, f.guid, f.location] for f in result.findings]
+    rows += [[None, u.reason, None, "unchecked", None, None,
+              u.element_id, u.guid, None] for u in result.unchecked]
+    return rows
+
+
+def build(results: list[RuleResult], *, source_file: str) -> Report:
+    """Build a Report: status summary plus one table with an expandable row
+    per rule category holding its rules, findings and unchecked elements.
+    Status cells are coloured: FAILED (and categories with a failure) red,
+    findings yellow."""
     summary = ReportTable(
         title="Summary",
         columns=["Status", "Rules"],
-        rows=[[_STATUS_LABEL[s], n] for s, n in sorted(
-            counts.items(), key=lambda kv: kv[0].value)],
+        rows=[[_STATUS_LABEL[s], n] for s, n in _status_counts(results)],
         footer_rows=[["total", len(results)]],
     )
 
-    rules_table = ReportTable(
-        title="Rules",
-        columns=["Rule", "Title", "Category", "Severity", "Status",
-                 "Findings", "Unchecked", "Note"],
-        rows=[[r.spec.rule_id, r.spec.title, r.spec.category,
-               r.spec.severity.value, _STATUS_LABEL[r.status],
-               len(r.findings) or None, len(r.unchecked) or None, r.reason]
-              for r in results],
-    )
-
-    finding_rows = []
+    by_category: dict[str, list[RuleResult]] = {}
     for result in results:
-        for finding in result.findings:
-            finding_rows.append([result.spec.rule_id,
-                                 result.spec.severity.value,
-                                 finding.message, finding.element_id,
-                                 finding.guid, finding.location])
-    truncated = len(finding_rows) > max_findings
-    findings_table = ReportTable(
-        title="Findings",
-        columns=["Rule", "Severity", "Message", "Element", "GUID", "Line"],
-        rows=finding_rows[:max_findings],
-    )
+        by_category.setdefault(result.spec.category, []).append(result)
+    rows: list[list[Cell]] = []
+    children: list[list[list[Cell]]] = []
+    for category, members in by_category.items():
+        status: Cell = ", ".join(f"{n} {_STATUS_LABEL[s]}"
+                                 for s, n in _status_counts(members))
+        if any(r.status is RuleStatus.FAILED for r in members):
+            status = Badge(status, "error")
+        rows.append([category, f"{len(members)} rule(s)", None, status,
+                     sum(len(r.findings) for r in members) or None,
+                     sum(len(r.unchecked) for r in members) or None,
+                     None, None, None])
+        children.append([row for r in members for row in _rule_rows(r)])
+    rules_table = ReportTable(title="Rules", columns=_COLUMNS, rows=rows,
+                              row_children=children)
 
-    notes = []
-    if truncated:
-        notes.append(f"Findings truncated to the first {max_findings} of "
-                     f"{len(finding_rows)}.")
-    unchecked_rows = [[result.spec.rule_id, u.element_id, u.guid, u.reason]
-                      for result in results for u in result.unchecked]
-    if len(unchecked_rows) > max_findings:
-        notes.append(f"Unchecked elements truncated to the first "
-                     f"{max_findings} of {len(unchecked_rows)}.")
-    tables = [summary, rules_table]
-    if finding_rows:
-        tables.append(findings_table)
-    if unchecked_rows:
-        tables.append(ReportTable(
-            title="Unchecked elements",
-            columns=["Rule", "Element", "GUID", "Reason"],
-            rows=unchecked_rows[:max_findings]))
     return Report(
         title="Rule validation",
         metadata={"model": source_file, "rules run": str(len(results))},
         sections=[ReportSection(title="Rule-based validation",
-                                tables=tables, notes=notes)],
+                                tables=[summary, rules_table])],
     )

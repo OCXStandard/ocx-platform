@@ -156,3 +156,18 @@ def test_rich_child_rows_render():
     out = RichRenderer().render(_grouped_report())
     assert "item-a" in out
     assert "item-b" in out
+
+
+def _badge_report() -> Report:
+    from ocx_model_validator.reporting.model import Badge
+    table = ReportTable(title="T", columns=["Severity"],
+                        rows=[[Badge("error", "error")]])
+    return Report(title="R", sections=[ReportSection(title="S", tables=[table])])
+
+
+def test_markdown_badge_renders_plain_text():
+    assert "| error |" in MarkdownRenderer().render(_badge_report())
+
+
+def test_rich_badge_renders_text():
+    assert "error" in RichRenderer().render(_badge_report())
