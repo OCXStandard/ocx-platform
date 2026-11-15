@@ -76,6 +76,11 @@
   hardened for curved seams (nearest-neighbour point chaining, evenly
   spread sample stations, bounded dedup).
 
+### Changed
+
+- Requires `ocx-geometry>=0.3,<0.4` (grid planes and surface/plane
+  intersection).
+
 ## 0.1.0 — 2026-10-20
 
 Initial release.

@@ -9,6 +9,10 @@
   an `Unchecked` column and an "Unchecked elements" table (capped by
   `--max-findings`). The exit code is unchanged.
 
+### Changed
+
+- Requires `ocx-geometry>=0.3,<0.4`.
+
 ## 0.5.0 — 2026-10-20
 
 Initial release as a workspace package: parsing, IR, units and schema
