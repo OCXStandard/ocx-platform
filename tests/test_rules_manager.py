@@ -9,12 +9,14 @@ from ocx_rules.context import ValidationContext
 from ocx_rules.manager import RuleManager
 from ocx_rules.model import (
     CheckNotImplemented,
+    CheckOutcome,
     CheckRef,
     Finding,
     RulePack,
     RuleSpec,
     RuleStatus,
     Severity,
+    Unchecked,
 )
 
 # --- helper checks used via CheckRef(custom=...) -----------------------------
@@ -33,6 +35,19 @@ def check_crashes(context, params):
 
 def check_stub(context, params):
     raise CheckNotImplemented("later")
+
+
+def check_outcome_pass_with_unchecked(context, params):
+    return CheckOutcome(unchecked=(Unchecked("no surface", "e9", "g9"),))
+
+
+def check_outcome_fail_with_unchecked(context, params):
+    return CheckOutcome(findings=(Finding(message="violation", element_id="e1"),),
+                        unchecked=(Unchecked("no surface", "e9"),))
+
+
+def check_generator(context, params):
+    yield Finding(message="from generator")
 
 
 _HERE = "tests.test_rules_manager"
@@ -109,6 +124,34 @@ class TestExecution:
         results = manager.run(context)
         assert [r.spec.rule_id for r in results] == ["R-A"]
         assert results[0].spec.severity is Severity.INFO
+
+    def test_check_outcome_unchecked_does_not_change_status(self, context):
+        manager = RuleManager(packs=[_pack(
+            _spec("R-OK", "check_outcome_pass_with_unchecked"),
+            _spec("R-BAD", "check_outcome_fail_with_unchecked"),
+        )])
+        by_id = {r.spec.rule_id: r for r in manager.run(context)}
+        ok, bad = by_id["R-OK"], by_id["R-BAD"]
+        assert ok.status is RuleStatus.PASSED
+        assert ok.findings == ()
+        assert ok.unchecked == (Unchecked("no surface", "e9", "g9"),)
+        assert bad.status is RuleStatus.FAILED
+        assert bad.findings[0].message == "violation"
+        assert bad.unchecked == (Unchecked("no surface", "e9"),)
+
+    def test_plain_iterable_wrapped(self, context):
+        manager = RuleManager(packs=[_pack(
+            _spec("R-GEN", "check_generator"), _spec("R-PASS", "check_passes"))])
+        by_id = {r.spec.rule_id: r for r in manager.run(context)}
+        assert by_id["R-GEN"].status is RuleStatus.FAILED
+        assert by_id["R-GEN"].findings[0].message == "from generator"
+        assert by_id["R-GEN"].unchecked == ()
+        assert by_id["R-PASS"].status is RuleStatus.PASSED
+
+    def test_non_run_statuses_carry_no_unchecked(self, context):
+        manager = RuleManager(packs=[_pack(
+            _spec("R-CRASH", "check_crashes"), _spec("R-STUB", "check_stub"))])
+        assert all(r.unchecked == () for r in manager.run(context))
 
 
 class TestSchemaApplicability:

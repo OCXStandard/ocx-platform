@@ -2,14 +2,24 @@
 
 ## Unreleased
 
+### Removed
+
+- `OCX-PROP-005` (part COG within part geometry): its bounding-box test
+  produced false positives.
+
 ### Added
 
+- Unchecked elements: checks may return `CheckOutcome(findings, unchecked)`;
+  `RuleResult.unchecked` lists elements a check could not evaluate (with a
+  reason) without changing PASSED/FAILED. `OutcomeCollector` builds outcomes
+  inside checks. All 14 geometry-dependent best-practice checks report
+  unchecked elements (unsampleable/reference-only traces, missing surfaces,
+  thickness or density, caught exceptions, …).
 - Exporter plausibility rules (`checks/plausibility.py`):
   `OCX-TOP-010` inclination Position must lie on the trace (error,
   50 mm); `OCX-TOP-011` stiffener WebDirection must not lie in the panel
   surface plane (error, ≥ 80° from the normal); `OCX-TOP-012` WebDirection
-  more than 30° from the surface normal (warning); `OCX-PROP-005`
-  MouldedCOG outside the part's bounding box + 500 mm (warning);
+  more than 30° from the surface normal (warning);
   `OCX-PROP-006` inclination positions / MouldedCOGs shared by ≥ 3 parts
   (warning, one finding per part). Web checks use every inline patch of
   multi-surface panels (`UnboundedGeometry.surfaces`).
@@ -30,6 +40,22 @@
   last sample of each plate's `OuterContour` must not exceed
   `tolerance_mm`, closing the "pattern must subdivide the panel into
   closed plate contours" aspect of the rule.
+- `OCX-TOP-001` checks panels bounded by `GridRef`s instead of reporting
+  them unchecked: grid planes (with `Offset`) are intersected with the
+  panel surface, all boundaries (plus surface parameter-domain edges) are
+  polygonized in the surface's uv space, and the union of the faces inside
+  the panel's OuterContour must match that contour ("not closed"
+  otherwise, also for L/U/T-shaped panels) and be bounded by every
+  LimitedBy boundary (one "does not bound the panel" finding per stray
+  boundary; GridRefs are measured by analytic plane distance, so planes
+  lying on a surface edge count). Location-only
+  grid ref planes are synthesized from their coordinate-system axis, also
+  for `UnboundedGeometry/GridRef` panel surfaces; this also lets
+  `OCX-TOP-011`/`OCX-TOP-012` evaluate stiffeners on location-only
+  grid-plane panels, which were previously unchecked. Unresolvable GridRefs
+  are reported as dangling; GridRef panels without an OuterContour stay
+  unchecked ("cannot determine panel extent"), as do those whose
+  OuterContour is not a valid polygon ("unusable OuterContour").
 
 ### Fixed
 
@@ -53,6 +79,11 @@
   kept in the finding message for diagnosability. Shared-edge sampling
   hardened for curved seams (nearest-neighbour point chaining, evenly
   spread sample stations, bounded dedup).
+
+### Changed
+
+- Requires `ocx-geometry>=0.3,<0.4` (grid planes and surface/plane
+  intersection).
 
 ## 0.1.0 — 2026-10-20
 

@@ -364,9 +364,6 @@ def validate_rules_cmd(
     rule: list[str] | None = typer.Option(
         None, "--rule",
         help="Run only the rule(s) with these ids (repeatable)."),
-    max_findings: int = typer.Option(
-        50, "--max-findings", min=1,
-        help="Maximum number of findings listed in the report."),
     fmt: ReportFormat | None = _FORMAT_OPT,
     destination: Path | None = _DEST_OPT,
 ) -> None:
@@ -399,8 +396,8 @@ def validate_rules_cmd(
         logger.error("{}", exc)
         raise typer.Exit(code=2) from exc
 
-    _emit(rules_report.build(results, source_file=str(model),
-                             max_findings=max_findings), fmt, destination)
+    _emit(rules_report.build(results, source_file=str(model)), fmt,
+          destination)
 
     json_path = model.with_suffix(".rules.json")
     try:

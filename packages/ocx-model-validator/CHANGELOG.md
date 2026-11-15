@@ -1,5 +1,26 @@
 # Changelog — ocx-model-validator
 
+## Unreleased
+
+### Changed
+
+- **Breaking:** the rules report is one table with an expandable row per
+  rule category, holding its rules and all their findings and unchecked
+  elements (no cap). Status cells are colour-coded: FAILED red, findings
+  yellow; a category is red when any of its rules failed.
+  `validate rules --max-findings` is removed.
+
+### Added
+
+- Report cells can be coloured `Badge` labels (HTML and rich renderers).
+- Rule reports show unchecked elements: the JSON sidecar gains a per-result
+  `unchecked` list and `summary.unchecked_elements`; the rules report shows
+  them per rule. The exit code is unchanged.
+
+### Changed
+
+- Requires `ocx-geometry>=0.3,<0.4`.
+
 ## 0.5.0 — 2026-10-20
 
 Initial release as a workspace package: parsing, IR, units and schema

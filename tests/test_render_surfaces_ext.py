@@ -35,6 +35,11 @@ class TestExtruded:
         # u is arclength along the base line, v metres along the sweep
         np.testing.assert_allclose(uv[1], [2.0, 3.0], atol=1e-6)
 
+    def test_uv_domain_is_base_length_by_unbounded_sweep(self):
+        u0, u1, v0, v1 = self.make().uv_domain()
+        assert (u0, v0, v1) == (0.0, -np.inf, np.inf)
+        assert u1 == pytest.approx(4.0)
+
     def test_missing_base_curve_returns_none(self):
         s = IrExtrudedSurface(id="e", base_curve=None, sweep=IrVector3D(0, 0, 1))
         assert make_param(s, LR, tol_m=0.01) is None
@@ -84,6 +89,10 @@ class TestNurbs:
         uv = param.inverse(pts)
         np.testing.assert_allclose(param.evaluate(uv), pts, atol=1e-5)
 
+    def test_uv_domain_is_knot_domain(self):
+        param = make_param(flat_nurbs_surface(), LR, tol_m=0.01)
+        assert param.uv_domain() == (0.0, 1.0, 0.0, 1.0)
+
     def test_curved_patch_newton_inversion(self):
         param = make_param(curved_nurbs_surface(), LR, tol_m=0.01)
         # take exact surface points, invert, re-evaluate
@@ -121,3 +130,36 @@ class TestNurbs:
                             [pt(4, 0, 0), pt(4, 2, 0)]],
         )
         assert make_param(s, LR, tol_m=0.01) is None
+
+
+def test_analytic_surfaces_have_no_uv_domain():
+    from ocx_geometry.surfaces import CylinderParam, PlaneParam
+    z = np.array([0.0, 0.0, 1.0])
+    assert PlaneParam(np.zeros(3), z).uv_domain() is None
+    assert CylinderParam(np.zeros(3), z, 1.0).uv_domain() is None
+
+
+def test_sphere_uv_domain_bounds_polar_angle():
+    from ocx_geometry.surfaces import SphereParam
+    assert SphereParam(np.zeros(3), 1.0).uv_domain() == (-np.inf, np.inf, 0.0, np.pi)
+
+
+@pytest.mark.parametrize("rb, rt, expected", [
+    (2.0, 1.0, (-np.inf, 8.0)),   # narrowing towards tip: apex beyond tip
+    (1.0, 2.0, (-4.0, np.inf)),   # widening towards tip: apex behind base
+    (2.0, 0.0, (-np.inf, 4.0)),   # pointed tip is the apex
+])
+def test_cone_uv_domain_stops_at_apex(rb, rt, expected):
+    from ocx_geometry.surfaces import ConeParam
+    cone = ConeParam(np.zeros(3), np.array([0.0, 0.0, 4.0]), rb, rt)
+    u0, u1, v0, v1 = cone.uv_domain()
+    assert (u0, u1) == (-np.inf, np.inf)
+    assert (v0, v1) == pytest.approx(expected)
+    apex = v1 if np.isfinite(v1) else v0
+    assert cone._radius(apex) == pytest.approx(0.0, abs=1e-12)
+
+
+def test_equal_radius_cone_has_no_uv_domain():
+    from ocx_geometry.surfaces import ConeParam
+    cone = ConeParam(np.zeros(3), np.array([0.0, 0.0, 4.0]), 1.0, 1.0)
+    assert cone.uv_domain() is None

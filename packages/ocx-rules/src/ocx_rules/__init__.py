@@ -11,13 +11,16 @@ from ocx_rules.context import ValidationContext
 from ocx_rules.manager import RuleManager
 from ocx_rules.model import (
     CheckNotImplemented,
+    CheckOutcome,
     CheckRef,
     Finding,
+    OutcomeCollector,
     RulePack,
     RuleResult,
     RuleSpec,
     RuleStatus,
     Severity,
+    Unchecked,
 )
 
 __version__ = "0.1.0"
@@ -25,9 +28,11 @@ __version__ = "0.1.0"
 __all__ = [
     "CatalogueError",
     "CheckNotImplemented",
+    "CheckOutcome",
     "CheckRef",
     "ConfigError",
     "Finding",
+    "OutcomeCollector",
     "RuleConfig",
     "RuleManager",
     "RulePack",
@@ -35,6 +40,7 @@ __all__ = [
     "RuleSpec",
     "RuleStatus",
     "Severity",
+    "Unchecked",
     "ValidationContext",
     "apply_config",
     "load_catalogue_dir",
