@@ -115,7 +115,7 @@ class TestPanelLimitedByClosed:
                 "1 boundary ref(s) without explicit curve (PanelRef×1)",
                 "p1", "g1"),))
 
-    def test_grid_and_dangling_refs_reported_separately(self):
+    def test_unresolvable_grid_refs_count_as_dangling(self):
         sides = _square_sides()[:2]
         sides += [IrLimitedByRef(ref_type="GridRef", local_ref="fr10"),
                   IrLimitedByRef(ref_type="GridRef", local_ref="fr11"),
@@ -123,9 +123,7 @@ class TestPanelLimitedByClosed:
         panel = IrPanel(id="p1", guidref="g1", limited_by=sides)
         ctx = _ctx(_vessel({"p1": panel}))
         (u,) = panel_limited_by_closed(ctx, {"tolerance_mm": 1.0}).unchecked
-        assert u.reason == ("1 dangling boundary ref(s) (SeamRef×1); "
-                            "2 boundary ref(s) without explicit curve "
-                            "(GridRef×2)")
+        assert u.reason == "3 dangling boundary ref(s) (GridRef×2, SeamRef×1)"
 
     def test_unsampleable_boundary_curve_reported(self):
         sides = _square_sides()[:3]

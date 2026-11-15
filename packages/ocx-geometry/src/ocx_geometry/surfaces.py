@@ -78,6 +78,11 @@ class SurfaceParam(ABC):
         """Axis-aligned box that contains the whole surface (None: unbounded)."""
         return None
 
+    def uv_domain(self) -> tuple[float, float, float, float] | None:
+        """``(u0, u1, v0, v1)`` parameter domain (entries may be ±inf);
+        None when no finite parameter bounds are known or needed."""
+        return None
+
 
 def _chord_edge(radius: float, tol_m: float) -> float:
     """Max chord length with sagitta <= tol on a circle of given radius."""
@@ -179,6 +184,16 @@ class ConeParam(SurfaceParam):
         u = np.arctan2(rad @ self.y, rad @ self.x)
         return np.column_stack([np.unwrap(u), v])
 
+    def uv_domain(self):
+        # Past the apex the radius turns negative and evaluate() continues on
+        # the opposite nappe; stop v at the apex on the base→tip side.
+        if self.rb == self.rt:
+            return None
+        v_apex = self.rb * self.h / (self.rb - self.rt)
+        if self.rb > self.rt:
+            return (-math.inf, math.inf, -math.inf, v_apex)
+        return (-math.inf, math.inf, v_apex, math.inf)
+
     def uv_scale(self):
         return (max(self.rb, self.rt), 1.0)
 
@@ -218,6 +233,9 @@ class SphereParam(SurfaceParam):
     def normals(self, uv):
         p = self.evaluate(uv)
         return (p - self.o) / self.r
+
+    def uv_domain(self):
+        return (-math.inf, math.inf, 0.0, math.pi)
 
     def uv_scale(self):
         return (self.r, self.r)
@@ -318,6 +336,9 @@ class ExtrudedParam(SurfaceParam):
             out[i] = (best_u, (p - base) @ self.d)
         return out
 
+    def uv_domain(self):
+        return (0.0, float(self.s[-1]), -np.inf, np.inf)
+
     def max_edge_m(self, tol_m):
         """Bound edges by the smallest circumradius along the base polyline."""
         if len(self.b) < 3:
@@ -372,6 +393,10 @@ class NurbsSurfaceParam(SurfaceParam):
     def bounds(self):
         # convex-hull property: the surface lies inside its control-point box
         return self._bounds
+
+    def uv_domain(self):
+        return (float(self.du[0]), float(self.du[1]),
+                float(self.dv[0]), float(self.dv[1]))
 
     def _clip_uv(self, uv: np.ndarray) -> np.ndarray:
         return np.clip(uv, [self.du[0], self.dv[0]], [self.du[1], self.dv[1]])

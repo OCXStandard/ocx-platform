@@ -17,6 +17,10 @@
   `unchecked` list and `summary.unchecked_elements`; the rules report shows
   them per rule. The exit code is unchanged.
 
+### Changed
+
+- Requires `ocx-geometry>=0.3,<0.4`.
+
 ## 0.5.0 — 2026-10-20
 
 Initial release as a workspace package: parsing, IR, units and schema
