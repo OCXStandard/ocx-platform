@@ -16,7 +16,7 @@ from ocx_model_core import (  # noqa: F401 — re-exported for back-compat
     get_builder,
 )
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "OcxParser",

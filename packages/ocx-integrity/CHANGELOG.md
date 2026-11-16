@@ -1,6 +1,6 @@
 # Changelog — ocx-integrity
 
-## Unreleased
+## 0.2.0 — 2026-11-16
 
 - Profile `ocx-hash/1`: canonical per-aspect records for 9 part kinds, JCS
   serialisation, HMAC-derived salts, RFC 9162 Merkle part/model roots.

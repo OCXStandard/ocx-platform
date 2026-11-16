@@ -22,7 +22,7 @@ from ocx_model_core.model.ir import IrVessel
 from ocx_model_core.parsers.dynamic_loader import DeclarationOfOcxImport, DynamicLoader
 from ocx_model_core.parsers.parser import OcxParser
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "OcxParser",

@@ -1,6 +1,6 @@
 # Changelog — ocx-model-validator
 
-## Unreleased
+## 0.6.0 — 2026-11-16
 
 ### Changed
 
