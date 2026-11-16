@@ -45,8 +45,10 @@ Rejected: moving `frame_table` and compartment data into `ocx-model-core`
 - `tests/test_mcp_server.py` uses `tests.section_fixtures.make_synthetic_vessel`
   and `make_model` / `make_report` / `plate_row` from `tests/test_writeback.py`.
 - Every platform package still pins `ocx-model-core>=0.5,<0.6` although core
-  is 0.6.0. The pins are only satisfied inside the uv workspace (workspace
-  sources override them); a git-pinned consumer cannot resolve them.
+  is 0.6.0. uv tolerates this for workspace and git-workspace consumers
+  (member sources override the constraint — verified with a git-pinned
+  probe), but the published metadata is wrong and a plain index install
+  would fail. Fixed as part of this release.
 
 ## Section 1 — Platform changes (release v0.7.0)
 
@@ -71,9 +73,10 @@ Rejected: moving `frame_table` and compartment data into `ocx-model-core`
    tree. Changelogs: validator entry under "Removed (breaking)"; workspace
    changelog entry; patch entries for packages whose pins changed.
 5. **Versions.** `ocx-model-validator` 0.7.0 (pyproject + `__version__`);
-   `ocx-geometry`, `ocx-rules`, `ocx-integrity` patch bumps (pin metadata
-   only; `ocx_rules.__version__` follows its pyproject). `uv lock`. Tag
-   `v0.7.0`.
+   `ocx-geometry` 0.3.1 and `ocx-integrity` 0.2.1 (pin metadata only).
+   `ocx-rules` keeps 0.1.0 — its changelog already has an `Unreleased`
+   section with feature work, so the pin note goes there instead of a
+   patch release. `uv lock`. Tag `v0.7.0`.
 
 ## Section 2 — The `ocx-mcp` repository
 
