@@ -11,6 +11,10 @@ Workspace-level summary; each package keeps its own `CHANGELOG.md` under
   that isolates a thickness; panel-grouped, searchable parts tree with
   show/hide and click-to-select in 3D; `--panel` filter; parallel plate
   tessellation (`--workers`); brackets rendered as solids.
+- IR: panel children (plates, brackets, stiffeners, pillars, edge
+  reinforcements) carry the panel `functionType` when not overridden,
+  flagged by `function_type_inherited`; integrity hashes the effective
+  value.
 
 ### Fixed
 

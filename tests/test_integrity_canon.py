@@ -422,6 +422,17 @@ def test_identity_material_section_and_hole_records():
     }
 
 
+def test_bracket_identity_hashes_resolved_function_type():
+    from ocx_integrity.records import bracket as bracket_records
+    from ocx_model_core.model.ir import IrBracket
+
+    v = make_vessel()
+    br = IrBracket(id="BR1", parent_ref=ParentRef(ParentKind.PANEL, "PAN1"),
+                   function_type="DECK PART", function_type_inherited=True)
+    ident = bracket_records.extract(br, Context(v))["identity"]
+    assert ident["function_type"] == "DECK PART"
+
+
 def test_unresolved_material_is_recorded_not_dropped():
     ctx = Context(make_vessel())
     ctx.current = "plate X"

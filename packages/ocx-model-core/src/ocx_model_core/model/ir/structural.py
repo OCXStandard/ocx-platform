@@ -86,6 +86,8 @@ class IrPlate:
     mass_properties: IrMassProperties | None = None
     net_area: Quantity | None = None
     function_type: str | None = None
+    # True when function_type was inherited from the parent panel.
+    function_type_inherited: bool = False
     outer_contour: IrCurve3D | None = None
     point_on_surface: IrPoint3D | None = None
     cut_by_contours: list[IrCurve3D] = field(default_factory=list)
@@ -104,6 +106,8 @@ class IrBracket:
     renewal_thickness: Quantity | None = None
     voluntary_thickness_addition: Quantity | None = None
     mass_properties: IrMassProperties | None = None
+    function_type: str | None = None
+    function_type_inherited: bool = False
     arm_length_u: Quantity | None = None
     arm_length_v: Quantity | None = None
     unose: Quantity | None = None
@@ -138,6 +142,7 @@ class IrStiffener:
     voluntary_flange_thickness_addition: Quantity | None = None
     mass_properties: IrMassProperties | None = None
     function_type: str | None = None
+    function_type_inherited: bool = False
     end_cut_end1: IrEndCut | None = None
     end_cut_end2: IrEndCut | None = None
     penetrations: list[IrPenetration] = field(default_factory=list)
@@ -162,6 +167,7 @@ class IrPillar:
     voluntary_flange_thickness_addition: Quantity | None = None
     mass_properties: IrMassProperties | None = None
     function_type: str | None = None
+    function_type_inherited: bool = False
     trace: IrCurve3D | None = None
     inclinations: list[IrInclination] = field(default_factory=list)
     penetrations: list[IrPenetration] = field(default_factory=list)
@@ -182,6 +188,7 @@ class IrEdgeReinforcement:
     voluntary_flange_thickness_addition: Quantity | None = None
     mass_properties: IrMassProperties | None = None
     function_type: str | None = None
+    function_type_inherited: bool = False
     orientation_rule: str | None = None
     trace_refs: list[Ref] = field(default_factory=list)
 

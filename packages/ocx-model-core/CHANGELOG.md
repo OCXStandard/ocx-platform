@@ -4,6 +4,11 @@
 
 ### Added
 
+- Panel `functionType` inheritance is resolved in the IR: plates,
+  brackets, stiffeners, pillars and edge reinforcements without their own
+  `functionType` take the panel's; a child value overrides it. New
+  `function_type_inherited` flag on those IR classes; `IrBracket` gains
+  `function_type`.
 - `IrBracket` gains `outer_contour`, `plane` and `offset`, populated
   from the bracket's `OuterContour`, `UnboundedGeometry/Plane3D` and
   `Offset` elements.

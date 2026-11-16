@@ -12,6 +12,10 @@
 
 ### Added
 
+- Plate/stiffener/pillar reports read the builder-resolved panel
+  `functionType` (`function_type_inherited` drives the parentheses
+  marker); `inherited_function_cell(function_type, inherited)` signature
+  changed.
 - Report cells can be coloured `Badge` labels (HTML and rich renderers).
 - Rule reports show unchecked elements: the JSON sidecar gains a per-result
   `unchecked` list and `summary.unchecked_elements`; the rules report shows

@@ -58,7 +58,7 @@ def build(vessel: IrVessel, source_file: str = "") -> Report:
             pos_cell = "(" + ", ".join(str(c) for c in coords) + ")"
         rows.append([
             p.id, p.name, _panel_name(p, vessel),
-            inherited_function_cell(p.function_type, p.parent_ref, vessel),
+            inherited_function_cell(p.function_type, p.function_type_inherited),
             _material_name(p, vessel),
             qty_mm_cell(p.thickness, reg, notes, f"{ctx} thickness"),
             qty_mm_cell(p.renewal_thickness, reg, notes,

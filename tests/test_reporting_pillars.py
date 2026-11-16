@@ -32,10 +32,11 @@ def _vessel() -> IrVessel:
         inclinations=[IrInclination()],
         penetrations=[IrPenetration(id="PEN1")],
     )
-    # No own function_type → inherits the panel's, shown in parentheses
+    # Inherited from the panel by the builder → shown in parentheses
     v.pillars["PIL2"] = IrPillar(
         id="PIL2", parent_ref=ParentRef(kind=ParentKind.PANEL, id="PAN1"),
-        name="Bare pillar")
+        name="Bare pillar", function_type="DECK PART",
+        function_type_inherited=True)
     return v
 
 

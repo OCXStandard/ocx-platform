@@ -1310,6 +1310,7 @@ class OcxV3Builder(IOcxBuilder):
                 getattr(pm, "voluntary_thickness_addition", None) if pm else None
             ),
             mass_properties=self._mass_properties(raw),
+            function_type=self._enum(getattr(raw, "function_type", None)),
             arm_length_u=self._qty(getattr(bp, "arm_length_u", None) if bp else None),
             arm_length_v=self._qty(getattr(bp, "arm_length_v", None) if bp else None),
             unose=self._qty(getattr(bp, "unose", None) if bp else None),
@@ -1448,6 +1449,14 @@ class OcxV3Builder(IOcxBuilder):
             return None
 
         panel_parent = ParentRef(kind=ParentKind.PANEL, id=pid)
+        panel_function_type = self._enum(getattr(raw, "function_type", None))
+
+        def _inherit(obj):
+            # Panel children inherit the panel's functionType unless overridden.
+            if obj is not None and not obj.function_type and panel_function_type:
+                obj.function_type = panel_function_type
+                obj.function_type_inherited = True
+            return obj
 
         # --- composed-of children ---
         plate_ids: list[str] = []
@@ -1456,17 +1465,17 @@ class OcxV3Builder(IOcxBuilder):
         composed_of = getattr(raw, "composed_of", None)
         if composed_of is not None:
             for rp in getattr(composed_of, "plate", []):
-                obj = self._build_plate(rp, panel_parent)
+                obj = _inherit(self._build_plate(rp, panel_parent))
                 if obj:
                     self._register(ir.plates, obj.id, obj, ir.duplicate_ids)
                     plate_ids.append(obj.id)
             for rb in getattr(composed_of, "bracket", []):
-                obj = self._build_bracket(rb, panel_parent)
+                obj = _inherit(self._build_bracket(rb, panel_parent))
                 if obj:
                     self._register(ir.brackets, obj.id, obj, ir.duplicate_ids)
                     bracket_ids.append(obj.id)
             for rpi in getattr(composed_of, "pillar", []):
-                obj = self._build_pillar(rpi, panel_parent)
+                obj = _inherit(self._build_pillar(rpi, panel_parent))
                 if obj:
                     self._register(ir.pillars, obj.id, obj, ir.duplicate_ids)
                     pillar_ids.append(obj.id)
@@ -1477,12 +1486,12 @@ class OcxV3Builder(IOcxBuilder):
         stiffened_by = getattr(raw, "stiffened_by", None)
         if stiffened_by is not None:
             for rs in getattr(stiffened_by, "stiffener", []):
-                obj = self._build_stiffener(rs, panel_parent)
+                obj = _inherit(self._build_stiffener(rs, panel_parent))
                 if obj:
                     self._register(ir.stiffeners, obj.id, obj, ir.duplicate_ids)
                     stiffener_ids.append(obj.id)
             for re in getattr(stiffened_by, "edge_reinforcement", []):
-                obj = self._build_edge_reinforcement(re, panel_parent)
+                obj = _inherit(self._build_edge_reinforcement(re, panel_parent))
                 if obj:
                     self._register(ir.edge_reinforcements, obj.id, obj, ir.duplicate_ids)
                     edge_reinforcement_ids.append(obj.id)
@@ -1557,7 +1566,7 @@ class OcxV3Builder(IOcxBuilder):
             id=pid,
             name=getattr(raw, "name", None),
             guidref=getattr(raw, "guidref", None),
-            function_type=self._enum(getattr(raw, "function_type", None)),
+            function_type=panel_function_type,
             tightness=self._enum(getattr(raw, "tightness", None)),
             point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),
             mass_properties=self._mass_properties(raw),

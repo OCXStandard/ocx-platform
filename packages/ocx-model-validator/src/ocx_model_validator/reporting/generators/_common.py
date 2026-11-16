@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from ocx_model_core.exeptions import GeometryError
-from ocx_model_core.model.ir.base import IrUnit, ParentKind, ParentRef, Quantity
+from ocx_model_core.model.ir.base import IrUnit, Quantity
 from ocx_model_core.model.ir.structural import IrVessel
 from ocx_model_core.model.units import to_si
 
@@ -82,20 +82,15 @@ def qty_t_per_m3_cell(qty, registry, notes, context) -> Cell:
     return _safe_convert(qty, registry, 1e-3, 3, notes, context)
 
 
-def inherited_function_cell(own: str | None, parent_ref: ParentRef | None,
-                            vessel: IrVessel) -> Cell:
+def inherited_function_cell(function_type: str | None, inherited: bool) -> Cell:
     """Effective functionType of a panel child.
 
-    Panel children inherit the panel's functionType; a child override wins.
-    An inherited value is shown in parentheses, an override plain.
+    The builder resolves panel inheritance; an inherited value is shown in
+    parentheses, an own value plain.
     """
-    if own:
-        return own
-    if parent_ref is not None and parent_ref.kind == ParentKind.PANEL:
-        panel = vessel.panels.get(parent_ref.id)
-        if panel is not None and panel.function_type:
-            return f"({panel.function_type})"
-    return None
+    if function_type and inherited:
+        return f"({function_type})"
+    return function_type or None
 
 
 def report_metadata(vessel: IrVessel, source_file: str) -> dict[str, str]:

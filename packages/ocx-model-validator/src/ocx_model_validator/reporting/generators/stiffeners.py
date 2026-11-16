@@ -65,7 +65,7 @@ def build(vessel: IrVessel, source_file: str = "") -> Report:
         offset = s.material_ref.offset if s.material_ref is not None else None
         rows.append([
             s.id, s.name, _panel_name(s, vessel),
-            inherited_function_cell(s.function_type, s.parent_ref, vessel),
+            inherited_function_cell(s.function_type, s.function_type_inherited),
             _material_name(s, vessel), _profile_name(s, vessel),
             qty_mm_cell(offset, reg, notes, f"{ctx} offset"),
             qty_m_cell(length, reg, notes, f"{ctx} length"),

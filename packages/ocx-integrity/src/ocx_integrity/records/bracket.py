@@ -20,7 +20,10 @@ KIND = "bracket"
 def extract(bracket: IrBracket, ctx: Context) -> dict[str, Any]:
     c = ctx.canon
     return {
-        "identity": identity(KIND, bracket, ctx, parent=ctx.parent(bracket.parent_ref)),
+        "identity": identity(
+            KIND, bracket, ctx, function_type=bracket.function_type,
+            parent=ctx.parent(bracket.parent_ref),
+        ),
         "material": material_aspect(KIND, bracket.material_ref, ctx),
         "scantlings": make_record(
             KIND,

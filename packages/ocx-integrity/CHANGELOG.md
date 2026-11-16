@@ -7,3 +7,5 @@
 - Manifest build/save/load with consistency checks; verify and diff.
 - Selective-disclosure proof bundles (`prove` / `check_bundle`).
 - `ocx-integrity` CLI: `keygen`, `manifest`, `verify`, `prove`, `check`, `diff`.
+- Identity records hash the effective `functionType` of panel children
+  (own or inherited from the panel); bracket identity now includes it.

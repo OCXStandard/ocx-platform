@@ -29,10 +29,11 @@ def _vessel() -> IrVessel:
     v.plates["P0"] = IrPlate(
         id="P0", parent_ref=ParentRef(kind=ParentKind.VESSEL, id="V1"),
         name="Bare plate")
-    # No own function_type → inherits the panel's, shown in parentheses
+    # Inherited from the panel by the builder → shown in parentheses
     v.plates["P2"] = IrPlate(
         id="P2", parent_ref=ParentRef(kind=ParentKind.PANEL, id="PAN1"),
-        name="Inner plate")
+        name="Inner plate", function_type="DECK PART",
+        function_type_inherited=True)
     return v
 
 
