@@ -1,6 +1,6 @@
 [project]
 name = "ocx-geometry"
-version = "0.3.0"
+version = "0.3.1"
 description = "Geometry evaluation kernel for the OCX IR — curves, surfaces, lengths, areas, closure (no tessellation)"
 readme = "README.md"
 requires-python = ">=3.12"

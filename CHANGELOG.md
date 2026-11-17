@@ -3,6 +3,20 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
+## 0.7.0 — 2026-11-17
+
+### Removed (breaking)
+
+- `ocx-model-validator`: the `ocx-mcp` MCP server moved to its own
+  repository, [OCXStandard/ocx-mcp](https://github.com/OCXStandard/ocx-mcp).
+  MCP client configs must launch it from that repository.
+
+### Changed
+
+- `ocx-model-validator`: `ocx_model_validator.compartments` is public.
+- All packages require `ocx-model-core>=0.6,<0.7` (stale `<0.6` pins
+  fixed); a test now guards inter-package pins.
+
 ## 0.6.0 — 2026-11-16
 
 ### Added

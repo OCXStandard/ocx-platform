@@ -571,7 +571,7 @@ wheels = [
 
 [[package]]
 name = "ocx-geometry"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "packages/ocx-geometry" }
 dependencies = [
     { name = "geomdl" },
@@ -596,7 +596,7 @@ requires-dist = [
 
 [[package]]
 name = "ocx-integrity"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "packages/ocx-integrity" }
 dependencies = [
     { name = "loguru" },
@@ -636,7 +636,7 @@ requires-dist = [
 
 [[package]]
 name = "ocx-model-validator"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/ocx-model-validator" }
 dependencies = [
     { name = "loguru" },

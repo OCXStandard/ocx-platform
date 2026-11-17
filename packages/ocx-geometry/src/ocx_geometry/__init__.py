@@ -6,6 +6,6 @@ polygon topology and hole placement. No tessellation or display stack.
 """
 from ocx_geometry.measure import LengthResolver, polyline_length
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = ["LengthResolver", "polyline_length"]
