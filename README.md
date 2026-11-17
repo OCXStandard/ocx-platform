@@ -21,8 +21,9 @@ making downstream tools independent of any particular OCX schema version.
   labels, positions and spacings (mm) from the model's X reference planes
 - **Model reports** (`validator report …`): frame table, compartments,
   catalogues and bill of materials, rendered rich to stdout or as Markdown
-- **MCP server** `ocx-mcp` exposing model loading, info, frame table,
-  compartments and scantling write-back to LLM clients
+- **MCP server**: `ocx-mcp` (model loading, info, frame table, compartments,
+  scantling write-back for LLM clients) lives in its own repository,
+  [OCXStandard/ocx-mcp](https://github.com/OCXStandard/ocx-mcp).
 - **XSD schema validation** (`validator validate schema`): offline validation
   against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
 - **Rule-based validation - EXPERIMENTAL** (`validator validate rules`): configurable
@@ -95,35 +96,6 @@ print(len(frame_table.positions), "frame positions,",
 label, x_mm = frame_table.nearest_frame(161_000.0)   # e.g. midship
 ```
 
-### MCP server
-
-Run the `ocx-mcp` server over stdio:
-
-```bash
-uv run ocx-mcp
-```
-
-MCP client configuration (e.g. `mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "ocx": {
-      "command": "uv",
-      "args": ["run", "--directory", "C:\\PythonDev\\ocx-platform", "ocx-mcp"]
-    }
-  }
-}
-```
-
-| Tool | Purpose |
-|---|---|
-| `load_model` | Parse a `.3docx` file and build the IR (kept in session state) |
-| `get_model_info` | Vessel name, schema version and entity counts |
-| `get_frame_table` | Frame 0 offset, spacing entries and frame positions (mm) |
-| `get_compartments` | Compartment names, tank types, COGs, volumes and extents |
-| `apply_scantlings` | Apply an `nh-optimisation/1` report to a `.3docx`: plate thicknesses plus stiffener `BarSection`s, written to a new file |
-
 ---
 
 ## Project structure
@@ -173,17 +145,15 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   │       ├── salts.py / hashing.py / merkle.py ← HMAC salts, JCS hashing, RFC 9162
 │   │       ├── manifest.py / diff.py / verify.py / proof.py
 │   │       └── cli.py             ← ocx-integrity entrypoint
-│   └── ocx-model-validator/       ← validation, reports, CLI, MCP server
+│   └── ocx-model-validator/       ← validation, reports, CLI
 │       └── src/ocx_model_validator/
 │           ├── cli.py             ← validator / ocx-validate CLI entrypoint
 │           ├── frame_table.py     ← FrameTable, build_frame_table
-│           ├── reporting/
-│           │   ├── model.py       ← Report, ReportSection, ReportTable
-│           │   ├── generators/    ← frame table, compartments, catalogues, BOM, …
-│           │   └── renderers/     ← rich, markdown and html renderers
-│           └── mcp/
-│               ├── state.py       ← session state (loaded vessel)
-│               └── server.py      ← FastMCP "ocx-mcp" server (5 tools)
+│           ├── compartments.py    ← compartment rows (tank type, COG, volume, extent)
+│           └── reporting/
+│               ├── model.py       ← Report, ReportSection, ReportTable
+│               ├── generators/    ← frame table, compartments, catalogues, BOM, …
+│               └── renderers/     ← rich, markdown and html renderers
 └── tests/
     ├── conftest.py
     ├── stubs.py                   ← stub loaders for each OCX entity
@@ -332,7 +302,7 @@ frame_table.build_frame_table(vessel) → FrameTable      (X ref planes → fram
 reporting.generators → Report                           (frame table, compartments,
     │                                                    catalogues, BOM)
     ▼
-validator CLI / ocx-mcp MCP server
+validator CLI
 ```
 
 ---
