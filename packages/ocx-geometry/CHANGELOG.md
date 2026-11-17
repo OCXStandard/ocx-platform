@@ -1,5 +1,11 @@
 # Changelog — ocx-geometry
 
+## 0.3.1 — 2026-11-17
+
+### Changed
+
+- Requires `ocx-model-core>=0.6,<0.7` (metadata only).
+
 ## 0.3.0 — 2026-11-15
 
 ### Added

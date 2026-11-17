@@ -10,13 +10,13 @@ from ocx_model_core.exeptions import GeometryError, SectionError
 from ocx_model_core.model.ir.base import Quantity
 from ocx_model_core.model.ir.structural import IrVessel
 
+from ocx_model_validator.compartments import build_compartments_block
 from ocx_model_validator.frame_table import FrameTable, build_frame_table
 from ocx_model_validator.reporting.generators._common import (
     qty_kpa_cell,
     qty_t_per_m3_cell,
     report_metadata,
 )
-from ocx_model_validator.reporting.generators._compartment_data import build_compartments_block
 from ocx_model_validator.reporting.model import Cell, Report, ReportSection, ReportTable
 
 _COLUMNS = [

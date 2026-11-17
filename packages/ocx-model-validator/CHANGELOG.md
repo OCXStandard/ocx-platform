@@ -1,5 +1,21 @@
 # Changelog — ocx-model-validator
 
+## 0.7.0 — 2026-11-17
+
+### Removed (breaking)
+
+- The `ocx-mcp` MCP server (`ocx_model_validator.mcp`, the `ocx-mcp`
+  script and the `mcp` dependency). It now lives in
+  [OCXStandard/ocx-mcp](https://github.com/OCXStandard/ocx-mcp) with the
+  same five tools.
+
+### Changed
+
+- Compartment data extraction is public:
+  `ocx_model_validator.compartments.build_compartments_block` (was the
+  private `reporting.generators._compartment_data`; no alias).
+- Requires `ocx-model-core>=0.6,<0.7`.
+
 ## 0.6.0 — 2026-11-16
 
 ### Changed

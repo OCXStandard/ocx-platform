@@ -8,7 +8,8 @@ direction: `ocx-model-validator` → `ocx-geometry` → `ocx-model-core`,
 `ocx-model-validator` → `ocx-rules` → `ocx-model-core` (rule checks use
 geometry lazily when installed), and `ocx-integrity` → `ocx-model-core`.
 Rendering/tessellation (`ocx-render`, `ocx-diagnose`) lives in a separate
-private repository and must not be added back here.
+private repository and must not be added back here. The ocx-mcp MCP server
+likewise lives in OCXStandard/ocx-mcp.
 
 ```
 ocx-platform/                  ← repo / workspace root
@@ -69,13 +70,13 @@ ocx-platform/                  ← repo / workspace root
 │   │       ├── manifest.py      ← hash_vessel, Manifest build/save/load
 │   │       ├── diff.py / verify.py / proof.py ← ChangeReport, disclosure bundles
 │   │       └── cli.py           ← ocx-integrity entrypoint
-│   └── ocx-model-validator/    ← reports, CLI, MCP server
+│   └── ocx-model-validator/    ← reports, CLI
 │       └── src/ocx_model_validator/
 │           ├── __init__.py      ← re-exports the core public API (back-compat)
 │           ├── cli.py           ← validator / ocx-validate entrypoint
 │           ├── frame_table.py
-│           ├── reporting/       ← generators/ + renderers/ (rich, md, html)
-│           └── mcp/             ← FastMCP "ocx-mcp" server + session state
+│           ├── compartments.py  ← compartment rows (public; used by ocx-mcp)
+│           └── reporting/       ← generators/ + renderers/ (rich, md, html)
 └── tests/                      ← single shared test suite, run from the root
     ├── conftest.py             ← fixtures; discovers stub dirs matching ocx_\d+_stubs
     ├── stubs.py / object_stubs.py
@@ -83,10 +84,11 @@ ocx-platform/                  ← repo / workspace root
 ```
 
 Import rule: parser/builder/IR/units/schema-validation code lives under
-`ocx_model_core.*`; reporting/CLI/MCP code under `ocx_model_validator.*`;
+`ocx_model_core.*`; reporting/CLI code under `ocx_model_validator.*`;
 geometry evaluation/measurement under `ocx_geometry.*`; integrity
 hashing/manifest/proof code under `ocx_integrity.*` (core only — never
 imports geometry). No tessellation or rendering code belongs in this repo.
+The MCP server lives in OCXStandard/ocx-mcp and must not be added back here.
 
 ## Build, test, and lint
 

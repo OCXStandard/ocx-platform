@@ -1,5 +1,9 @@
 # Changelog — ocx-integrity
 
+## 0.2.1 — 2026-11-17
+
+- Requires `ocx-model-core>=0.6,<0.7` (metadata only).
+
 ## 0.2.0 — 2026-11-16
 
 - Profile `ocx-hash/1`: canonical per-aspect records for 9 part kinds, JCS

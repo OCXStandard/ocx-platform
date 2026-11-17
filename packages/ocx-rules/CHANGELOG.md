@@ -84,6 +84,7 @@
 
 - Requires `ocx-geometry>=0.3,<0.4` (grid planes and surface/plane
   intersection).
+- Requires `ocx-model-core>=0.6,<0.7`.
 
 ## 0.1.0 — 2026-10-20
 
