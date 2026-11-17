@@ -5,7 +5,7 @@ description = "Validate OCX .3docx ship model files — schema validation, model
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "ocx-model-core>=0.5,<0.6",
+    "ocx-model-core>=0.6,<0.7",
     "ocx-geometry>=0.3,<0.4",
     "ocx-rules>=0.1,<0.2",
     "mcp>=1.0,<2",
