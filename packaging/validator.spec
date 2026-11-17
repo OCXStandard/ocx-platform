@@ -33,7 +33,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
-    excludes=["ocx_model_validator.mcp"],
+    excludes=[],
     noarchive=False,
 )
 pyz = PYZ(a.pure)
