@@ -13,21 +13,26 @@ making downstream tools independent of any particular OCX schema version.
 
 - Parses `.3docx` XML files using [xsdata](https://xsdata.readthedocs.io/) with dynamic schema-version detection
 - Builds a typed, frozen IR (`IrVessel`, `IrPanel`, `IrPlate`, `IrBracket`, `IrStiffener`, …)
-- Supports OCX schema **3.0 / 3.1 / 3.2** out of the box
+- Supports OCX schema **2.8.6 / 3.0 / 3.1 / 3.2** out of the box (later 3.x
+  minors fall back to the v3 builder)
 - Converts UnitsML unit definitions to SI factors via `build_unit_registry`
 - CLI subcommands for model reports; xsdata test stubs are generated with the repo-internal script `python -m ocx_model_core.generate_stubs`
 - Duplicate-id and dangling-ref integrity checks built into the builder
 - **Frame table extraction** (`ocx_model_validator.frame_table`): derives frame
   labels, positions and spacings (mm) from the model's X reference planes
-- **Model reports** (`validator report …`): frame table, compartments,
-  catalogues and bill of materials, rendered rich to stdout or as Markdown
+- **Model reports** (`validator report …`): frame table, compartments
+  (incl. cargoes), catalogues, bill of materials (expandable groups) and
+  per-part reports (panels, plates, stiffeners, brackets, pillars), rendered
+  rich to stdout or as Markdown / tabbed HTML. Panel children show the
+  inherited panel `functionType` in parentheses
 - **MCP server**: `ocx-mcp` (model loading, info, frame table, compartments,
   scantling write-back for LLM clients) lives in its own repository,
   [OCXStandard/ocx-mcp](https://github.com/OCXStandard/ocx-mcp).
 - **XSD schema validation** (`validator validate schema`): offline validation
-  against vendored OCX 3.0.0–3.3.0 schemas with rich, HTML and JSON output
+  against vendored OCX 2.8.6, 3.0.0, 3.0.1, 3.1.0, 3.2.0 and 3.3.0 schemas
+  with rich, HTML and JSON output
 - **Rule-based validation - EXPERIMENTAL** (`validator validate rules`): configurable
-  best-practice rules beyond the XSD — 36 wiki-sourced rules in 6 categories
+  best-practice rules beyond the XSD — 40 rules in 6 categories
   (identity, document, references, curves/surfaces, topology, properties),
   defined declaratively in TOML, extensible via `ocx_rules.packs` entry-point
   plugins and tunable through a user config (disable rules, override
@@ -39,8 +44,6 @@ making downstream tools independent of any particular OCX schema version.
   check cannot evaluate (e.g. reference-only traces, unbuildable surfaces) are
   listed as *unchecked* in the reports; they never change a rule's status or
   the exit code
-- **3-D rendering and render diagnostics** are developed in a separate,
-  private project and are not part of this platform.
 - **Integrity manifest - EXPERIMENTAL** (`ocx-integrity`): stable part IDs and
   canonical, salted per-aspect hashes (identity, material, scantlings,
   geometry, physical) rolled up in an RFC 9162 Merkle tree to one manifest
@@ -100,7 +103,7 @@ label, x_mm = frame_table.nearest_frame(161_000.0)   # e.g. midship
 
 ## Project structure
 
-A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with six packages:
+A [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) with five packages:
 
 ```
 ocx-platform/                      ← workspace root (virtual — no package here)
@@ -110,7 +113,7 @@ ocx-platform/                      ← workspace root (virtual — no package he
 │   ├── ocx-model-core/            ← parse .3docx → schema-neutral IR (no CLI)
 │   │   └── src/ocx_model_core/
 │   │       ├── parsers/           ← OcxParser, dynamic xsdata loader, serializer
-│   │       ├── builders/          ← IOcxBuilder ABC, get_builder() registry, OcxV3Builder
+│   │       ├── builders/          ← IOcxBuilder ABC, get_builder() registry, OcxV3Builder, Ocx286Builder
 │   │       ├── model/
 │   │       │   ├── ir/            ← IR dataclasses (base, structural, sections, …)
 │   │       │   └── units.py       ← UnitConverter, build_unit_registry, SI helpers
@@ -159,9 +162,9 @@ ocx-platform/                      ← workspace root (virtual — no package he
     ├── stubs.py                   ← stub loaders for each OCX entity
     ├── object_stubs.py            ← duck-typed helpers for unit tests
     ├── data/
-    │   ├── ocx_310_stubs/         ← generated XML stubs for 3.1.0
-    │   ├── ocx_320rc8_stubs/      ← generated XML stubs for 3.2.0rc8
-    │   └── unitsml_stubs/         ← generated UnitsML stubs
+    │   ├── ocx_{286,300,310,320}_stubs/ ← generated XML stubs per schema version
+    │   ├── unitsml_stubs/         ← generated UnitsML stubs
+    │   └── integrity/             ← ocx-integrity fixtures
     └── test_*.py
 ```
 
@@ -272,13 +275,14 @@ than 1024 characters — prefer `install.ps1` when possible.
 ## Running tests
 
 ```bash
-uv run pytest                  # unit tests (integration + browser deselected by default)
-uv run pytest -m integration   # end-to-end against a real .3docx model (slow)
-uv run pytest -m browser       # HTML viewer in headless Chrome (needs unpkg.com)
+uv run pytest                  # unit tests (integration deselected by default)
+uv run pytest -m integration   # end-to-end against real .3docx models (slow)
 ```
 
-The integration suite parses a full VLCC model and verifies frame table,
-midship cross-section and document extraction against known values.
+The integration suite runs the BOM report against a full VLCC reference
+model and the best-practice rules against a model corpus. The `models/`
+folder is git-ignored; place the models there locally or point
+`OCX_VLCC_MODEL` at the VLCC file.
 
 ---
 
@@ -293,14 +297,14 @@ OcxParser.parse(xml_file)
     │  → raw OCX root dataclass
     ▼
 get_builder(schema_version)
-    │  dispatches on (major, minor) → OcxV3Builder
+    │  dispatches on (major, minor) → OcxV3Builder / Ocx286Builder
     ▼
 IOcxBuilder.build(root) → IrVessel   ← schema-neutral IR
     │
     ▼
 frame_table.build_frame_table(vessel) → FrameTable      (X ref planes → frames)
 reporting.generators → Report                           (frame table, compartments,
-    │                                                    catalogues, BOM)
+    │                                                    catalogues, BOM, parts)
     ▼
 validator CLI
 ```

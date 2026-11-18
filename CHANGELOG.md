@@ -21,26 +21,10 @@ Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 
 ### Added
 
-- `ocx-render`: colour by plate thickness (default) with a viewer legend
-  that isolates a thickness; panel-grouped, searchable parts tree with
-  show/hide and click-to-select in 3D; `--panel` filter; parallel plate
-  tessellation (`--workers`); brackets rendered as solids.
 - IR: panel children (plates, brackets, stiffeners, pillars, edge
   reinforcements) carry the panel `functionType` when not overridden,
   flagged by `function_type_inherited`; integrity hashes the effective
   value.
-
-### Fixed
-
-- `ocx-geometry` / `ocx-render`: plates trimmed from multi-member panel
-  charts no longer render as the whole panel side, as fragments or empty
-  (mesh-trim side vote and bridging, LSCM chart stitching and faceting,
-  holes that only touch a plate edge, plus an area guard as backstop).
-- `ocx-render`: per-part failures are isolated and recorded instead of
-  aborting the render; CutBy hole failures are reported separately from
-  skipped parts; failing plates get complete diagnostics records.
-- `ocx-diagnose`: skip tables include hole failures (see the package
-  changelog).
 
 ### Dependencies
 
@@ -83,19 +67,14 @@ Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 
 ### Removed (breaking)
 
-- The `ocx_model_validator.sections` package (cross-section building, JSON
-  document, 2DLX/HMX export, SVG plot, EPP splitting, section properties).
-  This functionality now lives in the `nh-sections` package of the
-  [nh-mcp](https://github.com/ocastrup/nh-mcp) project.
 - `validator section create/export/plot` CLI commands.
 - `build_cross_section` and `save_cross_section` MCP tools (the `ocx-mcp`
   server now exposes 5 tools).
-- 2DLX/HMX schemas, sample section artefacts and related tests.
 - Unused `numpy` runtime dependency and `xmlschema` dev dependency.
 
 ### Changed
 
-- Generic helpers formerly in `sections/` relocated into core:
+- Generic helpers relocated into core:
   - `ocx_model_validator.frame_table` — `FrameTable`, `build_frame_table`,
     `frame_table_block`.
   - `ocx_model_validator.model.units` — `to_si`, `qty_mm`, `qty_m3`,

@@ -67,3 +67,7 @@ models/**/*_validation.md
 _site/
 
 .worktrees/
+
+# Local example and model folders
+examples/
+models/
