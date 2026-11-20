@@ -1,4 +1,4 @@
-"""ocx-integrity on real tracked models: parse → build → manifest → verify / prove / check."""
+"""ocx-integrity on real TR02 models (tracked fixtures): parse → build → manifest → verify / prove / check."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from ocx_integrity import (
 from tests.conftest import _build_session
 from tests.integrity_fixtures import KEY
 
-MODELS = Path(__file__).resolve().parents[1] / "models" / "TR02"
+MODELS = Path(__file__).resolve().parent / "data" / "integrity"
 CASES = [("TR02_TC01_ai3dx.3docx", 3), ("TR02_TC04_ai3dx.3docx", 9)]
 
 

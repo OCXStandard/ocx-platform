@@ -17,11 +17,14 @@ jobs:
           uv sync --dev
           uv run pytest
       - name: Build sdist and wheel
-        run: uv build
+        # Virtual workspace root: build every member under packages/.
+        run: uv build --all-packages
       - uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
 
   publish:
     needs: build
