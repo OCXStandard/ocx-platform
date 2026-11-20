@@ -3,6 +3,16 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
+## 0.8.2 — 2026-11-20
+
+### Fixed
+
+- Publishing: PyPI allows only one pending trusted publisher per
+  (repository, workflow, environment), so the three packages could not share
+  the `pypi` environment and v0.8.1 was rejected (`invalid-publisher`). Each
+  package now publishes from its own matrix job with environment
+  `pypi-<package>`. Same packages and versions as 0.8.1.
+
 ## 0.8.1 — 2026-11-20
 
 ### Fixed
