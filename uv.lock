@@ -596,7 +596,7 @@ requires-dist = [
 
 [[package]]
 name = "ocx-integrity"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "packages/ocx-integrity" }
 dependencies = [
     { name = "loguru" },
@@ -615,7 +615,7 @@ requires-dist = [
 
 [[package]]
 name = "ocx-model-core"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "packages/ocx-model-core" }
 dependencies = [
     { name = "loguru" },

@@ -3,7 +3,7 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
-## Unreleased
+## 0.8.0 — 2026-11-20
 
 ### Added
 

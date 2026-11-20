@@ -1,7 +1,8 @@
 # Changelog — ocx-integrity
 
-## Unreleased
+## 0.3.0 — 2026-11-20
 
+- Requires `ocx-model-core>=0.6.1,<0.7` (reads `IrPlate.offset`).
 - Plate `geometry` aspect includes the plate `offset`. Manifests built
   earlier for models whose plates carry `<Offset>` (including `0.0`) report
   a plate `geometry` change; plates without an offset hash as before.

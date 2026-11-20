@@ -1,6 +1,6 @@
 [project]
 name = "ocx-model-core"
-version = "0.6.0"
+version = "0.6.1"
 description = "Parse OCX .3docx ship model files into a schema-neutral IR, with offline XSD validation"
 readme = "README.md"
 requires-python = ">=3.12"

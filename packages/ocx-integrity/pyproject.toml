@@ -1,11 +1,11 @@
 [project]
 name = "ocx-integrity"
-version = "0.2.1"
+version = "0.3.0"
 description = "Canonical salted per-aspect hashes + Merkle manifest for OCX models (ocx-hash/1)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "ocx-model-core>=0.6,<0.7",
+    "ocx-model-core>=0.6.1,<0.7",
     "rfc8785>=0.1.4",
     "typer>=0.9",
     "loguru>=0.7",
