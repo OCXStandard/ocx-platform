@@ -3,6 +3,15 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
+## 0.8.3 — 2026-11-20
+
+### Release
+
+- Completes the PyPI rollout under the `3docx.org` organisation: publishes
+  `ocx-integrity` 0.3.0 and `ocx-model-validator` 0.7.0. All five workspace
+  packages are now published on every tag (versions already on PyPI are
+  skipped).
+
 ## 0.8.2 — 2026-11-20
 
 ### Fixed

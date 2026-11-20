@@ -9,9 +9,7 @@ env:
   # publisher in the 3docx.org PyPI organisation with environment
   # "pypi-<package>" — PyPI allows only one pending publisher per
   # (repo, workflow, environment), so packages cannot share an environment.
-  # Staged rollout: add ocx-integrity and ocx-model-validator once these
-  # three are on PyPI.
-  PUBLISH_PACKAGES: ocx-model-core ocx-geometry ocx-rules
+  PUBLISH_PACKAGES: ocx-model-core ocx-geometry ocx-rules ocx-integrity ocx-model-validator
 
 jobs:
   build:
