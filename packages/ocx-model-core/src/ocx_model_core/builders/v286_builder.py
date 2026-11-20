@@ -2,7 +2,7 @@
 
 The 2.8.6 element vocabulary is close enough to 3.1.0 that the inherited
 ``OcxV3Builder`` logic (which reads the newest field name first and falls
-back to older names, all via ``getattr``) handles it directly.  Two real
+back to older names, all via ``getattr``) handles it directly.  Three real
 structural differences remain:
 
 1. The 2.8.6 xsdata bindings declare many fields as ``List[...]`` where the
@@ -14,6 +14,9 @@ structural differences remain:
 2. 2.8.6 nests the frame-table plane groups inside a ``FrameTables`` wrapper
    on ``CoordinateSystem`` (3.x has ``XRefPlanes``/… directly on it); a small
    adapter re-exposes them under the 3.x field names.
+3. 2.8.6 points are ``<X/><Y/><Z/>`` quantity children and vectors are
+   ``x``/``y``/``z`` attributes; the normalisation pass adds the 3.x
+   ``coordinates``/``unit`` and ``direction`` lists the v3 builder reads.
 """
 from __future__ import annotations
 
@@ -117,6 +120,32 @@ class Ocx286Builder(OcxV3Builder):
                     self._normalize(item, seen)
             else:
                 self._normalize(value, seen)
+        self._adapt_geometry(node)
+
+    @staticmethod
+    def _adapt_geometry(node) -> None:
+        """Expose 2.8.6 points/vectors under the 3.x ``coordinates``/``direction`` names.
+
+        2.8.6 points carry ``<X/><Y/><Z/>`` quantity children and vectors carry
+        ``x``/``y``/``z`` attributes, whereas the v3 builder reads the 3.x
+        ``coordinates`` (+ ``unit``) and ``direction`` lists.  A 2.8.6
+        ``ControlPoint`` wraps its point in ``Point3D``.
+        """
+        names = {f.name for f in dataclasses.fields(node)}
+        if {"x", "y", "z"} <= names:
+            x, y, z = node.x, node.y, node.z
+            if hasattr(x, "numericvalue"):
+                node.coordinates = [
+                    getattr(c, "numericvalue", None) or 0.0 for c in (x, y, z)
+                ]
+                node.unit = getattr(x, "unit", None)
+            elif isinstance(x, (int, float)):
+                node.direction = [float(c or 0.0) for c in (x, y, z)]
+        elif "point3_d" in names:
+            pt = _first(node.point3_d)
+            if pt is not None and hasattr(pt, "coordinates"):
+                node.coordinates = pt.coordinates
+                node.unit = pt.unit
 
     # ------------------------------------------------------------------
     # 2.8.6 structural overrides

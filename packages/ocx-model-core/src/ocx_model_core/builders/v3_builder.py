@@ -228,6 +228,7 @@ class OcxV3Builder(IOcxBuilder):
         # --- geometry: coordinate system + reference surfaces ---
         self._build_coordinate_system(getattr(vessel_raw, "coordinate_system", None), ir)
         self._build_reference_surfaces(getattr(vessel_raw, "reference_surfaces", None), ir)
+        self._resolve_surface_guid_refs(ir)
 
         # --- design view (product/occurrence tree) ---
         self._build_design_view(getattr(vessel_raw, "design_view", None), ir)
@@ -671,7 +672,8 @@ class OcxV3Builder(IOcxBuilder):
         return IrUnboundedGeometry(
             surface=surfaces[0] if surfaces else None,
             surfaces=tuple(surfaces),
-            surface_ref=(getattr(sref, "local_ref", None) or None) if sref else None,
+            surface_ref=(getattr(sref, "local_ref", None)
+                         or getattr(sref, "guidref", None) or None) if sref else None,
             grid_ref=(getattr(grid, "local_ref", None) or None) if grid else None,
         )
 
@@ -695,9 +697,27 @@ class OcxV3Builder(IOcxBuilder):
             for attr in self._SURFACE_ATTRS:
                 for elem in getattr(coll, attr, None) or []:
                     members.append(IrSurface(id=getattr(elem, "id", None),
+                                             guidref=getattr(elem, "guidref", None),
                                              geometry=self._build_surface(elem)))
             self._register(ir.surface_collections, cid, IrSurfaceCollection(
-                id=cid, name=getattr(coll, "name", None), surfaces=members), ir.duplicate_ids)
+                id=cid, name=getattr(coll, "name", None),
+                guidref=getattr(coll, "guidref", None), surfaces=members), ir.duplicate_ids)
+
+    @staticmethod
+    def _resolve_surface_guid_refs(ir: IrVessel) -> None:
+        """Point GUIDRef-only panel SurfaceRefs at the referenced surface/collection id."""
+        by_guid: dict[str, str] = {}
+        for coll in ir.surface_collections.values():
+            for member in coll.surfaces:
+                if member.guidref and member.id:
+                    by_guid[member.guidref] = member.id
+        by_guid.update({s.guidref: s.id for s in ir.surfaces.values() if s.guidref})
+        by_guid.update({c.guidref: c.id for c in ir.surface_collections.values() if c.guidref})
+        for panel in ir.panels.values():
+            ug = panel.unbounded_geometry
+            if ug is not None and ug.surface_ref in by_guid:
+                panel.unbounded_geometry = dataclasses.replace(
+                    ug, surface_ref=by_guid[ug.surface_ref])
 
     def _build_coordinate_system(self, cs, ir: IrVessel) -> None:
         if cs is None:

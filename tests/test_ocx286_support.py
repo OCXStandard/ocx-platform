@@ -19,6 +19,11 @@ OCX286_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
       </ocx:FrameTables>
     </ocx:CoordinateSystem>
     <ocx:Panel id="panel1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000002}" name="P1"/>
+    <ocx:Panel id="panel2" ocx:GUIDRef="{00000000-0000-0000-0000-00000000000A}" name="P2">
+      <ocx:UnboundedGeometry>
+        <ocx:SurfaceRef ocx:GUIDRef="{00000000-0000-0000-0000-00000000000B}" ocx:refType="ocx:Surface"/>
+      </ocx:UnboundedGeometry>
+    </ocx:Panel>
     <ocx:Plate id="plate1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000004}" name="PL1">
       <ocx:PlateMaterial localRef="mat1">
         <ocx:Thickness numericvalue="10.0" unit="Umm"/>
@@ -26,7 +31,34 @@ OCX286_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
     </ocx:Plate>
     <ocx:Stiffener id="stf1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000005}" name="ST1">
       <ocx:SectionRef localRef="sec1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000006}" ocx:refType="ocx:BarSection"/>
+      <ocx:TraceLine>
+        <ocx:Line3D id="tl1">
+          <ocx:StartPoint>
+            <ocx:X numericvalue="1000" unit="Umm"/><ocx:Y numericvalue="200" unit="Umm"/><ocx:Z numericvalue="0" unit="Umm"/>
+          </ocx:StartPoint>
+          <ocx:EndPoint>
+            <ocx:X numericvalue="1000" unit="Umm"/><ocx:Y numericvalue="200" unit="Umm"/><ocx:Z numericvalue="1100" unit="Umm"/>
+          </ocx:EndPoint>
+        </ocx:Line3D>
+      </ocx:TraceLine>
+      <ocx:Inclination>
+        <ocx:WebDirection x="-1" y="0" z="0"/>
+        <ocx:FlangeDirection x="0" y="1" z="0"/>
+        <ocx:Position>
+          <ocx:X numericvalue="1000" unit="Umm"/><ocx:Y numericvalue="200" unit="Umm"/><ocx:Z numericvalue="200" unit="Umm"/>
+        </ocx:Position>
+      </ocx:Inclination>
     </ocx:Stiffener>
+    <ocx:ReferenceSurfaces>
+      <ocx:SurfaceCollection id="hull" name="HULL" ocx:GUIDRef="{00000000-0000-0000-0000-00000000000B}">
+        <ocx:Plane3D id="hullplane">
+          <ocx:Origin>
+            <ocx:X numericvalue="0" unit="Umm"/><ocx:Y numericvalue="0" unit="Umm"/><ocx:Z numericvalue="0" unit="Umm"/>
+          </ocx:Origin>
+          <ocx:Normal x="0" y="0" z="1"/>
+        </ocx:Plane3D>
+      </ocx:SurfaceCollection>
+    </ocx:ReferenceSurfaces>
   </ocx:Vessel>
   <ocx:ClassCatalogue id="cat1">
     <ocx:MaterialCatalogue id="matcat1">
@@ -99,7 +131,7 @@ class Test286EndToEnd:
         assert ir.schema_version == "2.8.6"
         assert ir.name == "TestVessel"
         # Vessel-level structural parts
-        assert set(ir.panels) == {"panel1"}
+        assert set(ir.panels) == {"panel1", "panel2"}
         assert set(ir.plates) == {"plate1"}
         assert set(ir.stiffeners) == {"stf1"}
         # Plate material + thickness resolved through normalised PlateMaterial
@@ -123,6 +155,32 @@ class Test286EndToEnd:
         # Stiffener section ref resolves - no dangling references
         assert ir.stiffeners["stf1"].section_ref.local_ref == "sec1"
         assert ir.dangling_refs == []
+
+    def test_points_and_vectors_carry_286_coordinates(self, model_286: Path):
+        """2.8.6 X/Y/Z children and x/y/z attributes are not dropped to (0,0,0)."""
+        from ocx_model_core.builders.factory import get_builder
+        from ocx_model_core.parsers.parser import OcxParser
+
+        root = OcxParser().parse(str(model_286))
+        stf = get_builder(root.schema_version).build(root).stiffeners["stf1"]
+
+        assert (stf.trace.start.x, stf.trace.start.y, stf.trace.start.z) == (1000.0, 200.0, 0.0)
+        assert stf.trace.end.z == 1100.0
+        assert stf.trace.start.unit == "Umm"
+        inc = stf.inclinations[0]
+        assert (inc.web_direction.x, inc.web_direction.y, inc.web_direction.z) == (-1.0, 0.0, 0.0)
+        assert inc.flange_direction.y == 1.0
+        assert inc.position.z == 200.0
+
+    def test_guid_only_surface_ref_resolves_to_collection_id(self, model_286: Path):
+        from ocx_model_core.builders.factory import get_builder
+        from ocx_model_core.parsers.parser import OcxParser
+
+        root = OcxParser().parse(str(model_286))
+        ir = get_builder(root.schema_version).build(root)
+
+        assert ir.panels["panel2"].unbounded_geometry.surface_ref == "hull"
+        assert ir.surface_collections["hull"].surfaces[0].geometry.normal.z == 1.0
 
 
 class Test286SchemaValidation:
