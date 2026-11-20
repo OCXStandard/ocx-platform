@@ -3,6 +3,25 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
+## Unreleased
+
+### Added
+
+- IR: `IrPlate.offset` holds the plate's material `Offset` from its parent
+  surface; integrity hashes it in the plate `geometry` aspect.
+
+### Fixed
+
+- OCX 2.8.6: point coordinates and vector directions are read (they came
+  out as (0,0,0)); GUID-only panel `SurfaceRef`s resolve to the referenced
+  surface or surface collection.
+
+### Compatibility
+
+- `ocx-integrity`: manifests built before this change for models whose
+  plates carry `<Offset>` (including `0.0`) report a plate `geometry`
+  change on `verify`/`diff`. The profile stays `ocx-hash/1`.
+
 ## 0.7.0 — 2026-11-17
 
 ### Removed (breaking)

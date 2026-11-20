@@ -85,6 +85,8 @@ class IrPlate:
     voluntary_thickness_addition: Quantity | None = None
     mass_properties: IrMassProperties | None = None
     net_area: Quantity | None = None
+    # Material offset from the parent surface, positive along its normal.
+    offset: Quantity | None = None
     function_type: str | None = None
     # True when function_type was inherited from the parent panel.
     function_type_inherited: bool = False

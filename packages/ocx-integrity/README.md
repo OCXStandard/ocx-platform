@@ -48,6 +48,10 @@ Exit codes:
 
 Diffing manifests built with different keys reports every part as changed.
 
+Canonical records can gain fields within `ocx-hash/1` (see `CHANGELOG.md`).
+A model that sets a newly hashed field will then fail `verify` against a
+manifest built by an older version. Rebuild such manifests.
+
 ## Security notes
 
 - Manifests are validated strictly on load: malformed JSON, duplicate keys or

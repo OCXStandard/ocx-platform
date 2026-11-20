@@ -1,5 +1,21 @@
 # Changelog — ocx-model-core
 
+## Unreleased
+
+### Added
+
+- `IrPlate` gains `offset`, populated from the plate's `Offset` element
+  (material offset from the parent surface, positive along its normal).
+
+### Fixed
+
+- OCX 2.8.6 points (`<X/><Y/><Z/>` quantity children) and vectors
+  (`x`/`y`/`z` attributes) were read as (0,0,0); the 2.8.6 normalisation
+  pass now exposes them as the 3.x `coordinates`/`unit` and `direction`.
+- Panel `SurfaceRef`s that carry only a `GUIDRef` resolve to the id of the
+  referenced surface or surface collection (kept as the GUID when
+  unresolved). `IrSurfaceCollection` gains `guidref`.
+
 ## 0.6.0 — 2026-11-16
 
 ### Added

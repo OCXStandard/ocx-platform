@@ -646,6 +646,12 @@ def test_weight_change_only_touches_physical():
     assert _changed(_aspect_hashes(make_vessel()), _aspect_hashes(v)) == {"G-PL-1": ["physical"]}
 
 
+def test_plate_offset_change_only_touches_geometry():
+    v = make_vessel()
+    v.plates["PL1"].offset = Quantity(6.0, "Umm")
+    assert _changed(_aspect_hashes(make_vessel()), _aspect_hashes(v)) == {"G-PL-1": ["geometry"]}
+
+
 def test_hashes_invariant_to_units_order_contour_start_and_noise():
     v = make_vessel()
     v.plates["PL1"].outer_contour = square(unit="Um", size=2.0, start=2, reverse=True)

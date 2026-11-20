@@ -1303,6 +1303,7 @@ class OcxV3Builder(IOcxBuilder):
             ),
             mass_properties=self._mass_properties(raw),
             net_area=self._qty(getattr(raw, "net_area", None)),
+            offset=self._qty(getattr(raw, "offset", None)),
             function_type=self._enum(getattr(raw, "function_type", None)),
             outer_contour=self._build_contour(getattr(raw, "outer_contour", None)),
             point_on_surface=self._pt(getattr(raw, "point_on_surface", None)),

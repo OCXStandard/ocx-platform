@@ -28,6 +28,7 @@ OCX286_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
       <ocx:PlateMaterial localRef="mat1">
         <ocx:Thickness numericvalue="10.0" unit="Umm"/>
       </ocx:PlateMaterial>
+      <ocx:Offset numericvalue="5.0" unit="Umm"/>
     </ocx:Plate>
     <ocx:Stiffener id="stf1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000005}" name="ST1">
       <ocx:SectionRef localRef="sec1" ocx:GUIDRef="{00000000-0000-0000-0000-000000000006}" ocx:refType="ocx:BarSection"/>
@@ -141,6 +142,7 @@ class Test286EndToEnd:
         assert plate.thickness.unit == "Umm"
         assert plate.material_ref is not None
         assert plate.material_ref.local_ref == "mat1"
+        assert (plate.offset.value, plate.offset.unit) == (5.0, "Umm")
         # Catalogues (root-level ClassCatalogue list, nested catalogue lists)
         assert "mat1" in ir.materials
         assert ir.materials["mat1"].density is not None

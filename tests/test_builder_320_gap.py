@@ -137,6 +137,14 @@ def test_plate_material_renewal_thickness():
     assert plate.voluntary_thickness_addition.value == 1.0
 
 
+def test_plate_offset():
+    raw = NS(id="PL3", name=None, guidref=None, plate_material=None,
+             net_area=None, function_type=None, outer_contour=None,
+             offset=_qty(-6.0, "Umm"))
+    plate = _b()._build_plate(raw, PARENT)
+    assert (plate.offset.value, plate.offset.unit) == (-6.0, "Umm")
+
+
 def test_stiffener_section_ref_scantlings():
     raw = NS(id="ST2", name=None, guidref=None, material_ref=None,
              function_type=None, end_cut_end1=None, end_cut_end2=None,

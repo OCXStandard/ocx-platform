@@ -95,7 +95,7 @@ Curve `curve_length` values are excluded from `geometry` and committed under
 
 | Kind | identity | material | scantlings | geometry | physical |
 |---|---|---|---|---|---|
-| plate | kind, part_id, id_source, name, function_type, parent part_id | resolved material | thickness, renewal_thickness, voluntary_thickness_addition | outer_contour, cut_by_contours, cut_by_holes (resolved hole shape + transformation), point_on_surface | mass_properties, net_area, curve lengths |
+| plate | kind, part_id, id_source, name, function_type, parent part_id | resolved material | thickness, renewal_thickness, voluntary_thickness_addition | outer_contour, cut_by_contours, cut_by_holes (resolved hole shape + transformation), point_on_surface, offset | mass_properties, net_area, curve lengths |
 | stiffener | as plate | resolved material | resolved section, web/flange renewal + voluntary additions, end_cut_end1/2 | trace, trace_refs (part ids), inclinations, orientation_rule, penetrations | mass_properties, trace length |
 | bracket | as plate, without function_type (not in `IrBracket`) | resolved material | thickness, renewal, voluntary, arm_length_u/v, unose/vnose, free_edge_radius, edge reinforcement flags, flange_width/radius, feature_cope | origin, u/vdirection, outer_contour, plane, offset | mass_properties, outer_contour length |
 | pillar | as plate | resolved material | resolved section, renewal + voluntary additions | trace, inclinations, penetrations | mass_properties, trace length |

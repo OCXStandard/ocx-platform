@@ -38,6 +38,7 @@ def extract(plate: IrPlate, ctx: Context) -> dict[str, Any]:
             cut_by_contours=ctx.canon_set(plate.cut_by_contours),
             cut_by_holes=sort_jcs(hole_placement(h, ctx) for h in plate.cut_by_holes),
             point_on_surface=c(plate.point_on_surface),
+            offset=c(plate.offset),
         ),
         "physical": make_record(
             KIND,
