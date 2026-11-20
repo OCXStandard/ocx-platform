@@ -4,6 +4,12 @@ on:
   push:
     tags: ["v*"]
 
+env:
+  # Workspace members published by a tag. Each needs a (pending) trusted
+  # publisher in the 3docx.org PyPI organisation. Staged rollout: add
+  # ocx-integrity and ocx-model-validator once these three are on PyPI.
+  PUBLISH_PACKAGES: ocx-model-core ocx-geometry ocx-rules
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,8 +23,10 @@ jobs:
           uv sync --dev
           uv run pytest
       - name: Build sdist and wheel
-        # Virtual workspace root: build every member under packages/.
-        run: uv build --all-packages
+        run: |
+          for p in $PUBLISH_PACKAGES; do
+            uv build --package "$p" -o dist
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -31,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/ocx-model-validator
+      url: https://pypi.org/org/3docx.org/
     permissions:
       id-token: write  # PyPI trusted publishing (no API token needed)
     steps:
@@ -41,3 +49,6 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # A tag may not bump every package; don't fail on versions already uploaded.
+          skip-existing: true

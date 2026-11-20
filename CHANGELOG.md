@@ -3,6 +3,22 @@
 Workspace-level summary; each package keeps its own `CHANGELOG.md` under
 `packages/` with the details.
 
+## 0.8.1 — 2026-11-20
+
+### Fixed
+
+- CI: the integrity model tests read `models/TR02`, which is no longer
+  tracked; their two TR02 models are now fixtures in `tests/data/integrity/`.
+- Publishing: `uv build` at the virtual workspace root failed, so v0.6.0–
+  v0.8.0 never reached PyPI. The workflow now builds the workspace members
+  listed in `PUBLISH_PACKAGES` and skips versions already on PyPI.
+
+### Release
+
+- Staged PyPI rollout under the `3docx.org` organisation: this tag publishes
+  `ocx-model-core` 0.6.1, `ocx-geometry` 0.3.1 and `ocx-rules` 0.1.0.
+  `ocx-integrity` and `ocx-model-validator` follow in the next release.
+
 ## 0.8.0 — 2026-11-20
 
 ### Added
